@@ -9,7 +9,7 @@ Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairedLis
 This package allows you to use a paired list as a Matrix.
 In pairwise calculations like `cor()`, saving the result as a `PairedListSymmetric` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of vectors:
 
-```
+```julia
 julia> n = 60_000;
 
 julia> Array(Float64, n, n);
@@ -30,7 +30,7 @@ Also it gives you the option of save your labels and allows you to use them for 
 
 ## Example
 
-```
+```julia
 julia> using PairedListMatrices
 
 julia> points = [ rand(3) for n in 1:3 ]
@@ -87,7 +87,7 @@ julia> getlabel(mat, "P", "Q")
 
 A `PairedListDiagonalSymmetric` (is diagonal because the list also includes the diagonal values) used as a matrix (`pairedlist_matindex`) can be filled faster the a Symmetric full matrix (`using_full_symmetric`). Is also faster than filling the full matrix as in `pairwise!` of **Distances.jl** (`distances_pairwise`). Filling a list (vector) and create a `PairedListDiagonalSymmetric` with it is also fast (`pairedlist_listindex`). When space is a problem `PairedListDiagonalSymmetric` everything is faster than saving the values on a sparse matrix (`using_full_symmetric`). The bechmark code is in the test folder.
 
-```
+```julia
 julia> function pairedlist_matindex(vecs)
          n = length(vecs)
          list = PairedListDiagonalSymmetric(Float64, n)
@@ -118,36 +118,37 @@ pairedlist_listindex (generic function with 1 method)
 
 ```
 
-### Small test set: `[ rand(3) for n in 1:100 ]`
+#### Small test set: [ rand(3) for n in 1:100 ]
 
-```pairedlist_matindex```
-**Time per evaluation: 1.29 ms [870.25 μs, 1.70 ms]**
 
-```using_full_symmetric```
+**pairedlist_matindex**
+Time per evaluation: 1.29 ms [870.25 μs, 1.70 ms]
+
+using_full_symmetric
 Time per evaluation: 1.43 ms [1.05 ms, 1.80 ms]
 
-```pairedlist_listindex(testset_small)```
-**Time per evaluation: 1.56 ms [1.17 ms, 1.95 ms]**
+**pairedlist_listindex**
+Time per evaluation: 1.56 ms [1.17 ms, 1.95 ms]
 
-```distances_pairwise```
+distances_pairwise
 Time per evaluation: 1.61 ms [1.07 ms, 2.14 ms]
 
-```using_sparse_symmetric```
+using_sparse_symmetric
 Time per evaluation: 3.75 ms [3.35 ms, 4.14 ms]
 
-### Big test set: `[ rand(3) for n in 1:1000 ]`
+#### Big test set: [ rand(3) for n in 1:1000 ]
 
-```pairedlist_matindex```
-**Time per evaluation: 114.25 ms [105.46 ms, 123.04 ms]**
+**pairedlist_matindex**
+Time per evaluation: 114.25 ms [105.46 ms, 123.04 ms]
 
-```pairedlist_listindex(testset_small)```
-**Time per evaluation: 149.55 ms [139.16 ms, 159.94 ms]**
+**pairedlist_listindex**
+Time per evaluation: 149.55 ms [139.16 ms, 159.94 ms]
 
-```using_full_symmetric```
+using_full_symmetric
 Time per evaluation: 154.07 ms [140.74 ms, 167.40 ms]
 
-```distances_pairwise```
+distances_pairwise
 Time per evaluation: 161.17 ms [145.42 ms, 176.91 ms]
 
-```using_sparse_symmetric```
+using_sparse_symmetric
 Time per evaluation: 26.46 s
