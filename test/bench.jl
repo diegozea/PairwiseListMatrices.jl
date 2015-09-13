@@ -1,6 +1,6 @@
 using PairedListMatrices
 using Benchmarks
-using Base.Tests
+using Base.Test
 
 # Similar to pairwise of Distances.jl
 function distances_pairwise(vecs)
@@ -102,6 +102,6 @@ const testset_big=[ rand(3) for n in  1:1000 ];
 
 @benchmark distances_pairwise(testset_big)
 @benchmark using_full_symmetric(testset_big)
-@benchmark using_sparse(testset_big)
+@benchmark using_sparse_symmetric(testset_big)
 @benchmark pairedlist_matindex(testset_big)
 @benchmark pairedlist_listindex(testset_big)
