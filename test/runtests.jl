@@ -1,9 +1,9 @@
-using PairedListMatrices
+using PairwiseListMatrices
 using Base.Test
 
 print("""
 
-Test PairedListMatrices
+Test PairwiseListMatrices
 =======================
 """)
 
@@ -30,12 +30,12 @@ let list = [1,-2,3],
   ------------------------
   """)
 
-  pld_triu = PairedListDiagonalSquareTriangular(list)
-  pld_tril = PairedListDiagonalSquareTriangular(list, false)
-  pl_triu  = PairedListSquareTriangular(list)
-  pl_tril  = PairedListSquareTriangular(list, false)
-  pld_sym  = PairedListDiagonalSymmetric(list)
-  pl_sym   = PairedListSymmetric(list)
+  pld_triu = PairwiseListDiagonalSquareTriangular(list)
+  pld_tril = PairwiseListDiagonalSquareTriangular(list, false)
+  pl_triu  = PairwiseListSquareTriangular(list)
+  pl_tril  = PairwiseListSquareTriangular(list, false)
+  pld_sym  = PairwiseListDiagonalSymmetric(list)
+  pl_sym   = PairwiseListSymmetric(list)
 
   @test pld_triu == list_diag_triu
   @test pld_tril == list_diag_tril
@@ -122,12 +122,12 @@ List with Labels
 """)
 
 let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
-    list_diag_triu =  PairedListDiagonalSquareTriangular(list, true, labels_diag),
-    list_diag_tril =  PairedListDiagonalSquareTriangular(list, false, labels_diag),
-    list_triu = PairedListSquareTriangular(list, true, labels),
-    list_tril = PairedListSquareTriangular(list, false, labels),
-    list_diag_sym = PairedListDiagonalSymmetric(list, labels_diag),
-    list_sym = PairedListSymmetric(list, labels)
+    list_diag_triu =  PairwiseListDiagonalSquareTriangular(list, true, labels_diag),
+    list_diag_tril =  PairwiseListDiagonalSquareTriangular(list, false, labels_diag),
+    list_triu = PairwiseListSquareTriangular(list, true, labels),
+    list_tril = PairwiseListSquareTriangular(list, false, labels),
+    list_diag_sym = PairwiseListDiagonalSymmetric(list, labels_diag),
+    list_sym = PairwiseListSymmetric(list, labels)
 
   print("""
   getlabel & getindex

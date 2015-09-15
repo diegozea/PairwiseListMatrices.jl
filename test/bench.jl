@@ -1,4 +1,4 @@
-using PairedListMatrices
+using PairwiseListMatrices
 using Benchmarks
 using Base.Test
 
@@ -56,7 +56,7 @@ end
 
 function pairedlist_matindex(vecs)
   n = length(vecs)
-  list = PairedListDiagonalSymmetric(Float64, n)
+  list = PairwiseListDiagonalSymmetric(Float64, n)
   @inbounds for i in 1:n
     vec_i = vecs[i]
     for j in i:n
@@ -77,7 +77,7 @@ function pairedlist_listindex(vecs)
       k += 1
     end
   end
-  PairedListDiagonalSymmetric(list)
+  PairwiseListDiagonalSymmetric(list)
 end
 
 const testset_small=[ rand(3) for n in 1:100 ];

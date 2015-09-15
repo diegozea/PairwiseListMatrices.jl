@@ -1,13 +1,13 @@
-# PairedListMatrices
+# PairwiseListMatrices
 
-Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairedListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairedListMatrices.jl)
+Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)
 
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/u8ayy5ep2tnncnyp/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairedlistmatrices-jl/branch/master)
 
-Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairedListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairedListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairedListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairedListMatrices.jl?branch=master)
+Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
 This package allows you to use a paired list as a Matrix.
-In pairwise calculations like `cor()`, saving the result as a `PairedListSymmetric` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of vectors:
+In pairwise calculations like `cor()`, saving the result as a `PairwiseListSymmetric` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of vectors:
 
 ```julia
 julia> n = 60_000;
@@ -25,13 +25,13 @@ julia>
 
 ```
 
-`PairedListMatrices` is faster than other alternatives, since is cache efficient.
+`PairwiseListMatrices` is faster than other alternatives, since is cache efficient.
 Also it gives you the option of save your labels and allows you to use them for indexing.
 
 ## Example
 
 ```julia
-julia> using PairedListMatrices
+julia> using PairwiseListMatrices
 
 julia> points = [ rand(3) for n in 1:3 ]
 3-element Array{Array{Float64,1},1}:
@@ -60,8 +60,8 @@ O P 0.923814951778981
 O Q -0.09394903823267092
 P Q -0.46793753775974317
 
-julia> mat = PairedListSymmetric(list, labels, 1.0)
-3x3 PairedListMatrices.PairedListSymmetric{Float64,ASCIIString}:
+julia> mat = PairwiseListSymmetric(list, labels, 1.0)
+3x3 PairwiseListMatrices.PairwiseListSymmetric{Float64,ASCIIString}:
   1.0        0.923815  -0.093949
   0.923815   1.0       -0.467938
  -0.093949  -0.467938   1.0
@@ -85,12 +85,12 @@ julia> getlabel(mat, "P", "Q")
 
 ## Benchmark
 
-A `PairedListDiagonalSymmetric` (is diagonal because the list also includes the diagonal values) used as a matrix (`pairedlist_matindex`) can be filled faster the a Symmetric full matrix (`using_full_symmetric`). Is also faster than filling the full matrix as in `pairwise!` of **Distances.jl** (`distances_pairwise`). Filling a list (vector) and create a `PairedListDiagonalSymmetric` with it is also fast (`pairedlist_listindex`). When space is a problem `PairedListDiagonalSymmetric` everything is faster than saving the values on a sparse matrix (`using_full_symmetric`). The bechmark code is in the test folder.
+A `PairwiseListDiagonalSymmetric` (is diagonal because the list also includes the diagonal values) used as a matrix (`pairedlist_matindex`) can be filled faster the a Symmetric full matrix (`using_full_symmetric`). Is also faster than filling the full matrix as in `pairwise!` of **Distances.jl** (`distances_pairwise`). Filling a list (vector) and create a `PairwiseListDiagonalSymmetric` with it is also fast (`pairedlist_listindex`). When space is a problem `PairwiseListDiagonalSymmetric` everything is faster than saving the values on a sparse matrix (`using_full_symmetric`). The bechmark code is in the test folder.
 
 ```julia
 julia> function pairedlist_matindex(vecs)
          n = length(vecs)
-         list = PairedListDiagonalSymmetric(Float64, n)
+         list = PairwiseListDiagonalSymmetric(Float64, n)
          @inbounds for i in 1:n
            vec_i = vecs[i]
            for j in i:n
@@ -112,7 +112,7 @@ julia> function pairedlist_listindex(vecs)
              k += 1
            end
          end
-         PairedListDiagonalSymmetric(list)
+         PairwiseListDiagonalSymmetric(list)
        end
 pairedlist_listindex (generic function with 1 method)
 
