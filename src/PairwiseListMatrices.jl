@@ -10,5 +10,6 @@ module PairwiseListMatrices
   getlabel, setlabel!
 
   include("matrices.jl")
+  #include("pairwiselistmatrix.jl")
 
 end # module
