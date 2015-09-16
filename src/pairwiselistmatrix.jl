@@ -191,7 +191,9 @@ ctranspose!(lm::PairwiseListMatrix) = lm
 # diag and full
 # =============
 
-diag(lm::PairwiseListMatrix) = lm.diag
+diag{T, L}(lm::PairwiseListMatrix{T, L, false}) = lm.diag
+
+diag{T, L}(lm::PairwiseListMatrix{T, L, true}) = T[ lm[i,i] for i in 1:lm.nelements ]
 
 # This is faster than list comprehension (1.21 x)
 "Returns a full dense matrix"
@@ -229,6 +231,8 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, false})
   complete
 end
 
+full(m::Symmetric{PairwiseListMatrix}) = full(m.data)
+
 # Unary operations
 # ================
 
@@ -238,6 +242,8 @@ for una in (:abs, :-)
     $(una){T, L}(lm::PairwiseListMatrix{T, L, false})= PairwiseListMatrix{T, L, false}($(una)(lm.list), $(una)(lm.diag), lm.labels, lm.nelements)
   end
 end
+
+svd(m::PairwiseListMatrix) = svd(full(m))
 
 # Binary operations
 # =================
@@ -260,8 +266,14 @@ for bin in ( :-, :+, :.*, :./, :.+, :.- )
       PairwiseListMatrix{T, L, false}($(bin)(A.list, B.list), $(bin)(A.diag, B.diag), A.labels, A.nelements)
     end
 
-    $(bin)(A::PairwiseListMatrix, B::PairwiseListMatrix) = return($(bin)(full(A), full(B)))
+    $(bin)(A::PairwiseListMatrix, B::PairwiseListMatrix) = $(bin)(full(A), full(B))
 
   end
+
+end
+
+for bin in (:*, :/)
+
+  @eval $(bin)(A::PairwiseListMatrix, B::PairwiseListMatrix) = $(bin)(full(A), full(B))
 
 end

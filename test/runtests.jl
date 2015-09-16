@@ -113,6 +113,71 @@ let list = [1,-2,3],
   @test ctranspose(pld_sym) == pld_sym == list_diag_sym'
   @test ctranspose(pl_sym) == pl_sym == list_sym'
 
+  print("""
+
+  Linear algebra
+  --------------
+  """)
+
+  @test pld_triu * pld_triu == list_diag_triu * list_diag_triu
+  @test pld_tril * pld_tril == list_diag_tril * list_diag_tril
+  @test pl_triu  * pl_triu  == list_triu      * list_triu
+  @test pl_tril  * pl_tril  == list_tril      * list_tril
+  @test pld_sym  * pld_sym  == list_diag_sym  * list_diag_sym
+  @test pl_sym   * pl_sym   == list_sym       * list_sym
+
+  @test pld_triu / pld_triu == list_diag_triu / list_diag_triu
+  @test pld_tril / pld_tril == list_diag_tril / list_diag_tril
+  @test pld_sym  / pld_sym  == list_diag_sym  / list_diag_sym
+  @test pl_sym   / pl_sym   == list_sym       / list_sym
+
+  @test svd(pld_triu) == svd(list_diag_triu)
+  @test svd(pld_tril) == svd(list_diag_tril)
+  @test svd(pl_triu ) == svd(list_triu)
+  @test svd(pl_tril ) == svd(list_tril)
+  @test svd(pld_sym ) == svd(list_diag_sym)
+  @test svd(pl_sym  ) == svd(list_sym)
+
+  print("""
+
+  Stats
+  -----
+  """)
+
+  @test mean(pld_triu) == mean(list_diag_triu)
+  @test mean(pld_tril) == mean(list_diag_tril)
+  @test mean(pl_triu ) == mean(list_triu)
+  @test mean(pl_tril ) == mean(list_tril)
+  @test mean(pld_sym ) == mean(list_diag_sym)
+  @test mean(pl_sym  ) == mean(list_sym)
+
+  @test mean(pld_sym,1) == mean(list_diag_sym, 1)
+  @test mean(pl_sym ,1) == mean(list_sym, 1)
+
+  @test mean(pld_sym,2) == mean(list_diag_sym, 2)
+  @test mean(pl_sym ,2) == mean(list_sym, 2)
+
+  @test std(pld_triu) == std(list_diag_triu)
+  @test std(pld_tril) == std(list_diag_tril)
+  @test std(pl_triu ) == std(list_triu)
+  @test std(pl_tril ) == std(list_tril)
+  @test std(pld_sym ) == std(list_diag_sym)
+  @test std(pl_sym  ) == std(list_sym)
+
+  @test std(pld_sym,1) == std(list_diag_sym, 1)
+  @test std(pl_sym, 1) == std(list_sym, 1)
+
+  @test std(pld_sym,2) == std(list_diag_sym, 2)
+  @test std(pl_sym, 2) == std(list_sym, 2)
+
+
+#  @test cor(pld_triu) == cor(list_diag_triu)
+#  @test cor(pld_tril) == cor(list_diag_tril)
+#  @test cor(pl_triu ) == cor(list_triu)
+#  @test cor(pl_tril ) == cor(list_tril)
+  @test cor(pld_sym ) == cor(list_diag_sym)
+  @test cor(pl_sym  ) == cor(list_sym)
+
 end
 
 print("""
@@ -128,6 +193,21 @@ let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
     list_tril = LowerTriangular(PairwiseListMatrix(list, labels)),
     list_diag_sym = PairwiseListMatrix(list, labels_diag, true),
     list_sym = PairwiseListMatrix(list, labels)
+
+  print("""
+  labels(!) & copy
+  """)
+
+  @test PairwiseListMatrices.labels(list_diag_sym) == labels_diag
+
+  copy_lm = copy(list_sym)
+  labels!(copy_lm, ['A', 'B', 'C'])
+  @test PairwiseListMatrices.labels(copy_lm) == ['A', 'B', 'C']
+
+  @test PairwiseListMatrices.labels(list_sym) == labels
+
+  @test diag(list_diag_sym) == [1, 3]
+  @test diag(list_sym) == [0, 0, 0]
 
   print("""
   getlabel & getindex
