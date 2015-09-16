@@ -5,11 +5,9 @@ module PairwiseListMatrices
   import Base: size, getindex, setindex!, length, eltype, similar, copy, abs, full,
   transpose, transpose!, ctranspose, ctranspose!, diag, -, +, .*, .-, .+, .-, ./
 
-  export AbstractPairwiseList, AbstractPairwiseListDiagonalMatrix, AbstractPairwiseListMatrix,
-  PairwiseListDiagonalSymmetric, PairwiseListSymmetric, PairwiseListDiagonalSquareTriangular, PairwiseListSquareTriangular,
-  getlabel, setlabel!
+  export PairwiseListMatrix,
+  labels, labels!, getlabel, setlabel!
 
-  include("matrices.jl")
-  #include("pairwiselistmatrix.jl")
+  include("pairwiselistmatrix.jl")
 
-end # module
+end
