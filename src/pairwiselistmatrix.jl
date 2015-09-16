@@ -231,7 +231,7 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, false})
   complete
 end
 
-full(m::Symmetric{PairwiseListMatrix}) = full(m.data)
+full{T, S <: PairwiseListMatrix}(m::Symmetric{T, S}) = full(m.data)
 
 # Unary operations
 # ================

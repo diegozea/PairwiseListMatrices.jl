@@ -113,6 +113,9 @@ let list = [1,-2,3],
   @test ctranspose(pld_sym) == pld_sym == list_diag_sym'
   @test ctranspose(pl_sym) == pl_sym == list_sym'
 
+  @test transpose!(pl_sym) == pl_sym
+  @test ctranspose!(pl_sym) == pl_sym
+
   print("""
 
   Linear algebra
@@ -125,6 +128,7 @@ let list = [1,-2,3],
   @test pl_tril  * pl_tril  == list_tril      * list_tril
   @test pld_sym  * pld_sym  == list_diag_sym  * list_diag_sym
   @test pl_sym   * pl_sym   == list_sym       * list_sym
+  @test Symmetric(pl_sym) * Symmetric(pl_sym) == Symmetric(list_sym) * Symmetric(list_sym)
 
   @test pld_triu / pld_triu == list_diag_triu / list_diag_triu
   @test pld_tril / pld_tril == list_diag_tril / list_diag_tril
