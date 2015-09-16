@@ -30,12 +30,12 @@ let list = [1,-2,3],
   ------------------------
   """)
 
-  pld_triu = PairwiseListDiagonalSquareTriangular(list)
-  pld_tril = PairwiseListDiagonalSquareTriangular(list, false)
-  pl_triu  = PairwiseListSquareTriangular(list)
-  pl_tril  = PairwiseListSquareTriangular(list, false)
-  pld_sym  = PairwiseListDiagonalSymmetric(list)
-  pl_sym   = PairwiseListSymmetric(list)
+  pld_triu = UpperTriangular(PairwiseListMatrix(list, true))
+  pld_tril = LowerTriangular(PairwiseListMatrix(list, true))
+  pl_triu  = UpperTriangular(PairwiseListMatrix(list))
+  pl_tril  = LowerTriangular(PairwiseListMatrix(list))
+  pld_sym  = PairwiseListMatrix(list, true)
+  pl_sym   = PairwiseListMatrix(list)
 
   @test pld_triu == list_diag_triu
   @test pld_tril == list_diag_tril
@@ -122,28 +122,16 @@ List with Labels
 """)
 
 let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
-    list_diag_triu =  PairwiseListDiagonalSquareTriangular(list, true, labels_diag),
-    list_diag_tril =  PairwiseListDiagonalSquareTriangular(list, false, labels_diag),
-    list_triu = PairwiseListSquareTriangular(list, true, labels),
-    list_tril = PairwiseListSquareTriangular(list, false, labels),
-    list_diag_sym = PairwiseListDiagonalSymmetric(list, labels_diag),
-    list_sym = PairwiseListSymmetric(list, labels)
+    list_diag_triu =  UpperTriangular(PairwiseListMatrix(list, labels_diag, true)),
+    list_diag_tril =  LowerTriangular(PairwiseListMatrix(list, labels_diag, true)),
+    list_triu = UpperTriangular(PairwiseListMatrix(list, labels)),
+    list_tril = LowerTriangular(PairwiseListMatrix(list, labels)),
+    list_diag_sym = PairwiseListMatrix(list, labels_diag, true),
+    list_sym = PairwiseListMatrix(list, labels)
 
   print("""
   getlabel & getindex
   """)
-
-  @test getlabel(list_diag_triu, 'A', 'B') == list_diag_triu[1,2] == 2
-  @test getlabel(list_diag_triu, 'B', 'A') == list_diag_triu[2,1] == 0
-
-  @test getlabel(list_diag_tril, 'A', 'B') == list_diag_tril[1,2] == 0
-  @test getlabel(list_diag_tril, 'B', 'A') == list_diag_tril[2,1] == 2
-
-  @test getlabel(list_triu, 'a', 'b') == list_triu[1,2] == 1
-  @test getlabel(list_triu, 'b', 'a') == list_triu[2,1] == 0
-
-  @test getlabel(list_tril, 'a', 'b') == list_tril[1,2] == 0
-  @test getlabel(list_tril, 'b', 'a') == list_tril[2,1] == 1
 
   @test getlabel(list_diag_sym, 'A', 'B') == list_diag_sym[1,2] == 2
   @test getlabel(list_diag_sym, 'B', 'A') == list_diag_sym[2,1] == 2
@@ -155,20 +143,15 @@ let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
   setlabel! & setindex!
   """)
 
-  @test_throws BoundsError setlabel!(list_diag_triu, 10, 'B', 'A')
-  @test_throws BoundsError setlabel!(list_diag_tril, 10, 'A', 'B')
-  @test_throws BoundsError setlabel!(list_triu, 10, 'b', 'a')
-  @test_throws BoundsError setlabel!(list_tril, 10, 'a', 'b')
+  setlabel!(list_diag_sym, 20, 'A', 'B')
+  @test list_diag_sym[1,2] == 20
+  setlabel!(list_diag_sym, 10, 'B', 'A')
+  @test list_diag_sym[2,1] == 10
 
-  setlabel!(list_diag_triu, 10, 'A', 'B')
-  setlabel!(list_diag_tril, 10, 'B', 'A')
-  setlabel!(list_triu, 10, 'a', 'b')
-  setlabel!(list_tril, 10, 'b', 'a')
-
-  @test list_diag_triu[1,2] == 10
-  @test list_diag_tril[2,1] == 10
-  @test list_triu[1,2] == 10
-  @test list_tril[2,1] == 10
+  setlabel!(list_sym, 20, 'a', 'b')
+  @test list_sym[1,2] == 20
+  setlabel!(list_sym, 10, 'b', 'a')
+  @test list_sym[2,1] == 10
 
   list_diag_sym[1,2] = 10
   @test list_diag_sym[2,1] == 10
