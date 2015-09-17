@@ -277,3 +277,8 @@ for bin in (:*, :/)
   @eval $(bin)(A::PairwiseListMatrix, B::PairwiseListMatrix) = $(bin)(full(A), full(B))
 
 end
+
+# Fast operations
+# ===============
+
+mean{T, L}(m::PairwiseListMatrix{T, L, false}) = (2*sum(m.list) + sum(m.diag))/length(m)
