@@ -120,6 +120,35 @@ function getindex{T, L}(lm::PairwiseListMatrix{T, L, false}, i::Int, j::Int)
   end
 end
 
+# i, n -> row: ceil(i/n) col: rem(i-1, n)+1
+# i, n -> row: ceil(i/n) col: i - n*(ceil(i/n)-1)
+
+Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
+
+function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int)
+  n = lm.nelements
+  row = Int(ceil(i/n))
+  @fastmath col = i - n*(row-1)
+  if row <= col
+    @inbounds return lm.list[_listindex_with_diagonal(row, col, n)]
+  else
+    @inbounds return lm.list[_listindex_with_diagonal(col, row, n)]
+  end
+end
+
+function getindex{T, L}(lm::PairwiseListMatrix{T, L, false}, i::Int)
+  n = lm.nelements
+  row = Int(ceil(i/n))
+  col = i - n*(row-1)
+  if row < col
+    @inbounds return lm.list[_listindex(row, col, n)]
+  elseif row > col
+    @inbounds return lm.list[_listindex(col, row, n)]
+  else
+    @inbounds return lm.diag[row]
+  end
+end
+
 # Labels
 # ======
 
@@ -164,6 +193,30 @@ function setindex!{T, L}(lm::PairwiseListMatrix{T, L, false}, v, i::Int, j::Int)
     return setindex!(lm.list, v, _listindex(j, i, lm.nelements))
   else
     return setindex!(lm.diag, v, i)
+  end
+end
+
+function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int)
+  n = lm.nelements
+  row = Int(ceil(i/n))
+  @fastmath col = i - n*(row-1)
+  if row <= col
+    return setindex!(lm.list, v, _listindex_with_diagonal(row, col, n))
+  else
+    return setindex!(lm.list, v, _listindex_with_diagonal(col, row, n))
+  end
+end
+
+function setindex!{T, L}(lm::PairwiseListMatrix{T, L, false}, v, i::Int)
+  n = lm.nelements
+  row = Int(ceil(i/n))
+  col = i - n*(row-1)
+  if row < col
+    return setindex!(lm.list, v, _listindex(row, col, n))
+  elseif row > col
+    return setindex!(lm.list, v, _listindex(col, row, n))
+  else
+    return setindex!(lm.diag, v, row)
   end
 end
 
@@ -282,3 +335,64 @@ end
 # ===============
 
 mean{T, L}(m::PairwiseListMatrix{T, L, false}) = (2*sum(m.list) + sum(m.diag))/length(m)
+
+function mean{T, L}(lm::PairwiseListMatrix{T, L, true}, region::Int)
+  N = lm.nelements
+  len = N*N
+  if region == 1
+    sum = zeros(Float64, 1, N)
+  elseif region == 2
+    sum = zeros(Float64, N, 1)
+  else
+    throw(ErrorException("region should be 1 or 2"))
+  end
+  k = 0
+  list = lm.list
+  for col in 1:N
+    for row in col:N
+      k += 1
+      @inbounds sum[row] += list[k]
+    end
+  end
+  for col in 2:N
+    for row in 1:(col-1)
+      @inbounds sum[row] += list[_listindex_with_diagonal(row, col, N)]
+    end
+  end
+  for i in 1:length(sum)
+    @inbounds sum[i] /= N
+  end
+  sum
+end
+
+function mean{T, L}(lm::PairwiseListMatrix{T, L, false}, region::Int)
+  N = lm.nelements
+  len = N*N
+  if region == 1
+    sum = zeros(Float64, 1, N)
+  elseif region == 2
+    sum = zeros(Float64, N, 1)
+  else
+    throw(ErrorException("region should be 1 or 2"))
+  end
+  k = 0
+  list = lm.list
+  for col in 1:(N-1)
+    for row in (col+1):N
+      k += 1
+      @inbounds sum[row] += list[k]
+    end
+  end
+  for row in 1:N
+    @inbounds sum[row] += lm.diag[row]
+  end
+  for col in 2:N
+    for row in 1:(col-1)
+      @inbounds sum[row] += list[_listindex(row, col, N)]
+    end
+  end
+  for i in 1:length(sum)
+    @inbounds sum[i] /= N
+  end
+  sum
+end
