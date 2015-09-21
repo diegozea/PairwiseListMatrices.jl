@@ -372,59 +372,59 @@ end
 sum{T, L}(m::PairwiseListMatrix{T, L, false}) = 2*sum(m.list) + sum(m.diag)
 sum{T, L}(m::PairwiseListMatrix{T, L, true}) =  2*sum(m.list) - sum(diag(m))
 
-function _sum_kernel!(sum_i, sum_j, list, N)
+function _sum_kernel!(sum_i, list, N)
   k = 0
+  l = 0
   for i in 1:N
-    for j in i:N
-      k += 1
-      @inbounds value = list[k]
-      @inbounds sum_i[i] += value
-      @inbounds if i != j
-        sum_j[j] += value
-      end
+    l += 1
+    @fastmath @inbounds @simd for j in i:N
+      sum_i[i] += list[k += 1]
+    end
+    @fastmath @inbounds @simd  for j in (i+1):N
+      sum_i[j] += list[l += 1]
     end
   end
-  sum_i .+ sum_j
+  sum_i
 end
 
-function _sum_kernel!(sum_i, sum_j, diag, list, N)
+function _sum_kernel!(sum_i, diag, list, N)
   k = 0
+  l = 0
   for i in 1:(N-1)
-    @inbounds sum_i[i] += diag[i]
-    for j in (i+1):N
-      k += 1
-      @inbounds value = list[k]
-      @inbounds sum_i[i] += value
-      @inbounds sum_j[j] += value
+    @fastmath @inbounds @simd for j in (i+1):N
+      sum_i[i] += list[k += 1]
+    end
+    @fastmath @inbounds @simd for j in (i+1):N
+      sum_i[j] += list[l += 1]
     end
   end
-  @inbounds sum_i[N] += diag[N]
-  sum_i .+ sum_j
+  @fastmath @inbounds @simd for i in 1:N
+    sum_i[i] += diag[i]
+  end
+  sum_i
 end
 
 function _test_and_set_sum{T}(::Type{T}, region, N)
   if region == 1
     sum_i = zeros(T, 1, N)
-    sum_j = zeros(T, 1, N)
   elseif region == 2
     sum_i = zeros(T, N, 1)
-    sum_j = zeros(T, N, 1)
   else
     throw(ErrorException("region should be 1 or 2"))
   end
-  sum_i, sum_j
+  sum_i
 end
 
 function sum{T, L}(lm::PairwiseListMatrix{T, L, true}, region::Int)
   N = lm.nelements
-  sum_i, sum_j = _test_and_set_sum(T, region, N)
-  _sum_kernel!(sum_i, sum_j, lm.list, N)
+  sum_i = _test_and_set_sum(T, region, N)
+  _sum_kernel!(sum_i, lm.list, N)
 end
 
 function sum{T, L}(lm::PairwiseListMatrix{T, L, false}, region::Int)
   N = lm.nelements
-  sum_i, sum_j = _test_and_set_sum(T, region, N)
-  _sum_kernel!(sum_i, sum_j, lm.diag, lm.list, N)
+  sum_i = _test_and_set_sum(T, region, N)
+  _sum_kernel!(sum_i, lm.diag, lm.list, N)
 end
 
 mean(m::PairwiseListMatrix) = sum(m)/length(m)
@@ -436,35 +436,41 @@ mean(m::PairwiseListMatrix, region::Int) = sum(m, region) ./ m.nelements
 sum_nodiag{T, L}(m::PairwiseListMatrix{T, L, false}) = T(2) * sum(m.list)
 sum_nodiag{T, L}(m::PairwiseListMatrix{T, L, true}) = T(2) * sum(m.list) - sum(diag(m))
 
-function _sum_kernel!{T, L}(sum_i, sum_j, lm::PairwiseListMatrix{T, L, true}, N)
-  for i in 1:(N-1)
-    for j in (i+1):N
-      @inbounds value = lm[i, j]
-      @inbounds sum_i[i] += value
-      @inbounds sum_j[j] += value
-    end
-  end
-  sum_i .+ sum_j
-end
-
-function _sum_kernel!{T, L}(sum_i, sum_j, lm::PairwiseListMatrix{T, L, false}, N)
+function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, true}, N)
   list = lm.list
   k = 0
-  for i in 1:(N-1)
-    for j in (i+1):N
+  for i in 1:N
+    for j in i:N
       k += 1
-      @inbounds value = list[k]
-      @inbounds sum_i[i] += value
-      @inbounds sum_j[j] += value
+      if i != j
+        @inbounds value = list[k]
+        @fastmath @inbounds sum_i[i] += value
+        @fastmath @inbounds sum_i[j] += value
+      end
     end
   end
-  sum_i .+ sum_j
+  sum_i
+end
+
+function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, false}, N)
+  list = lm.list
+  k = 0
+  l = 0
+  for i in 1:(N-1)
+    @fastmath @inbounds @simd for j in (i+1):N
+      sum_i[i] += list[k += 1]
+    end
+    @fastmath @inbounds @simd for j in (i+1):N
+      sum_i[j] += list[l += 1]
+    end
+  end
+  sum_i
 end
 
 function sum_nodiag{T, L, diagonal}(lm::PairwiseListMatrix{T, L, diagonal}, region::Int)
   N = lm.nelements
-  sum_i, sum_j = _test_and_set_sum(T, region, N)
-  _sum_kernel!(sum_i, sum_j, lm, N)
+  sum_i = _test_and_set_sum(T, region, N)
+  _sum_nodiag_kernel!(sum_i, lm, N)
 end
 
 "Mean of the values outside the diagonal"
