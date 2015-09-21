@@ -298,32 +298,18 @@ Mean without diagonal
 ---------------------
 """)
 
-import PairwiseListMatrices: mean_nodiag
+let list = PairwiseListMatrix([10,20,30], ["A", "B", "C"])
 
-mean_nodiag(m::Matrix, region) = (squeeze(sum(m, region), region) .- diag(m)) ./ (size(m, region)-1)
-
-function mean_nodiag{T}(m::Matrix{T})
-    nrow, ncol = size(m)
-    total = zero(T)
-    for i in 1:(ncol-1)
-      for j in (i+1):ncol
-        total += m[i, j]
-      end
-    end
-    total / div(ncol*(ncol-1), 2)
+  @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
+  @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
+  @test mean_nodiag(list) == 20.
 end
 
-let example = abs(PairwiseListMatrix(Float64, 150, false)) .+ 1.0,
-  example_diag = abs(PairwiseListMatrix(Float64, 150, true)) .+ 1.0
+let list = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
 
-  @test_approx_eq_eps mean_nodiag(example) mean_nodiag(full(example)) eps(Float64)
-  @test_approx_eq_eps mean_nodiag(example_diag) mean_nodiag(full(example_diag)) eps(Float64)
-
-  @test_approx_eq_eps mean_nodiag(example, 1) mean_nodiag(full(example), 1) eps(Float64)
-  @test_approx_eq_eps mean_nodiag(example_diag, 1) mean_nodiag(full(example_diag), 1) eps(Float64)
-
-  @test_approx_eq_eps mean_nodiag(example, 2) mean_nodiag(full(example), 2) eps(Float64)
-  @test_approx_eq_eps mean_nodiag(example_diag, 2) mean_nodiag(full(example_diag), 2) eps(Float64)
+  @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
+  @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
+  @test mean_nodiag(list) == 20.
 end
 
 print("""
