@@ -313,8 +313,8 @@ function mean_nodiag{T}(m::Matrix{T})
     total / div(ncol*(ncol-1), 2)
 end
 
-let example = PairwiseListMatrix(Float64, 150, false),
-  example_diag = PairwiseListMatrix(Float64, 150, true)
+let example = abs(PairwiseListMatrix(Float64, 150, false)) .+ 1.0,
+  example_diag = abs(PairwiseListMatrix(Float64, 150, true)) .+ 1.0
 
   @test_approx_eq_eps mean_nodiag(example) mean_nodiag(full(example)) eps(Float64)
   @test_approx_eq_eps mean_nodiag(example_diag) mean_nodiag(full(example_diag)) eps(Float64)
