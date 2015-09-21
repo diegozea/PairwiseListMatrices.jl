@@ -91,6 +91,22 @@ let list = [1,-2,3],
   @test pld_sym  .* pld_sym  == list_diag_sym .* list_diag_sym
   @test pl_sym   .* pl_sym   == list_sym .* list_sym
 
+  @test pld_sym  .* 2 == list_diag_sym .* 2
+  @test pl_sym   .* 2 == list_sym .* 2
+  @test pld_sym  .+ 2 == list_diag_sym .+ 2
+  @test pl_sym   .+ 2 == list_sym .+ 2
+  @test pld_sym  .- 2 == list_diag_sym .- 2
+  @test pl_sym   .- 2 == list_sym .- 2
+  @test pld_sym  ./ 2 == list_diag_sym ./ 2
+  @test pl_sym   ./ 2 == list_sym ./ 2
+  @test pld_sym  .* 2 == list_diag_sym .* 2
+  @test pl_sym   + 2 == list_sym + 2
+  @test pld_sym  + 2 == list_diag_sym + 2
+  @test pl_sym   - 2 == list_sym - 2
+  @test pld_sym  - 2 == list_diag_sym - 2
+  @test pl_sym   / 2 == list_sym / 2
+  @test pld_sym  / 2 == list_diag_sym / 2
+
   print("""
 
   Transpose
@@ -174,15 +190,21 @@ let list = [1,-2,3],
   @test std(pld_sym,2) == std(list_diag_sym, 2)
   @test std(pl_sym, 2) == std(list_sym, 2)
 
-
-#  @test cor(pld_triu) == cor(list_diag_triu)
-#  @test cor(pld_tril) == cor(list_diag_tril)
-#  @test cor(pl_triu ) == cor(list_triu)
-#  @test cor(pl_tril ) == cor(list_tril)
   @test cor(pld_sym ) == cor(list_diag_sym)
   @test cor(pl_sym  ) == cor(list_sym)
 
 end
+
+let list = PairwiseListMatrix([true, true, true])
+
+  @test list - true == [ -1  0  0
+                         0 -1  0
+                         0  0 -1 ]
+  @test list + true == [ 1  2  2
+                         2  1  2
+                         2  2  1 ]
+end
+
 
 print("""
 
@@ -243,4 +265,88 @@ let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
   list_sym[1,2] = 10
   @test list_sym[2,1] == 10
 
+end
+
+
+print("""
+
+Vector{PairwiseListMatrix}
+--------------------------
+""")
+
+let list_samples = [ PairwiseListMatrix(Int, 4, false) for i in 1:100 ],
+  list_diag_samples = [ PairwiseListMatrix(Int, 4, true) for i in 1:100 ],
+  full_samples = Matrix{Int}[ full(mat) for mat in list_samples ],
+  full_diag_samples = Matrix{Int}[ full(mat) for mat in list_diag_samples ]
+
+  @test sum(list_samples) == sum(full_samples)
+  @test sum(list_diag_samples) == sum(full_diag_samples)
+
+  @test mean(list_samples) == mean(full_samples)
+  @test mean(list_diag_samples) == mean(full_diag_samples)
+end
+
+let list_samples = [ ones(PairwiseListMatrix(Int, 4, false)) for i in 1:100 ],
+  list_diag_samples = [ zeros(PairwiseListMatrix(Int, 4, true)) for i in 1:100 ]
+
+  @test std(list_samples) == std(list_diag_samples)
+end
+
+print("""
+
+Mean without diagonal
+---------------------
+""")
+
+import PairwiseListMatrices: mean_nodiag
+
+mean_nodiag(m::Matrix, region) = (squeeze(sum(m, region), region) .- diag(m)) ./ (size(m, region)-1)
+
+function mean_nodiag{T}(m::Matrix{T})
+    nrow, ncol = size(m)
+    total = zero(T)
+    for i in 1:(ncol-1)
+      for j in (i+1):ncol
+        total += m[i, j]
+      end
+    end
+    total / div(ncol*(ncol-1), 2)
+end
+
+let example = PairwiseListMatrix(Float64, 150, false),
+  example_diag = PairwiseListMatrix(Float64, 150, true)
+
+  @test_approx_eq_eps mean_nodiag(example) mean_nodiag(full(example)) eps(Float64)
+  @test_approx_eq_eps mean_nodiag(example_diag) mean_nodiag(full(example_diag)) eps(Float64)
+
+  @test_approx_eq_eps mean_nodiag(example, 1) mean_nodiag(full(example), 1) eps(Float64)
+  @test_approx_eq_eps mean_nodiag(example_diag, 1) mean_nodiag(full(example_diag), 1) eps(Float64)
+
+  @test_approx_eq_eps mean_nodiag(example, 2) mean_nodiag(full(example), 2) eps(Float64)
+  @test_approx_eq_eps mean_nodiag(example_diag, 2) mean_nodiag(full(example_diag), 2) eps(Float64)
+end
+
+print("""
+
+To and from table
+-----------------
+""")
+
+let table = [ "A" "B" 10
+              "A" "C" 20
+              "B" "C" 30 ],
+  list = PairwiseListMatrix([10,20,30], ["A", "B", "C"]),
+  list_diag = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
+
+  @test to_table(list, false) == table
+  @test from_table(table, Int64, ASCIIString, false) == list
+
+  @test to_table(list) == [ "A" "A" 0
+                            "A" "B" 10
+                            "A" "C" 20
+                            "B" "B" 0
+                            "B" "C" 30
+                            "C" "C" 0]
+  @test to_table(list) == to_table(list_diag)
+  @test to_table(list, false) == to_table(list_diag, false)
 end
