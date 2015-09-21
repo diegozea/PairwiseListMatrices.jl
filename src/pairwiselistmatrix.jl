@@ -258,12 +258,9 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, true})
   complete = Array(T, N, N)
   list = lm.list
   k = 0
-  @inbounds for col in 1:N
-    for row in col:N
-      k += 1
-      value = list[k]
-      complete[row, col] = value
-      complete[col, row] = value
+  for col in 1:N
+    @inbounds @simd for row in col:N
+            complete[row, col] = complete[col, row] = list[k += 1]
     end
   end
   complete
@@ -275,16 +272,18 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, false})
   list = lm.list
   diag = lm.diag
   k = 0
-  @inbounds for col in 1:(N-1)
-    complete[col, col] = diag[col]
-    for row in (col+1):N
-      k += 1
-      value = list[k]
-      complete[row, col] = value
-      complete[col, row] = value
+  l = 0
+  for col in 1:(N-1)
+    @inbounds @simd for row in (col+1):N
+      complete[row, col] = list[k += 1]
+    end
+    @inbounds @simd for row in (col+1):N
+      complete[col, row] = list[l += 1]
     end
   end
-  @inbounds complete[N, N] = diag[N]
+  @inbounds @simd for i in 1:N
+    complete[i, i] = diag[i]
+  end
   complete
 end
 
