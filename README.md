@@ -13,23 +13,8 @@ If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1,
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.  
 
-In pairwise calculations like `cor()`, saving the result as a `PairwiseListMatrix` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of vectors:
+In pairwise calculations like `cor()`, saving the result as a `PairwiseListMatrix` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of elements.
 
-```julia
-julia> n = 60_000;
-
-julia> Array(Float64, n, n);
-ERROR: OutOfMemoryError()
- in call at essentials.jl:202
- in eval_user_input at REPL.jl:64
- [inlined code] from REPL.jl:93
- in anonymous at task.jl:68
-
-julia> Array(Float64, div(n*(n-1),2));
-
-julia>
-
-```
 `PairwiseListMatrix` gives you the option of save your labels and allows you to use them for indexing.
 
 ## Example
