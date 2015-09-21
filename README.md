@@ -6,7 +6,13 @@ Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23
 
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
-This package allows you to use a paired list as a Matrix.
+This package allows you to use a paired list as a Matrix.  
+
+`PairwiseListMatrix{T, L, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
+If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
+If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
+Labels can be stored on the field `labels` as an `IndexedArray`.  
+
 In pairwise calculations like `cor()`, saving the result as a `PairwiseListMatrix` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of vectors:
 
 ```julia
@@ -75,5 +81,5 @@ julia> full(list)
 ## Benchmark
 `PairwiseListMatrix` is faster when you work with all the values, since is cache efficient and requires less operations. However is slower than a full matrix for reducing along dimensions.
 
- - Creation benchmark
- - Statistics benchmark
+ - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
+ - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
