@@ -594,13 +594,14 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table(lm::PairwiseListMatrix, diagonal::Bool=true)
+function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
   N = lm.nelements
   labels = lm.labels
   list = lm.list
-  if _has_diagonal(lm)
+  OutType = T == L ? T : Any
+  if D
     if diagonal
-      table = Array(Any, length(list), 3)
+      table = Array(OutType, length(list), 3)
       k = 0
       for i in 1:N
         for j in i:N
@@ -611,7 +612,7 @@ function to_table(lm::PairwiseListMatrix, diagonal::Bool=true)
         end
       end
     else
-      table = Array(Any, length(list) - N, 3)
+      table = Array(OutType, length(list) - N, 3)
       k = 0
       for i in 1:(N-1)
         for j in (i+1):N
@@ -624,7 +625,7 @@ function to_table(lm::PairwiseListMatrix, diagonal::Bool=true)
     end
   else
     if diagonal
-      table = Array(Any, length(list) + N, 3)
+      table = Array(OutType, length(list) + N, 3)
       l = 0
       t = 0
       for i in 1:N
@@ -641,7 +642,7 @@ function to_table(lm::PairwiseListMatrix, diagonal::Bool=true)
         end
       end
     else
-      table = Array(Any, length(list), 3)
+      table = Array(OutType, length(list), 3)
       k = 0
       for i in 1:(N-1)
         for j in (i+1):N
