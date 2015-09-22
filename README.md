@@ -64,7 +64,7 @@ julia> full(list)
 ```
 
 ## Benchmark
-`PairwiseListMatrix` is faster than a full matrix to make operatation like `sum` and `mean` in the whole matrix, since is cache efficient. However it is slower than a full matrix for reducing along dimensions.
+`PairwiseListMatrix` is faster than a full matrix to make operatation like `sum` and `mean` in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.
 
  - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
  - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
