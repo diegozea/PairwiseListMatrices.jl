@@ -1,7 +1,7 @@
 """
 `PairwiseListMatrix{T, L, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
-If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
+If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.
 """
 type PairwiseListMatrix{T, L, diagonal} <: AbstractArray{T, 2}
@@ -27,11 +27,11 @@ end
 # -------
 
 """
-An empty `PairwiseListMatrix` can be created for a given `Type` and a number of elements `elements`.
-Optionally, you can use a vector or IndexedArray for declaring names/labels to each element.
-The `diagonal` (default to `false`) could be declared as `true` in order to indicate that the list needs space for the diagonal elements.
-If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field instead of being on the list.
-This vector can be filled to a value with the optional `diagonalvalue` arguments (default to `0`).
+An empty `PairwiseListMatrix` can be created for a given `Type` and a number of elements `nelements`.
+Optionally, the vector or IndexedArray can be used to declare names/labels to each element.
+The `diagonal` (default to `false`) can be declared as `true` to indicate that the list needs space for the diagonal elements.
+If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field instead of being on the list.
+This vector can be filled with the optional `diagonalvalue` arguments (default to `0`).
 """
 function PairwiseListMatrix{T, L}(::Type{T}, nelements::Int, labels::IndexedArray{L},
                                   diagonal::Bool=false, diagonalvalue::T=zero(T))
@@ -56,10 +56,10 @@ PairwiseListMatrix{T}(::Type{T}, nelements::Int, diagonal::Bool=false,
 @inline _nelements_with_diagonal(len::Int) = @fastmath div(Int(sqrt(1+8*len)-1),2)
 
 """
-A `PairwiseListMatrix` can be from a `list`. Optionally, you can use a vector or IndexedArray for declaring `labels` to each element.
-The `diagonal` (default to `false`) could be declared as `true` in order to indicate that the list has the diagonal elements.
+A `PairwiseListMatrix` can be created from a `list`. Optionally, the vector or IndexedArray can be used for declare `labels` to each element.
+The `diagonal` (default to `false`) could be declared as `true` to indicate that the list has the diagonal elements.
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field instead of being on the list.
-This vector can be filled to a value with the optional `diagonalvalue` arguments (default to `0`).
+This vector can be filled with the optional `diagonalvalue` arguments (default to `0`).
 """
 function PairwiseListMatrix{T, L}(list::AbstractVector{T}, labels::IndexedArray{L},
                                   diagonal::Bool=false, diagonalvalue::T=zero(T))
@@ -566,9 +566,9 @@ std{T <: PairwiseListMatrix}(list::Vector{T}; mean=nothing) = sqrt(var(list, mea
 # ======
 
 """
-Creates a `Matrix{Any}` useful for `writedlm` and/or `writecsv`.
-The labels are stored in the columns 1 and 2, and the values in the column 3.
-The diagonal values are included by default.
+Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
+Labels are stored in the columns 1 and 2, and the values in the column 3.
+Diagonal values are included by default.
 
 ```
 julia> list
@@ -658,9 +658,9 @@ function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
 end
 
 """
-Creates a `PairwiseListMatrix` from a `Matrix`.
+Creation of a `PairwiseListMatrix` from a `Matrix`.
 By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
-The values are taken from the column 3 by default.
+Values are taken from the column 3 by default.
 
 ```
 julia> data = readcsv("example.csv")
