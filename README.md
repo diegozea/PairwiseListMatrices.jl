@@ -13,9 +13,9 @@ If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1,
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.  
 
-In pairwise calculations like `cor()`, saving the result as a `PairwiseListMatrix` is `N(N-1)/2` in space, instead of `N*N`. This is very useful when you need to compare a large number of elements.
+In pairwise calculations like `cor()` results are saved as `PairwiseListMatrix`, that is `N(N-1)/2` in space instead of `N*N`. This is useful to compare a large number of elements.
 
-`PairwiseListMatrix` gives you the option of save your labels and allows you to use them for indexing.
+`PairwiseListMatrix` gives the option of save labels and allows to use them for indexing.
 
 ## Example
 
@@ -64,7 +64,7 @@ julia> full(list)
 ```
 
 ## Benchmark
-`PairwiseListMatrix` is faster when you work with all the values, since is cache efficient and requires less operations. However is slower than a full matrix for reducing along dimensions.
+`PairwiseListMatrix` is faster than a full matrix to make operatation like `sum` and `mean` in the whole matrix, since is cache efficient. However it is slower than a full matrix for reducing along dimensions.
 
  - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
  - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
