@@ -13,7 +13,7 @@ If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1,
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.  
 
-In pairwise calculations like `cor()` results are saved as `PairwiseListMatrix`, that is `N(N-1)/2` in space instead of `N*N`. This is useful to compare a large number of elements.
+In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N-1)/2` instead of `N*N`. This is useful to compare a large number of elements.
 
 `PairwiseListMatrix` gives the option of save labels and allows to use them for indexing.
 
