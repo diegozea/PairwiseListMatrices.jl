@@ -131,7 +131,7 @@ Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
 function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
-  @fastmath col = i - n*(row-1)
+  col = i - n*(row-1)
   if row <= col
     @inbounds return lm.list[_listindex_with_diagonal(row, col, n)]
   else
@@ -202,7 +202,7 @@ end
 function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
-  @fastmath col = i - n*(row-1)
+  col = i - n*(row-1)
   if row <= col
     return setindex!(lm.list, v, _listindex_with_diagonal(row, col, n))
   else
@@ -259,7 +259,7 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, true})
   list = lm.list
   k = 0
   for col in 1:N
-    @inbounds @simd for row in col:N
+    @inbounds for row in col:N
             complete[row, col] = complete[col, row] = list[k += 1]
     end
   end
@@ -274,14 +274,14 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, false})
   k = 0
   l = 0
   for col in 1:(N-1)
-    @inbounds @simd for row in (col+1):N
+    @inbounds for row in (col+1):N
       complete[row, col] = list[k += 1]
     end
-    @inbounds @simd for row in (col+1):N
+    @inbounds for row in (col+1):N
       complete[col, row] = list[l += 1]
     end
   end
-  @inbounds @simd for i in 1:N
+  @inbounds for i in 1:N
     complete[i, i] = diag[i]
   end
   complete
@@ -377,10 +377,10 @@ function _sum_kernel!(sum_i, list, N)
   l = 0
   for i in 1:N
     l += 1
-    @fastmath @inbounds @simd for j in i:N
+    @inbounds @simd for j in i:N
       sum_i[i] += list[k += 1]
     end
-    @fastmath @inbounds @simd  for j in (i+1):N
+    @inbounds for j in (i+1):N
       sum_i[j] += list[l += 1]
     end
   end
@@ -391,14 +391,14 @@ function _sum_kernel!(sum_i, diag, list, N)
   k = 0
   l = 0
   for i in 1:(N-1)
-    @fastmath @inbounds @simd for j in (i+1):N
+    @inbounds @simd for j in (i+1):N
       sum_i[i] += list[k += 1]
     end
-    @fastmath @inbounds @simd for j in (i+1):N
+    @inbounds for j in (i+1):N
       sum_i[j] += list[l += 1]
     end
   end
-  @fastmath @inbounds @simd for i in 1:N
+  @inbounds for i in 1:N
     sum_i[i] += diag[i]
   end
   sum_i
@@ -444,8 +444,8 @@ function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, true}, N)
       k += 1
       if i != j
         @inbounds value = list[k]
-        @fastmath @inbounds sum_i[i] += value
-        @fastmath @inbounds sum_i[j] += value
+        @inbounds sum_i[i] += value
+        @inbounds sum_i[j] += value
       end
     end
   end
@@ -457,10 +457,10 @@ function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, false}, N
   k = 0
   l = 0
   for i in 1:(N-1)
-    @fastmath @inbounds @simd for j in (i+1):N
+    @inbounds @simd for j in (i+1):N
       sum_i[i] += list[k += 1]
     end
-    @fastmath @inbounds @simd for j in (i+1):N
+    @inbounds for j in (i+1):N
       sum_i[j] += list[l += 1]
     end
   end
