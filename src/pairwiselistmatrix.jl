@@ -335,8 +335,8 @@ for bin in (:/, :./)
 	$(bin){T <: AbstractFloat}(A::PairwiseListMatrix{T, true},  B::T) = PairwiseListMatrix{T, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
 	$(bin){T <: AbstractFloat}(A::PairwiseListMatrix{T, false}, B::T) = PairwiseListMatrix{T, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
 
-	$(bin)(A::PairwiseListMatrix{Int, true},  B::Integer) = PairwiseListMatrix{Float64, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
-	$(bin)(A::PairwiseListMatrix{Int, false}, B::Integer) = PairwiseListMatrix{Float64, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
+	$(bin){T}(A::PairwiseListMatrix{T, true},  B::Integer) = PairwiseListMatrix{Float64, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
+	$(bin){T}(A::PairwiseListMatrix{T, false}, B::Integer) = PairwiseListMatrix{Float64, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
 
   end
 

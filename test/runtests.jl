@@ -336,3 +336,17 @@ let table = [ "A" "B" 10
   @test to_table(list) == to_table(list_diag)
   @test to_table(list, false) == to_table(list_diag, false)
 end
+
+print("""
+
+./
+==
+""")
+
+let  list = PairwiseListMatrix([.5, .4, .3])
+
+  result =  list ./ 4
+
+  @test isa(result, PairwiseListMatrix{Float64,false})
+  @test sum(result) == 0.6
+end
