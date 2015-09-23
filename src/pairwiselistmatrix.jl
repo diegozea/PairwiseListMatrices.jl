@@ -292,7 +292,10 @@ full{T, S <: PairwiseListMatrix}(m::Symmetric{T, S}) = full(m.data)
 # Unary operations
 # ================
 
-for una in (:abs, :sqrt, :-)
+sqrt{T <: Real}(lm::PairwiseListMatrix{T, true}) = PairwiseListMatrix{Float64, true }(sqrt(lm.list), lm.diag, lm.labels, lm.nelements)
+sqrt{T <: Real}(lm::PairwiseListMatrix{T, false})= PairwiseListMatrix{Float64, false}(sqrt(lm.list), sqrt(lm.diag), lm.labels, lm.nelements)
+
+for una in (:abs, :-)
   @eval begin
     $(una){T}(lm::PairwiseListMatrix{T, true}) = PairwiseListMatrix{T, true }($(una)(lm.list), lm.diag, lm.labels, lm.nelements)
     $(una){T}(lm::PairwiseListMatrix{T, false})= PairwiseListMatrix{T, false}($(una)(lm.list), $(una)(lm.diag), lm.labels, lm.nelements)
@@ -432,6 +435,7 @@ mean(m::PairwiseListMatrix, region::Int) = sum(m, region) ./ m.nelements
 
 # Sum/Mean without diagonal: sum/mean_nodiag
 # ------------------------------------------
+
 "Sum the values outside the diagonal"
 sum_nodiag{T}(m::PairwiseListMatrix{T, false}) = T(2) * sum(m.list)
 sum_nodiag{T}(m::PairwiseListMatrix{T, true}) = T(2) * sum(m.list) - sum(diag(m))
@@ -561,6 +565,50 @@ function var{T <: PairwiseListMatrix}(list::Vector{T}; mean=nothing)
 end
 
 std{T <: PairwiseListMatrix}(list::Vector{T}; mean=nothing) = sqrt(var(list, mean=mean))
+
+# zscore
+# ======
+
+function zscore!{T <: PairwiseListMatrix}(list::Vector{T}, mat::T)
+  list_mean = mean(list)
+  if size(mat) != size(list_mean)
+    throw(ErrorException("PairwiseListMatrices must have the same size"))
+  end
+  list_std  = std(list, mean=list_mean)
+
+  mat_list = mat.list
+  std_list = list_std.list
+  mean_list = list_mean.list
+
+  ElementType = eltype(mat_list)
+
+  @inbounds for i in 1:length(mat_list)
+    s = std_list[i]
+    if s*one(ElementType) ≉ one(ElementType)
+      mat_list[i] = (mat_list[i] - mean_list[i])/s
+    else
+      mat_list[i] = NaN
+    end
+  end
+
+  if _has_diagonal(mat)
+    mat_diag = mat.diag
+    std_diag = list_std.diag
+    mean_diag = list_mean.diag
+    @inbounds for i in 1:length(mat_diag)
+      s = std_diag[i]
+      if s*one(ElementType) ≉ one(ElementType)
+        mat_diag[i] = (mat_diag[i] - mean_diag[i])/s
+      else
+        mat_diag[i] = NaN
+      end
+    end
+  end
+
+  mat
+end
+
+zscore(list, mat) = zscore!(list, copy(mat))
 
 # Tables
 # ======

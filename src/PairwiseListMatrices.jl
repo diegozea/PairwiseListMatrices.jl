@@ -11,7 +11,7 @@ module PairwiseListMatrices
 
   export PairwiseListMatrix,
   labels, labels!, getlabel, setlabel!,
-  sum_nodiag, mean_nodiag,
+  sum_nodiag, mean_nodiag, zscore!, zscore,
   from_table, to_table
 
 

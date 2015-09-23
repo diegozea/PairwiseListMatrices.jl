@@ -350,3 +350,9 @@ let  list = PairwiseListMatrix([.5, .4, .3])
   @test isa(result, PairwiseListMatrix{Float64,false})
   @test sum(result) == 0.6
 end
+
+let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), PairwiseListMatrix([3, 3, 3]) ],
+  mat = PairwiseListMatrix([2, 2, 2])
+
+  zscore(list, mat) == PairwiseListMatrix([0, 0, 0])
+end
