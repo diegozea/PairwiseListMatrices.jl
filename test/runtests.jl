@@ -325,7 +325,7 @@ let table = [ "A" "B" 10
   list_diag = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
 
   @test to_table(list, false) == table
-  @test from_table(table, Int64, ASCIIString, false) == list
+  @test from_table(table, Int64, false) == list
 
   @test to_table(list) == [ "A" "A" 0
                             "A" "B" 10

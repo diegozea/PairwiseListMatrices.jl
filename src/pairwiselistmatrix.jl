@@ -1,13 +1,13 @@
 """
-`PairwiseListMatrix{T, L, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
+`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.
 """
-type PairwiseListMatrix{T, L, diagonal} <: AbstractArray{T, 2}
+type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
   list::Vector{T}
   diag::Vector{T}
-  labels::IndexedArray{L}
+  labels::IndexedArray
   nelements::Int
 end
 
@@ -33,18 +33,18 @@ The `diagonal` (default to `false`) can be declared as `true` to indicate that t
 If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field instead of being on the list.
 This vector can be filled with the optional `diagonalvalue` arguments (default to `0`).
 """
-function PairwiseListMatrix{T, L}(::Type{T}, nelements::Int, labels::IndexedArray{L},
+function PairwiseListMatrix{T}(::Type{T}, nelements::Int, labels::IndexedArray,
                                   diagonal::Bool=false, diagonalvalue::T=zero(T))
   _test_nelements(labels, nelements, "labels")
   if diagonal
-    return PairwiseListMatrix{T, L, diagonal}(Array(T, _list_with_diagonal_length(nelements)), T[], labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(Array(T, _list_with_diagonal_length(nelements)), T[], labels, nelements)
   else
-    return PairwiseListMatrix{T, L, diagonal}(Array(T, _list_length(nelements)), fill!(Array(T, nelements), diagonalvalue), labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(Array(T, _list_length(nelements)), fill!(Array(T, nelements), diagonalvalue), labels, nelements)
   end
 end
 
-PairwiseListMatrix{T, L}(::Type{T}, nelements::Int, labels::AbstractVector{L}, diagonal::Bool=false,
-                         diagonalvalue::T=zero(T)) = PairwiseListMatrix(T, nelements, IndexedArray(labels), diagonal, diagonalvalue)
+PairwiseListMatrix{T}(::Type{T}, nelements::Int, labels::AbstractVector, diagonal::Bool=false,
+                      diagonalvalue::T=zero(T)) = PairwiseListMatrix(T, nelements, IndexedArray(labels), diagonal, diagonalvalue)
 
 PairwiseListMatrix{T}(::Type{T}, nelements::Int, diagonal::Bool=false,
                       diagonalvalue::T=zero(T)) = PairwiseListMatrix(T, nelements, IndexedArray{Any}(), diagonal, diagonalvalue)
@@ -61,21 +61,21 @@ The `diagonal` (default to `false`) could be declared as `true` to indicate that
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field instead of being on the list.
 This vector can be filled with the optional `diagonalvalue` arguments (default to `0`).
 """
-function PairwiseListMatrix{T, L}(list::AbstractVector{T}, labels::IndexedArray{L},
-                                  diagonal::Bool=false, diagonalvalue::T=zero(T))
+function PairwiseListMatrix{T}(list::AbstractVector{T}, labels::IndexedArray,
+                               diagonal::Bool=false, diagonalvalue::T=zero(T))
   if diagonal
     nelements = _nelements_with_diagonal(length(list))
     _test_nelements(labels, nelements, "labels")
-    return PairwiseListMatrix{T, L, diagonal}(list, T[], labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(list, T[], labels, nelements)
   else
     nelements = _nelements(length(list))
     _test_nelements(labels, nelements, "labels")
-    return PairwiseListMatrix{T, L, diagonal}(list, fill!(Array(T, nelements), diagonalvalue), labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(list, fill!(Array(T, nelements), diagonalvalue), labels, nelements)
   end
 end
 
-PairwiseListMatrix{T, L}(list::AbstractVector{T}, labels::AbstractVector{L}, diagonal::Bool=false,
-                         diagonalvalue::T=zero(T)) = PairwiseListMatrix(list, IndexedArray(labels), diagonal, diagonalvalue)
+PairwiseListMatrix{T}(list::AbstractVector{T}, labels::AbstractVector, diagonal::Bool=false,
+                      diagonalvalue::T=zero(T)) = PairwiseListMatrix(list, IndexedArray(labels), diagonal, diagonalvalue)
 
 PairwiseListMatrix{T}(list::AbstractVector{T}, diagonal::Bool=false,
                       diagonalvalue::T=zero(T)) = PairwiseListMatrix(list, IndexedArray{Any}(), diagonal, diagonalvalue)
@@ -87,17 +87,17 @@ PairwiseListMatrix{T}(list::AbstractVector{T}, diagonal::Bool=false,
 size(m::PairwiseListMatrix) = (m.nelements, m.nelements)
 length(m::PairwiseListMatrix) = m.nelements * m.nelements
 
-eltype{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal}) = T
+eltype{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = T
 
-similar{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal}) = PairwiseListMatrix{T, L, diagonal}(similar(m.list), copy(m.diag),
+similar{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(similar(m.list), copy(m.diag),
                                                                                                     copy(m.labels), copy(m.nelements))
-similar{T, L, diagonal, S}(m::PairwiseListMatrix{T, L, diagonal}, ::Type{S}) = PairwiseListMatrix{S, L, diagonal}(similar(m.list, S), convert(Vector{S}, m.diag),
+similar{T, diagonal, S}(m::PairwiseListMatrix{T, diagonal}, ::Type{S}) = PairwiseListMatrix{S, diagonal}(similar(m.list, S), convert(Vector{S}, m.diag),
                                                                                                                   copy(m.labels), S(copy(m.nelements)))
 
-copy{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal}) = PairwiseListMatrix{T, L, diagonal}(copy(m.list), copy(m.diag), copy(m.labels), copy(m.nelements))
+copy{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(copy(m.list), copy(m.diag), copy(m.labels), copy(m.nelements))
 
-zeros{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal}) = PairwiseListMatrix{T, L, diagonal}(zeros(m.list), zeros(m.diag), copy(m.labels), copy(m.nelements))
-ones{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal})  = PairwiseListMatrix{T, L, diagonal}(ones(m.list),  ones(m.diag),  copy(m.labels), copy(m.nelements))
+zeros{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(zeros(m.list), zeros(m.diag), copy(m.labels), copy(m.nelements))
+ones{T, diagonal}(m::PairwiseListMatrix{T, diagonal})  = PairwiseListMatrix{T, diagonal}(ones(m.list),  ones(m.diag),  copy(m.labels), copy(m.nelements))
 
 # Indexing (getindex)
 # ===================
@@ -105,7 +105,7 @@ ones{T, L, diagonal}(m::PairwiseListMatrix{T, L, diagonal})  = PairwiseListMatri
 @inline _listindex(i, j, n) = @fastmath div((n*(n-1))-((n-i)*(n-i-1)),2) - n + j
 @inline _listindex_with_diagonal(i, j, n) = @fastmath div((n*(n+1))-((n-i)*(n-i+1)),2) - n + j
 
-function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int, j::Int)
+function getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int, j::Int)
   if i <= j
     return(lm.list[_listindex_with_diagonal(i, j, lm.nelements)])
   else
@@ -113,7 +113,7 @@ function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int, j::Int)
   end
 end
 
-function getindex{T, L}(lm::PairwiseListMatrix{T, L, false}, i::Int, j::Int)
+function getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int, j::Int)
   if i < j
     return(lm.list[_listindex(i, j, lm.nelements)])
   elseif i > j
@@ -128,7 +128,7 @@ end
 
 Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
 
-function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int)
+function getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
   col = i - n*(row-1)
@@ -139,7 +139,7 @@ function getindex{T, L}(lm::PairwiseListMatrix{T, L, true}, i::Int)
   end
 end
 
-function getindex{T, L}(lm::PairwiseListMatrix{T, L, false}, i::Int)
+function getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
   col = i - n*(row-1)
@@ -181,7 +181,7 @@ end
 # Set values (setindex!)
 # ======================
 
-function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int, j::Int)
+function setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int, j::Int)
   if i <= j
     return setindex!(lm.list, v, _listindex_with_diagonal(i, j, lm.nelements))
   else
@@ -189,7 +189,7 @@ function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int, j::Int)
   end
 end
 
-function setindex!{T, L}(lm::PairwiseListMatrix{T, L, false}, v, i::Int, j::Int)
+function setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int, j::Int)
   if i < j
     return setindex!(lm.list, v, _listindex(i, j, lm.nelements))
   elseif i > j
@@ -199,7 +199,7 @@ function setindex!{T, L}(lm::PairwiseListMatrix{T, L, false}, v, i::Int, j::Int)
   end
 end
 
-function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int)
+function setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
   col = i - n*(row-1)
@@ -210,7 +210,7 @@ function setindex!{T, L}(lm::PairwiseListMatrix{T, L, true}, v, i::Int)
   end
 end
 
-function setindex!{T, L}(lm::PairwiseListMatrix{T, L, false}, v, i::Int)
+function setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int)
   n = lm.nelements
   row = Int(ceil(i/n))
   col = i - n*(row-1)
@@ -247,13 +247,13 @@ ctranspose!(lm::PairwiseListMatrix) = lm
 # diag and full
 # =============
 
-diag{T, L}(lm::PairwiseListMatrix{T, L, false}) = lm.diag
+diag{T}(lm::PairwiseListMatrix{T, false}) = lm.diag
 
-diag{T, L}(lm::PairwiseListMatrix{T, L, true}) = T[ lm[i,i] for i in 1:lm.nelements ]
+diag{T}(lm::PairwiseListMatrix{T, true}) = T[ lm[i,i] for i in 1:lm.nelements ]
 
 # This is faster than list comprehension (2.4 x)
 "Returns a full dense matrix"
-function full{T, L}(lm::PairwiseListMatrix{T, L, true})
+function full{T}(lm::PairwiseListMatrix{T, true})
   N = lm.nelements
   complete = Array(T, N, N)
   list = lm.list
@@ -266,7 +266,7 @@ function full{T, L}(lm::PairwiseListMatrix{T, L, true})
   complete
 end
 
-function full{T, L}(lm::PairwiseListMatrix{T, L, false})
+function full{T}(lm::PairwiseListMatrix{T, false})
   N = lm.nelements
   complete = Array(T, N, N)
   list = lm.list
@@ -294,8 +294,8 @@ full{T, S <: PairwiseListMatrix}(m::Symmetric{T, S}) = full(m.data)
 
 for una in (:abs, :sqrt, :-)
   @eval begin
-    $(una){T, L}(lm::PairwiseListMatrix{T, L, true}) = PairwiseListMatrix{T, L, true }($(una)(lm.list), lm.diag, lm.labels, lm.nelements)
-    $(una){T, L}(lm::PairwiseListMatrix{T, L, false})= PairwiseListMatrix{T, L, false}($(una)(lm.list), $(una)(lm.diag), lm.labels, lm.nelements)
+    $(una){T}(lm::PairwiseListMatrix{T, true}) = PairwiseListMatrix{T, true }($(una)(lm.list), lm.diag, lm.labels, lm.nelements)
+    $(una){T}(lm::PairwiseListMatrix{T, false})= PairwiseListMatrix{T, false}($(una)(lm.list), $(una)(lm.diag), lm.labels, lm.nelements)
   end
 end
 
@@ -308,18 +308,18 @@ for bin in ( :-, :+, :.*, :./, :.+, :.- )
 
   @eval begin
 
-    function $(bin){T, L}(A::PairwiseListMatrix{T, L, true}, B::PairwiseListMatrix{T, L, true})
+    function $(bin){T}(A::PairwiseListMatrix{T, true}, B::PairwiseListMatrix{T, true})
       if A.labels != B.labels || A.nelements != B.nelements
         return($(bin)(full(A), full(B)))
       end
-      PairwiseListMatrix{T, L, true}($(bin)(A.list, B.list), copy(A.diag), copy(A.labels), copy(A.nelements))
+      PairwiseListMatrix{T, true}($(bin)(A.list, B.list), copy(A.diag), copy(A.labels), copy(A.nelements))
     end
 
-    function $(bin){T, L}(A::PairwiseListMatrix{T, L, false}, B::PairwiseListMatrix{T, L, false})
+    function $(bin){T}(A::PairwiseListMatrix{T, false}, B::PairwiseListMatrix{T, false})
       if A.labels != B.labels || A.nelements != B.nelements
         return($(bin)(full(A), full(B)))
       end
-      PairwiseListMatrix{T, L, false}($(bin)(A.list, B.list), $(bin)(A.diag, B.diag), copy(A.labels), copy(A.nelements))
+      PairwiseListMatrix{T, false}($(bin)(A.list, B.list), $(bin)(A.diag, B.diag), copy(A.labels), copy(A.nelements))
     end
 
     $(bin)(A::PairwiseListMatrix, B::PairwiseListMatrix) = $(bin)(full(A), full(B))
@@ -332,11 +332,11 @@ for bin in (:/, :./)
 
   @eval begin
 
-	$(bin){T <: AbstractFloat, L}(A::PairwiseListMatrix{T, L, true},  B::T) = PairwiseListMatrix{T, L, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
-	$(bin){T <: AbstractFloat, L}(A::PairwiseListMatrix{T, L, false}, B::T) = PairwiseListMatrix{T, L, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
+	$(bin){T <: AbstractFloat}(A::PairwiseListMatrix{T, true},  B::T) = PairwiseListMatrix{T, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
+	$(bin){T <: AbstractFloat}(A::PairwiseListMatrix{T, false}, B::T) = PairwiseListMatrix{T, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
 
-	$(bin){L}(A::PairwiseListMatrix{Int, L, true},  B::Integer) = PairwiseListMatrix{Float64, L, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
-	$(bin){L}(A::PairwiseListMatrix{Int, L, false}, B::Integer) = PairwiseListMatrix{Float64, L, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
+	$(bin)(A::PairwiseListMatrix{Int, true},  B::Integer) = PairwiseListMatrix{Float64, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
+	$(bin)(A::PairwiseListMatrix{Int, false}, B::Integer) = PairwiseListMatrix{Float64, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
 
   end
 
@@ -344,8 +344,8 @@ end
 
 for bin in (:+, :-)
   @eval begin
-    $(bin){L}(A::PairwiseListMatrix{Bool, L, true},  B::Bool) = PairwiseListMatrix{Int, L, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
-    $(bin){L}(A::PairwiseListMatrix{Bool, L, false}, B::Bool) = PairwiseListMatrix{Int, L, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
+    $(bin)(A::PairwiseListMatrix{Bool, true},  B::Bool) = PairwiseListMatrix{Int, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
+    $(bin)(A::PairwiseListMatrix{Bool, false}, B::Bool) = PairwiseListMatrix{Int, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
   end
 end
 
@@ -353,8 +353,8 @@ for bin in (:.+, :.-, :.*, :-, :+)
 
   @eval begin
 
-	$(bin){T <: Number, L}(A::PairwiseListMatrix{T, L, true},  B::T) = PairwiseListMatrix{T, L, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
-	$(bin){T <: Number, L}(A::PairwiseListMatrix{T, L, false}, B::T) = PairwiseListMatrix{T, L, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
+	$(bin){T <: Number}(A::PairwiseListMatrix{T, true},  B::T) = PairwiseListMatrix{T, true }($(bin)(A.list, B), copy(A.diag), copy(A.labels), copy(A.nelements))
+	$(bin){T <: Number}(A::PairwiseListMatrix{T, false}, B::T) = PairwiseListMatrix{T, false}($(bin)(A.list, B), $(bin)(A.diag, B), copy(A.labels), copy(A.nelements))
 
   end
 
@@ -369,8 +369,8 @@ end
 # Faster mean
 # ===========
 
-sum{T, L}(m::PairwiseListMatrix{T, L, false}) = 2*sum(m.list) + sum(m.diag)
-sum{T, L}(m::PairwiseListMatrix{T, L, true}) =  2*sum(m.list) - sum(diag(m))
+sum{T}(m::PairwiseListMatrix{T, false}) = 2*sum(m.list) + sum(m.diag)
+sum{T}(m::PairwiseListMatrix{T, true}) =  2*sum(m.list) - sum(diag(m))
 
 function _sum_kernel!(sum_i, list, N)
   k = 0
@@ -415,13 +415,13 @@ function _test_and_set_sum{T}(::Type{T}, region, N)
   sum_i
 end
 
-function sum{T, L}(lm::PairwiseListMatrix{T, L, true}, region::Int)
+function sum{T}(lm::PairwiseListMatrix{T, true}, region::Int)
   N = lm.nelements
   sum_i = _test_and_set_sum(T, region, N)
   _sum_kernel!(sum_i, lm.list, N)
 end
 
-function sum{T, L}(lm::PairwiseListMatrix{T, L, false}, region::Int)
+function sum{T}(lm::PairwiseListMatrix{T, false}, region::Int)
   N = lm.nelements
   sum_i = _test_and_set_sum(T, region, N)
   _sum_kernel!(sum_i, lm.diag, lm.list, N)
@@ -433,10 +433,10 @@ mean(m::PairwiseListMatrix, region::Int) = sum(m, region) ./ m.nelements
 # Sum/Mean without diagonal: sum/mean_nodiag
 # ------------------------------------------
 "Sum the values outside the diagonal"
-sum_nodiag{T, L}(m::PairwiseListMatrix{T, L, false}) = T(2) * sum(m.list)
-sum_nodiag{T, L}(m::PairwiseListMatrix{T, L, true}) = T(2) * sum(m.list) - sum(diag(m))
+sum_nodiag{T}(m::PairwiseListMatrix{T, false}) = T(2) * sum(m.list)
+sum_nodiag{T}(m::PairwiseListMatrix{T, true}) = T(2) * sum(m.list) - sum(diag(m))
 
-function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, true}, N)
+function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, true}, N)
   list = lm.list
   k = 0
   for i in 1:N
@@ -452,7 +452,7 @@ function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, true}, N)
   sum_i
 end
 
-function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, false}, N)
+function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, false}, N)
   list = lm.list
   k = 0
   l = 0
@@ -467,7 +467,7 @@ function _sum_nodiag_kernel!{T, L}(sum_i, lm::PairwiseListMatrix{T, L, false}, N
   sum_i
 end
 
-function sum_nodiag{T, L, diagonal}(lm::PairwiseListMatrix{T, L, diagonal}, region::Int)
+function sum_nodiag{T, diagonal}(lm::PairwiseListMatrix{T, diagonal}, region::Int)
   N = lm.nelements
   sum_i = _test_and_set_sum(T, region, N)
   _sum_nodiag_kernel!(sum_i, lm, N)
@@ -483,7 +483,7 @@ mean_nodiag(m::PairwiseListMatrix, region::Int) = sum_nodiag(m, region) ./ (m.ne
 # Sum
 # ---
 
-@inline _has_diagonal{T, L, diagonal}(x::PairwiseListMatrix{T, L, diagonal}) = diagonal
+@inline _has_diagonal{T, diagonal}(x::PairwiseListMatrix{T, diagonal}) = diagonal
 
 function sum{T <: PairwiseListMatrix}(list::Vector{T})
   samples = length(list)
@@ -572,7 +572,7 @@ Diagonal values are included by default.
 
 ```
 julia> list
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,ASCIIString,false}:
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
  0  1  2
  1  0  3
  2  3  0
@@ -594,14 +594,13 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
+function to_table{T, D}(lm::PairwiseListMatrix{T, D}, diagonal::Bool=true)
   N = lm.nelements
   labels = lm.labels
   list = lm.list
-  OutType = T == L ? T : Any
   if D
     if diagonal
-      table = Array(OutType, length(list), 3)
+      table = Array(Any, length(list), 3)
       k = 0
       for i in 1:N
         for j in i:N
@@ -612,7 +611,7 @@ function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
         end
       end
     else
-      table = Array(OutType, length(list) - N, 3)
+      table = Array(Any, length(list) - N, 3)
       k = 0
       for i in 1:(N-1)
         for j in (i+1):N
@@ -625,7 +624,7 @@ function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
     end
   else
     if diagonal
-      table = Array(OutType, length(list) + N, 3)
+      table = Array(Any, length(list) + N, 3)
       l = 0
       t = 0
       for i in 1:N
@@ -642,7 +641,7 @@ function to_table{T, L, D}(lm::PairwiseListMatrix{T, L, D}, diagonal::Bool=true)
         end
       end
     else
-      table = Array(OutType, length(list), 3)
+      table = Array(Any, length(list), 3)
       k = 0
       for i in 1:(N-1)
         for j in (i+1):N
@@ -669,14 +668,14 @@ julia> data = readcsv("example.csv")
  "A"  "C"  20
  "B"  "C"  30
 
-julia> from_table(data, Int, ASCIIString, false)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,ASCIIString,false}:
+julia> from_table(data, Int, false)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
   0  10  20
  10   0  30
  20  30   0
 
 ```
 """
-function from_table{T, L}(table::Matrix, value::Type{T}, labels::Type{L}, diagonal::Bool, labelcols::Vector{Int}=[1,2], valuecol::Int=3)
-  PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), convert(Vector{L}, unique(table[:,labelcols])), diagonal)
+function from_table{T}(table::Matrix, value::Type{T}, diagonal::Bool, labelcols::Vector{Int}=[1,2], valuecol::Int=3)
+  PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), unique(table[:,labelcols]), diagonal)
 end

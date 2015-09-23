@@ -6,12 +6,12 @@ Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23
 
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
-This package allows you to use a paired list as a Matrix.  
+This package allows you to use a paired list as a Matrix.
 
-`PairwiseListMatrix{T, L, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
+`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
-Labels can be stored on the field `labels` as an `IndexedArray`.  
+Labels can be stored on the field `labels` as an `IndexedArray`.
 
 In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N-1)/2` instead of `N*N`. This is useful to compare a large number of elements.
 
@@ -20,7 +20,11 @@ In pairwise calculations like `cor()` if results are saved as `PairwiseListMatri
 ## Example
 
 ```julia
-shell> cat example.csv
+julia> # Pkg.add("PairwiseListMatrices")
+
+julia> using PairwiseListMatrices
+
+shell>  cat example.csv
 A,B,10
 A,C,20
 B,C,30
@@ -31,8 +35,8 @@ julia> data = readcsv("example.csv")
  "A"  "C"  20
  "B"  "C"  30
 
-julia> list = from_table(data, Int, ASCIIString, false)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,ASCIIString,false}:
+julia> list = from_table(data, Int, false)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
   0  10  20
  10   0  30
  20  30   0
@@ -44,7 +48,7 @@ julia> list.list
  30
 
 julia> labels(list)
-3-element IndexedArrays.IndexedArray{ASCIIString}:
+3-element IndexedArrays.IndexedArray{Any}:
  "A"
  "B"
  "C"
