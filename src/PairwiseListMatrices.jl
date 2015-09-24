@@ -3,7 +3,7 @@ module PairwiseListMatrices
   using IndexedArrays
 
   import Base: size, getindex, setindex!, length, eltype,
-  similar, copy, abs, full, zeros, ones,
+  similar, copy, abs, full, zeros, ones, convert,
   transpose, transpose!, ctranspose, ctranspose!, diag, svd,
   -, +, .*, .-, .+, .-, ./, *, /,
   # faster

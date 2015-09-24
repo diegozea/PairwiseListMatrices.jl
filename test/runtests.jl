@@ -339,20 +339,51 @@ end
 
 print("""
 
-./
-==
+./ Int & Float64
+----------------
 """)
 
 let  list = PairwiseListMatrix([.5, .4, .3])
 
   result =  list ./ 4
+  @test isa(result, PairwiseListMatrix{Float64,false})
+  @test sum(result) == 0.6
 
+  result =  list ./ 4.
   @test isa(result, PairwiseListMatrix{Float64,false})
   @test sum(result) == 0.6
 end
 
+let  list = PairwiseListMatrix([.5, .4, .3], true)
+
+  result =  list ./ 4
+  @test isa(result, PairwiseListMatrix{Float64,true})
+  @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4
+
+  result =  list ./ 4.
+  @test isa(result, PairwiseListMatrix{Float64,true})
+  @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
+
+end
+
+print("""
+
+Z score
+-------
+""")
+
 let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), PairwiseListMatrix([3, 3, 3]) ],
   mat = PairwiseListMatrix([2, 2, 2])
 
-  zscore(list, mat) == PairwiseListMatrix([0, 0, 0])
+  @test std(list) == PairwiseListMatrix([1., 1., 1.])
+  @test mean(list) == mat
+  @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
+end
+
+let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([3, 3, 3], true) ],
+  mat = PairwiseListMatrix([2, 2, 2], true)
+
+  @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
+  @test mean(list) == mat
+  @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
 end

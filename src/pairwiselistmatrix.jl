@@ -49,6 +49,13 @@ PairwiseListMatrix{T}(::Type{T}, nelements::Int, labels::AbstractVector, diagona
 PairwiseListMatrix{T}(::Type{T}, nelements::Int, diagonal::Bool=false,
                       diagonalvalue::T=zero(T)) = PairwiseListMatrix(T, nelements, IndexedArray{Any}(), diagonal, diagonalvalue)
 
+# Convert
+# -------
+
+convert{T, F, D}(::Type{PairwiseListMatrix{T, D}},
+              mat::PairwiseListMatrix{F, D}) = PairwiseListMatrix{T, D}(convert(Vector{T}, mat.list),
+                                                                        convert(Vector{T}, mat.diag), mat.labels, mat.nelements)
+
 # From a list
 # -----------
 
@@ -557,7 +564,7 @@ function varm{T <: PairwiseListMatrix}(list::Vector{T}, mean::PairwiseListMatrix
     end
   end
   end
-  out
+  out ./ samples
 end
 
 function var{T <: PairwiseListMatrix}(list::Vector{T}; mean=nothing)
@@ -569,10 +576,13 @@ std{T <: PairwiseListMatrix}(list::Vector{T}; mean=nothing) = sqrt(var(list, mea
 # zscore
 # ======
 
-function zscore!{T <: PairwiseListMatrix}(list::Vector{T}, mat::T)
+function zscore!{T <: PairwiseListMatrix, E <: AbstractFloat, D}(list::Vector{T}, mat::PairwiseListMatrix{E, D})
   list_mean = mean(list)
   if size(mat) != size(list_mean)
     throw(ErrorException("PairwiseListMatrices must have the same size"))
+  end
+  if D != _has_diagonal(list[1])
+    throw(ErrorException("PairwiseListMatrices must have the same diagonal parameter"))
   end
   list_std  = std(list, mean=list_mean)
 
@@ -584,7 +594,7 @@ function zscore!{T <: PairwiseListMatrix}(list::Vector{T}, mat::T)
 
   @inbounds for i in 1:length(mat_list)
     s = std_list[i]
-    if s*one(ElementType) ≉ one(ElementType)
+    if (s + one(ElementType)) ≉ one(ElementType)
       mat_list[i] = (mat_list[i] - mean_list[i])/s
     else
       mat_list[i] = NaN
@@ -597,7 +607,7 @@ function zscore!{T <: PairwiseListMatrix}(list::Vector{T}, mat::T)
     mean_diag = list_mean.diag
     @inbounds for i in 1:length(mat_diag)
       s = std_diag[i]
-      if s*one(ElementType) ≉ one(ElementType)
+      if (s + one(ElementType)) ≉ one(ElementType)
         mat_diag[i] = (mat_diag[i] - mean_diag[i])/s
       else
         mat_diag[i] = NaN
@@ -608,6 +618,7 @@ function zscore!{T <: PairwiseListMatrix}(list::Vector{T}, mat::T)
   mat
 end
 
+zscore!{T <: PairwiseListMatrix, E <: Integer, D}(list::Vector{T}, mat::PairwiseListMatrix{E, D}) = zscore!(list, convert(PairwiseListMatrix{Float64, D}, mat))
 zscore(list, mat) = zscore!(list, copy(mat))
 
 # Tables
