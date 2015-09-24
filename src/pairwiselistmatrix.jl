@@ -595,10 +595,16 @@ function zscore!{T <: PairwiseListMatrix, E <: AbstractFloat, D}(list::Vector{T}
 
   @inbounds for i in 1:length(mat_list)
     s = std_list[i]
-    if (s + one(ElementType)) ≉ one(ElementType)
-      mat_list[i] = (mat_list[i] - mean_list[i])/s
+    m = mean_list[i]
+    value = mat_list[i]
+    if (m - value + one(ElementType)) ≉ one(ElementType)
+      if (s + one(ElementType)) ≉ one(ElementType)
+        mat_list[i] = (value - m)/s
+      else
+        mat_list[i] = NaN
+      end
     else
-      mat_list[i] = NaN
+      mat_list[i] = zero(ElementType)
     end
   end
 
@@ -608,10 +614,16 @@ function zscore!{T <: PairwiseListMatrix, E <: AbstractFloat, D}(list::Vector{T}
     mean_diag = list_mean.diag
     @inbounds for i in 1:length(mat_diag)
       s = std_diag[i]
-      if (s + one(ElementType)) ≉ one(ElementType)
-        mat_diag[i] = (mat_diag[i] - mean_diag[i])/s
+      m = mean_diag[i]
+      value = mat_diag[i]
+      if (m - value + one(ElementType)) ≉ one(ElementType)
+        if (s + one(ElementType)) ≉ one(ElementType)
+          mat_diag[i] = (value - m)/s
+        else
+          mat_diag[i] = NaN
+        end
       else
-        mat_diag[i] = NaN
+        mat_diag[i] = zero(ElementType)
       end
     end
   end
@@ -739,3 +751,9 @@ julia> from_table(data, Int, false)
 function from_table{T}(table::Matrix, value::Type{T}, diagonal::Bool, labelcols::Vector{Int}=[1,2], valuecol::Int=3)
   PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), unique(table[:,labelcols]), diagonal)
 end
+
+# triu! & triu
+# ############
+
+triu!(::PairwiseListMatrix, args...) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
+triu(mat::PairwiseListMatrix, args...) = triu(full(mat), args...)

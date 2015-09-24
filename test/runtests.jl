@@ -193,6 +193,21 @@ let list = [1,-2,3],
   @test cor(pld_sym ) == cor(list_diag_sym)
   @test cor(pl_sym  ) == cor(list_sym)
 
+  print("""
+
+  triu
+  ----
+  """)
+
+  @test triu(pld_sym ) == triu(list_diag_sym)
+  @test triu(pl_sym  ) == triu(list_sym)
+
+  @test triu(pld_sym,1) == triu(list_diag_sym, 1)
+  @test triu(pl_sym, 1) == triu(list_sym, 1)
+
+  @test_throws ErrorException triu!(pl_sym)
+  @test_throws ErrorException triu!(pl_sym, 1)
+
 end
 
 let list = PairwiseListMatrix([true, true, true])

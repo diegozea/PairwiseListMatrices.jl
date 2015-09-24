@@ -5,6 +5,7 @@ module PairwiseListMatrices
   import Base: size, getindex, setindex!, length, eltype,
   similar, copy, abs, full, zeros, ones, convert,
   transpose, transpose!, ctranspose, ctranspose!, diag, svd,
+  triu!, triu,
   -, +, .*, .-, .+, .-, ./, *, /,
   # faster
   mean, sum, varm, var, std, sqrt
