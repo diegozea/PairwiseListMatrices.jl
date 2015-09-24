@@ -498,10 +498,11 @@ mean_nodiag(m::PairwiseListMatrix, region::Int) = sum_nodiag(m, region) ./ (m.ne
 
 function sum{T <: PairwiseListMatrix}(list::Vector{T})
   samples = length(list)
+  if samples == 0
+    throw(ErrorException("Empty list"))
+  end
   if samples == 1
     return list[1]
-  elseif samples == 0
-    return zero(list[1])
   else
     start = copy(list[1])
     i = 2

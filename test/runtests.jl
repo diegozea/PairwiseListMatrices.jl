@@ -249,6 +249,11 @@ let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
   setlabel! & setindex!
   """)
 
+  list_diag_sym[1,2] = 30
+  @test list_diag_sym[1,2] == 30
+  list_diag_sym[2] = 40
+  @test list_diag_sym[2] == 40
+
   setlabel!(list_diag_sym, 20, 'A', 'B')
   @test list_diag_sym[1,2] == 20
   setlabel!(list_diag_sym, 10, 'B', 'A')
@@ -262,8 +267,15 @@ let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
   list_diag_sym[1,2] = 10
   @test list_diag_sym[2,1] == 10
 
-  list_sym[1,2] = 10
-  @test list_sym[2,1] == 10
+  list_sym[1,2] = 15
+  @test list_sym[2,1] == 15
+  list_sym[2] = 30
+  @test list_sym[2] == 30
+
+  list_diag_sym[1,2] = 15
+  @test list_diag_sym[2,1] == 15
+  list_diag_sym[2] = 30
+  @test list_diag_sym[2] == 30
 
 end
 
@@ -285,6 +297,13 @@ let list_samples = [ PairwiseListMatrix(Int, 4, false) for i in 1:100 ],
   @test mean(list_samples) == mean(full_samples)
   @test mean(list_diag_samples) == mean(full_diag_samples)
 end
+
+@test sum(PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]) ]) == PairwiseListMatrix([1, 1, 1])
+@test sum(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true) ]) == PairwiseListMatrix([1, 1, 1], true)
+
+@test_throws ErrorException sum(PairwiseListMatrix{Int, true}[])
+@test_throws ErrorException sum(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([1, 1, 1, 1, 1, 1], true) ])
+@test_throws ErrorException std(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true) ])
 
 let list_samples = [ ones(PairwiseListMatrix(Int, 4, false)) for i in 1:100 ],
   list_diag_samples = [ zeros(PairwiseListMatrix(Int, 4, true)) for i in 1:100 ]
@@ -378,6 +397,9 @@ let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), Pairwi
   @test std(list) == PairwiseListMatrix([1., 1., 1.])
   @test mean(list) == mat
   @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
+
+  @test_throws ErrorException zscore(list, PairwiseListMatrix([2, 2, 2], true))
+  @test_throws ErrorException zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2]))
 end
 
 let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([3, 3, 3], true) ],
@@ -386,4 +408,7 @@ let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), P
   @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
   @test mean(list) == mat
   @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
+
+  @test_throws ErrorException zscore(list, PairwiseListMatrix([2, 2, 2]))
+  @test_throws ErrorException zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2], true))
 end
