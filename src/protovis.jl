@@ -5,18 +5,20 @@ function _start_protovis_html(filename::ByteString)
   fh
 end
 
+"JSON representation of the `PairwiseListMatrix` for protovis (networks)"
 function print_json(io::IO, mat::PairwiseListMatrix, groups::Vector{Int})
   names = labels(mat)
-  nlabels = length(names)
+  hasnames = length(names) != 0
+  nlabels = mat.nelements
   if nlabels != length(groups)
-    throw(ErrorException("The groups vector must have the length of the labels."))
+    throw(ErrorException("You need a group integer for each element."))
   end
   print(io, """<script type="text/javascript">
 var plm = {"nodes":[""")
   for i in 1:(nlabels-1)
-    print(io, """{"nodeName":\"""", names[i] ,"""\", "group":""", groups[i], "},")
+    print(io, """{"nodeName":\"""", hasnames ? names[i] : i ,"""\", "group":""", groups[i], "},")
   end
-  print(io, """{"nodeName":\"""", names[nlabels] ,"""\", "group":""", groups[nlabels], "}], links:[")
+  print(io, """{"nodeName":\"""", hasnames ? names[nlabels] : nlabels,"""\", "group":""", groups[nlabels], "}], links:[")
   nelem = size(mat, 1)
   for i in 1:nelem
     for j in i:nelem
@@ -28,8 +30,8 @@ var plm = {"nodes":[""")
 end
 
 print_json(mat::PairwiseListMatrix, groups) = print_json(STDOUT, mat, groups)
-print_json(io::IO, mat::PairwiseListMatrix) = print_json(io, mat, ones(Int, length(labels(mat))))
-print_json(mat::PairwiseListMatrix) = print_json(STDOUT, mat, ones(Int, length(labels(mat))))
+print_json(io::IO, mat::PairwiseListMatrix) = print_json(io, mat, ones(Int, mat.nelements))
+print_json(mat::PairwiseListMatrix) = print_json(STDOUT, mat, ones(Int, mat.nelements))
 
 # open_file from Gadfly: https://github.com/dcjones/Gadfly.jl
 function _open_file(filename)
@@ -44,40 +46,52 @@ function _open_file(filename)
     end
 end
 
-function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, length(labels(mat))), htmlfile::ByteString=string(tempname(), ".html"))
+"""
+Plots on the web browser an arc diagram and a matrix using Protovis.
+A vector of `groups`/clusters i.e. `Int[ 1, 1, 2, 3, 2 ...` can be used for each element.
+You can save the plot on a `htmlfile`.
+"""
+function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, mat.nelements), htmlfile::ByteString=string(tempname(), ".html"))
   fh = _start_protovis_html(htmlfile)
   print_json(fh, mat, groups)
-  print(fh, _plots_html)
-  close(fh)
-  _open_file(htmlfile)
-  htmlfile
-end
-
-const _plots_html = """
+  minmat = minimum(mat)
+  maxmat = maximum(mat)
+  l = length(labels(mat)) > 0 ? 10 * length(string(labels(mat)[1])) : 90
+  lenlabel = l <= 90 ? 90 : l > 300 ? 300 : l
+  print(fh,"""
 </head>
   <body>
+
     <script type="text/javascript+protovis">
 
 var w = document.body.clientWidth,
     h = document.body.clientHeight;
 
 var vis = new pv.Panel()
-    .width(w/2.2)
-    .height(w/2.2)
-    .bottom(90);
+    .width((w/2.2) - """, lenlabel,""")
+    .height((w/2.2) - """, lenlabel,""")
+    .bottom(""", lenlabel, """);
 
 var arc = vis.add(pv.Layout.Arc)
     .nodes(plm.nodes)
     .links(plm.links)
 
-arc.link.add(pv.Line);
+arc.link.add(pv.Line)
+    .lineWidth(function(d, p) Math.abs(p.linkValue)""", maxmat <= 1. ? " * 10" : maxmat >= 50 ? " / 10" : "", """)
+    .strokeStyle(function(d, p) pv.Scale.linear(""",
+        minmat,
+        ",",
+        minmat < 0.0 ? 0.0 : minmat,
+        ",",
+        maxmat,
+        """).range('red', 'white', 'blue')(p.linkValue).alpha(.5));
 
 arc.node.add(pv.Dot)
     .size(function(d) d.linkDegree + 4)
     .fillStyle(pv.Colors.category19().by(function(d) d.group))
     .strokeStyle(function() this.fillStyle().darker());
 
-arc.label.add(pv.Label)
+arc.label.add(pv.Label);
 
 vis.render();
 
@@ -90,19 +104,23 @@ var w = document.body.clientWidth,
 var color = pv.Colors.category19().by(function(d) d.group);
 
 var vis = new pv.Panel()
-    .width(w/2.2)
-    .height(w/2.2)
-    .top(90)
-    .left(90);
+    .width((w/2.2) - """, lenlabel,""")
+    .height((w/2.2) - """,lenlabel,""")
+    .top(""", lenlabel, """)
+    .left(""", lenlabel, """);
 
 var layout = vis.add(pv.Layout.Matrix)
     .nodes(plm.nodes)
     .links(plm.links)
 
 layout.link.add(pv.Bar)
-    .fillStyle(function(l) l.linkValue
-        ? ((l.targetNode.group == l.sourceNode.group)
-        ? color(l.sourceNode) : "#555") : "#eee")
+    .fillStyle(function(d) pv.Scale.linear(""",
+        minmat,
+        ",",
+        minmat < 0.0 ? 0.0 : minmat,
+        ",",
+        maxmat,
+        """).range('red', 'white', 'blue')(d.linkValue))
     .antialias(false)
     .lineWidth(1);
 
@@ -114,8 +132,11 @@ vis.render();
     </script>
 
 </body>
-</html>
-"""
+</html>""")
+  close(fh)
+  _open_file(htmlfile)
+  htmlfile
+end
 
 const _protovis_html = """
 <html>
