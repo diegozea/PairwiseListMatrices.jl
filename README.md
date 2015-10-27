@@ -19,6 +19,8 @@ In pairwise calculations like `cor()` if results are saved as `PairwiseListMatri
 
 `PairwiseListMatrix` gives the option of save labels and allows to use them for indexing.
 
+Since this could be a representation for an **adjacency matrix/list**, the function `protovis` provides an **arc diagram** and and matrix visualization on the web browser using [Protovis](http://mbostock.github.io/protovis/).
+![Protovis example](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/protovis_example.png) 
 ## Example
 
 ```julia
