@@ -31,7 +31,7 @@
       <div class="col-sm-7">
       <div id="body-content">
       <h1 id="installation">Installation</h1>
-<p>This package is registered on Julia&#39;s METADATA.jl and It can be installed through the Julia&#39;s REPL:</p>
+<p>This package is registered on Julia&#39;s METADATA.jl and it can be installed through the Julia&#39;s REPL:</p>
 <pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">Pkg.add&#40;&quot;PairwiseListMatrices&quot;&#41;</code></pre>
 <p>If the package is installed on your system, you can load it with:</p>
 <pre><code class="language-julia">using PairwiseListMatrices</code></pre>
@@ -61,7 +61,7 @@
 <h1 id="implementation">Implementation</h1>
 <p>If you are performing pairwise measures over <code>N</code> elements, storing all the <code>N*N</code> values on a <code>Matrix&#123;T&#125;</code> represents <code>sizeof&#40;T&#41;*&#40;N*N&#41;</code> bytes on memory. However, the lower and upper triangular part of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:</p>
 <div style="text-align: center"><img width=300px src="PLM.svg"></div>
-<p>The diagonal values should be stored, since it could change at any time &#40;i.e. yellow value&#41;. So, do you need <code>sizeof&#40;T&#41;*&#40;N&#41;</code> bytes for storing the diagonal values on a vector and <code>sizeof&#40;T&#41;*&#40;N*&#40;N-1&#41;&#41;/2</code> bytes for storing the lower or upper triangular part of the matrix. The type <code>PairwiseListMatrix&#123;T, diagonal&#125;</code> represents the symmetric matrix using only <code>sizeof&#40;T&#41;*&#40;N*&#40;N&#43;1&#41;&#41;/2</code> bytes instead of <code>sizeof&#40;T&#41;*&#40;N*N&#41;</code> bytes, saving almost a 50&#37; of the memory &#40;the percent depends on <code>N</code>&#41;:</p>
+<p>The diagonal values should be stored, since they could change at any time &#40;i.e. yellow value&#41;. So you need <code>sizeof&#40;T&#41;*&#40;N&#41;</code> bytes for storing the diagonal values on a vector and <code>sizeof&#40;T&#41;*&#40;N*&#40;N-1&#41;&#41;/2</code> bytes for storing the lower or upper triangular part of the matrix. The type <code>PairwiseListMatrix&#123;T, diagonal&#125;</code> represents the symmetric matrix using only <code>sizeof&#40;T&#41;*&#40;N*&#40;N&#43;1&#41;&#41;/2</code> bytes instead of <code>sizeof&#40;T&#41;*&#40;N*N&#41;</code> bytes, saving almost 50&#37; of the memory &#40;the percent depends on <code>N</code>&#41;:</p>
 <pre><code class="language-julia">using Gadfly
 plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#40;N*N&#41; &#41;, 2, 500, Guide.xlabel&#40;&quot;N&quot;&#41;, Guide.ylabel&#40;&quot;&#37; of saved memory&quot;&#41;&#41;</code></pre>
 <?xml version="1.0" encoding="UTF-8"?>
@@ -75,12 +75,12 @@ plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#4
      stroke-width="0.3"
      font-size="3.88"
 
-     id="fig-40caba37f55f4b5fa77a53785f3ec2a5">
-<g class="plotroot xscalable yscalable" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-1">
-  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-2">
+     id="fig-79276579b90742e4838482f10ba691aa">
+<g class="plotroot xscalable yscalable" id="fig-79276579b90742e4838482f10ba691aa-element-1">
+  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="fig-79276579b90742e4838482f10ba691aa-element-2">
     <text x="77.19" y="88.39" text-anchor="middle" dy="0.6em">N</text>
   </g>
-  <g class="guide xlabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-3">
+  <g class="guide xlabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="fig-79276579b90742e4838482f10ba691aa-element-3">
     <text x="-117.4" y="84.39" text-anchor="middle" visibility="hidden" gadfly:scale="1.0">-600</text>
     <text x="-94.5" y="84.39" text-anchor="middle" visibility="hidden" gadfly:scale="1.0">-500</text>
     <text x="-71.61" y="84.39" text-anchor="middle" visibility="hidden" gadfly:scale="1.0">-400</text>
@@ -211,11 +211,11 @@ plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#4
     <text x="237.44" y="84.39" text-anchor="middle" visibility="hidden" gadfly:scale="5.0">950</text>
     <text x="248.88" y="84.39" text-anchor="middle" visibility="hidden" gadfly:scale="5.0">1000</text>
   </g>
-  <g clip-path="url(#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-5)" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-4">
-    <g pointer-events="visible" opacity="1" fill="#000000" fill-opacity="0.000" stroke="#000000" stroke-opacity="0.000" class="guide background" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-6">
+  <g clip-path="url(#fig-79276579b90742e4838482f10ba691aa-element-5)" id="fig-79276579b90742e4838482f10ba691aa-element-4">
+    <g pointer-events="visible" opacity="1" fill="#000000" fill-opacity="0.000" stroke="#000000" stroke-opacity="0.000" class="guide background" id="fig-79276579b90742e4838482f10ba691aa-element-6">
       <rect x="17.96" y="5" width="118.46" height="75.72"/>
     </g>
-    <g class="guide ygridlines xfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-7">
+    <g class="guide ygridlines xfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="fig-79276579b90742e4838482f10ba691aa-element-7">
       <path fill="none" d="M17.96,164.77 L 136.42 164.77" visibility="hidden" gadfly:scale="1.0"/>
       <path fill="none" d="M17.96,150.43 L 136.42 150.43" visibility="hidden" gadfly:scale="1.0"/>
       <path fill="none" d="M17.96,136.09 L 136.42 136.09" visibility="hidden" gadfly:scale="1.0"/>
@@ -355,7 +355,7 @@ plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#4
       <path fill="none" d="M17.96,-61.85 L 136.42 -61.85" visibility="hidden" gadfly:scale="5.0"/>
       <path fill="none" d="M17.96,-67.58 L 136.42 -67.58" visibility="hidden" gadfly:scale="5.0"/>
     </g>
-    <g class="guide xgridlines yfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-8">
+    <g class="guide xgridlines yfixed" stroke-dasharray="0.5,0.5" stroke-width="0.2" stroke="#D0D0E0" id="fig-79276579b90742e4838482f10ba691aa-element-8">
       <path fill="none" d="M-117.4,5 L -117.4 80.72" visibility="hidden" gadfly:scale="1.0"/>
       <path fill="none" d="M-94.5,5 L -94.5 80.72" visibility="hidden" gadfly:scale="1.0"/>
       <path fill="none" d="M-71.61,5 L -71.61 80.72" visibility="hidden" gadfly:scale="1.0"/>
@@ -486,33 +486,33 @@ plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#4
       <path fill="none" d="M237.44,5 L 237.44 80.72" visibility="hidden" gadfly:scale="5.0"/>
       <path fill="none" d="M248.88,5 L 248.88 80.72" visibility="hidden" gadfly:scale="5.0"/>
     </g>
-    <g class="plotpanel" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-9">
-      <g stroke-width="0.3" fill="#000000" fill-opacity="0.000" class="geometry" stroke-dasharray="none" stroke="#00BFFF" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-10">
+    <g class="plotpanel" id="fig-79276579b90742e4838482f10ba691aa-element-9">
+      <g stroke-width="0.3" fill="#000000" fill-opacity="0.000" class="geometry" stroke-dasharray="none" stroke="#00BFFF" id="fig-79276579b90742e4838482f10ba691aa-element-10">
         <path fill="none" d="M20.42,78.72 L 20.87 42.86 21.33 30.91 21.79 24.93 22.25 21.34 22.71 18.95 23.16 17.24 23.62 15.96 24.08 14.97 24.54 14.17 24.99 13.52 25.45 12.98 25.91 12.52 26.37 12.12 26.83 11.78 27.28 11.48 27.74 11.22 28.2 10.98 28.66 10.77 29.12 10.59 29.57 10.42 30.03 10.26 30.49 10.12 30.95 9.99 31.4 9.87 31.86 9.76 32.32 9.66 32.78 9.56 33.24 9.47 33.69 9.39 34.15 9.31 34.61 9.24 35.07 9.17 35.53 9.11 35.98 9.05 36.44 8.99 36.9 8.94 37.36 8.89 37.81 8.84 38.27 8.79 38.73 8.75 39.19 8.71 39.65 8.67 40.1 8.63 40.56 8.59 41.02 8.56 41.48 8.53 41.94 8.49 42.39 8.46 42.85 8.43 43.31 8.41 43.77 8.38 44.22 8.35 44.68 8.33 45.14 8.3 45.6 8.28 46.06 8.26 46.51 8.24 46.97 8.22 47.43 8.2 47.89 8.18 48.35 8.16 48.8 8.14 49.26 8.12 49.72 8.1 50.18 8.09 50.63 8.07 51.09 8.05 51.55 8.04 52.01 8.02 52.47 8.01 52.92 8 53.38 7.98 53.84 7.97 54.3 7.96 54.76 7.94 55.21 7.93 55.67 7.92 56.13 7.91 56.59 7.9 57.04 7.89 57.5 7.87 57.96 7.86 58.42 7.85 58.88 7.84 59.33 7.83 59.79 7.82 60.25 7.81 60.71 7.81 61.17 7.8 61.62 7.79 62.08 7.78 62.54 7.77 63 7.76 63.45 7.75 63.91 7.75 64.37 7.74 64.83 7.73 65.29 7.72 65.74 7.72 66.2 7.71 66.66 7.7 67.12 7.7 67.57 7.69 68.03 7.68 68.49 7.68 68.95 7.67 69.41 7.66 69.86 7.66 70.32 7.65 70.78 7.65 71.24 7.64 71.7 7.63 72.15 7.63 72.61 7.62 73.07 7.62 73.53 7.61 73.98 7.61 74.44 7.6 74.9 7.6 75.36 7.59 75.82 7.59 76.27 7.58 76.73 7.58 77.19 7.57 77.65 7.57 78.11 7.56 78.56 7.56 79.02 7.56 79.48 7.55 79.94 7.55 80.39 7.54 80.85 7.54 81.31 7.54 81.77 7.53 82.23 7.53 82.68 7.52 83.14 7.52 83.6 7.52 84.06 7.51 84.52 7.51 84.97 7.51 85.43 7.5 85.89 7.5 86.35 7.49 86.8 7.49 87.26 7.49 87.72 7.48 88.18 7.48 88.64 7.48 89.09 7.47 89.55 7.47 90.01 7.47 90.47 7.47 90.93 7.46 91.38 7.46 91.84 7.46 92.3 7.45 92.76 7.45 93.21 7.45 93.67 7.45 94.13 7.44 94.59 7.44 95.05 7.44 95.5 7.43 95.96 7.43 96.42 7.43 96.88 7.43 97.34 7.42 97.79 7.42 98.25 7.42 98.71 7.42 99.17 7.41 99.62 7.41 100.08 7.41 100.54 7.41 101 7.41 101.46 7.4 101.91 7.4 102.37 7.4 102.83 7.4 103.29 7.39 103.75 7.39 104.2 7.39 104.66 7.39 105.12 7.39 105.58 7.38 106.03 7.38 106.49 7.38 106.95 7.38 107.41 7.38 107.87 7.37 108.32 7.37 108.78 7.37 109.24 7.37 109.7 7.37 110.16 7.36 110.61 7.36 111.07 7.36 111.53 7.36 111.99 7.36 112.44 7.36 112.9 7.35 113.36 7.35 113.82 7.35 114.28 7.35 114.73 7.35 115.19 7.34 115.65 7.34 116.11 7.34 116.57 7.34 117.02 7.34 117.48 7.34 117.94 7.34 118.4 7.33 118.85 7.33 119.31 7.33 119.77 7.33 120.23 7.33 120.69 7.33 121.14 7.32 121.6 7.32 122.06 7.32 122.52 7.32 122.98 7.32 123.43 7.32 123.89 7.32 124.35 7.31 124.81 7.31 125.26 7.31 125.72 7.31 126.18 7.31 126.64 7.31 127.1 7.31 127.55 7.31 128.01 7.3 128.47 7.3 128.93 7.3 129.38 7.3 129.84 7.3 130.3 7.3 130.76 7.3 131.22 7.3 131.67 7.29 132.13 7.29 132.59 7.29 133.05 7.29 133.51 7.29 133.96 7.29 134.42 7.29"/>
       </g>
     </g>
-    <g opacity="0" class="guide zoomslider" stroke="#000000" stroke-opacity="0.000" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-11">
-      <g fill="#EAEAEA" stroke-width="0.3" stroke-opacity="0" stroke="#6A6A6A" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-12">
+    <g opacity="0" class="guide zoomslider" stroke="#000000" stroke-opacity="0.000" id="fig-79276579b90742e4838482f10ba691aa-element-11">
+      <g fill="#EAEAEA" stroke-width="0.3" stroke-opacity="0" stroke="#6A6A6A" id="fig-79276579b90742e4838482f10ba691aa-element-12">
         <rect x="129.42" y="8" width="4" height="4"/>
-        <g class="button_logo" fill="#6A6A6A" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-13">
+        <g class="button_logo" fill="#6A6A6A" id="fig-79276579b90742e4838482f10ba691aa-element-13">
           <path d="M130.22,9.6 L 131.02 9.6 131.02 8.8 131.82 8.8 131.82 9.6 132.62 9.6 132.62 10.4 131.82 10.4 131.82 11.2 131.02 11.2 131.02 10.4 130.22 10.4 z"/>
         </g>
       </g>
-      <g fill="#EAEAEA" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-14">
+      <g fill="#EAEAEA" id="fig-79276579b90742e4838482f10ba691aa-element-14">
         <rect x="109.92" y="8" width="19" height="4"/>
       </g>
-      <g class="zoomslider_thumb" fill="#6A6A6A" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15">
+      <g class="zoomslider_thumb" fill="#6A6A6A" id="fig-79276579b90742e4838482f10ba691aa-element-15">
         <rect x="118.42" y="8" width="2" height="4"/>
       </g>
-      <g fill="#EAEAEA" stroke-width="0.3" stroke-opacity="0" stroke="#6A6A6A" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-16">
+      <g fill="#EAEAEA" stroke-width="0.3" stroke-opacity="0" stroke="#6A6A6A" id="fig-79276579b90742e4838482f10ba691aa-element-16">
         <rect x="105.42" y="8" width="4" height="4"/>
-        <g class="button_logo" fill="#6A6A6A" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-17">
+        <g class="button_logo" fill="#6A6A6A" id="fig-79276579b90742e4838482f10ba691aa-element-17">
           <path d="M106.22,9.6 L 108.62 9.6 108.62 10.4 106.22 10.4 z"/>
         </g>
       </g>
     </g>
   </g>
-  <g class="guide ylabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-18">
+  <g class="guide ylabels" font-size="2.82" font-family="'PT Sans Caption','Helvetica Neue','Helvetica',sans-serif" fill="#6C606B" id="fig-79276579b90742e4838482f10ba691aa-element-18">
     <text x="16.96" y="164.77" text-anchor="end" dy="0.35em" visibility="hidden" gadfly:scale="1.0">-5</text>
     <text x="16.96" y="150.43" text-anchor="end" dy="0.35em" visibility="hidden" gadfly:scale="1.0">0</text>
     <text x="16.96" y="136.09" text-anchor="end" dy="0.35em" visibility="hidden" gadfly:scale="1.0">5</text>
@@ -652,12 +652,12 @@ plot&#40;N -&gt; 100.0 - &#40; 100.0 * div&#40;N*&#40;N&#43;1&#41;, 2&#41; / &#4
     <text x="16.96" y="-61.85" text-anchor="end" dy="0.35em" visibility="hidden" gadfly:scale="5.0">74</text>
     <text x="16.96" y="-67.58" text-anchor="end" dy="0.35em" visibility="hidden" gadfly:scale="5.0">76</text>
   </g>
-  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-19">
+  <g font-size="3.88" font-family="'PT Sans','Helvetica Neue','Helvetica',sans-serif" fill="#564A55" stroke="#000000" stroke-opacity="0.000" id="fig-79276579b90742e4838482f10ba691aa-element-19">
     <text x="8.81" y="40.86" text-anchor="middle" dy="0.35em" transform="rotate(-90, 8.81, 42.86)">% of saved memory</text>
   </g>
 </g>
 <defs>
-<clipPath id="fig-40caba37f55f4b5fa77a53785f3ec2a5-element-5">
+<clipPath id="fig-79276579b90742e4838482f10ba691aa-element-5">
   <path d="M17.96,5 L 136.42 5 136.42 80.72 17.96 80.72" />
 </clipPath
 ></defs>
@@ -1758,64 +1758,64 @@ return Gadfly;
           factory(glob.Snap, glob.Gadfly);
       }
 })(window, function (Snap, Gadfly) {
-    var fig = Snap("#fig-40caba37f55f4b5fa77a53785f3ec2a5");
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-4")
+    var fig = Snap("#fig-79276579b90742e4838482f10ba691aa");
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-4")
    .init_gadfly();
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-7")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-7")
    .plotroot().data("unfocused_ygrid_color", "#D0D0E0")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-7")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-7")
    .plotroot().data("focused_ygrid_color", "#A0A0A0")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-8")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-8")
    .plotroot().data("unfocused_xgrid_color", "#D0D0E0")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-8")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-8")
    .plotroot().data("focused_xgrid_color", "#A0A0A0")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-12")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-12")
    .data("mouseover_color", "#CD5C5C")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-12")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-12")
    .data("mouseout_color", "#6A6A6A")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-12")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-12")
    .click(Gadfly.zoomslider_zoomin_click)
 .mouseenter(Gadfly.zoomslider_button_mouseover)
 .mouseleave(Gadfly.zoomslider_button_mouseout)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-14")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-14")
    .data("max_pos", 120.42)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-14")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-14")
    .data("min_pos", 103.42)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-14")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-14")
    .click(Gadfly.zoomslider_track_click);
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-15")
    .data("max_pos", 120.42)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-15")
    .data("min_pos", 103.42)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-15")
    .data("mouseover_color", "#CD5C5C")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-15")
    .data("mouseout_color", "#6A6A6A")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-15")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-15")
    .drag(Gadfly.zoomslider_thumb_dragmove,
      Gadfly.zoomslider_thumb_dragstart,
      Gadfly.zoomslider_thumb_dragend)
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-16")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-16")
    .data("mouseover_color", "#CD5C5C")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-16")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-16")
    .data("mouseout_color", "#6A6A6A")
 ;
-fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-16")
+fig.select("#fig-79276579b90742e4838482f10ba691aa-element-16")
    .click(Gadfly.zoomslider_zoomout_click)
 .mouseenter(Gadfly.zoomslider_button_mouseover)
 .mouseleave(Gadfly.zoomslider_button_mouseout)
@@ -1824,7 +1824,7 @@ fig.select("#fig-40caba37f55f4b5fa77a53785f3ec2a5-element-16")
 ]]> </script>
 </svg>
 
-<p>As you can see in the schematic diagram, the difference between <code>PairwiseListMatrix&#123;T, true&#125;</code> and <code>PairwiseListMatrix&#123;T, false&#125;</code> is where the diagonal values are stored. All the <code>PairwiseListMatrix&#123;T, diagonal&#125;</code> has a <code>list</code> field for storing the values. If <code>diagonal</code> is true, the diagonal values are included on the <code>list</code> &#40;i.e. yellow value&#41; and the <code>diag</code> is empty. But if the <code>diagonal</code> value is <code>false</code> the diagonal values are stored on the <code>diag</code> vector.</p>
+<p>As you can see in the schematic diagram, the difference between <code>PairwiseListMatrix&#123;T, true&#125;</code> and <code>PairwiseListMatrix&#123;T, false&#125;</code> is where the diagonal values are stored. All <code>PairwiseListMatrix&#123;T, diagonal&#125;</code> have a <code>list</code> field for storing the values. If <code>diagonal</code> is true, the diagonal values are included on the <code>list</code> &#40;i.e. yellow value&#41; and the <code>diag</code> is empty. But if the <code>diagonal</code> value is <code>false</code> the diagonal values are stored on the <code>diag</code> vector.</p>
 <pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">type PairwiseListMatrix&#123;T, diagonal&#125; &lt;: AbstractArray&#123;T, 2&#125;
   list::Vector&#123;T&#125;
   diag::Vector&#123;T&#125;
@@ -1892,7 +1892,7 @@ PairwiseListMatrices.PairwiseListMatrix&#123;Int64,false&#125;
 <p>The function <code>protovis</code> provides an <strong>arc diagram</strong> &#40;since this could be a representation for an <strong>adjacency matrix/list</strong> of an undirected graph&#41; and a <strong>matrix visualization</strong> on the web browser using <a href="http://mbostock.github.io/protovis/">Protovis</a>.</p>
 <div style="text-align: center"><img width=650px src="https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png"></div>
 <h1 id="benchmark">Benchmark</h1>
-<p><code>PairwiseListMatrix</code> is faster than a full matrix to make operatation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p>
+<p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p>
 <ul>
 <li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></li>
 <li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></li>
