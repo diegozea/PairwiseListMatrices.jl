@@ -8,6 +8,8 @@ Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23
 
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
+[**Documentation**](http://diegozea.github.io/PairwiseListMatrices.jl/)
+
 This package allows you to use a paired list as a Matrix.
 
 `PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
@@ -15,12 +17,13 @@ If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1,
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.
 
-In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N-1)/2` instead of `N*N`. This is useful to compare a large number of elements.
+In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N+1)/2` instead of `N*N`. This is useful to compare a large number of elements.
 
 `PairwiseListMatrix` gives the option of save labels and allows to use them for indexing.
 
 Since this could be a representation for an **adjacency matrix/list**, the function `protovis` provides an **arc diagram** and and matrix visualization on the web browser using [Protovis](http://mbostock.github.io/protovis/).
 ![Protovis example](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png)
+
 ## Example
 
 ```julia

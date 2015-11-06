@@ -53,7 +53,7 @@ julia> plm = PairwiseListMatrix(list)
 # Implementation
 If you are performing pairwise measures over `N` elements, storing all the `N*N` values on a `Matrix{T}` represents `sizeof(T)*(N*N)` bytes on memory. However, the lower and upper triangular part of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:
 
-<div style="text-align: center"><img width=300px src="https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/PLM.svg"></div>
+<div style="text-align: center"><img width=300px src="PLM.svg"></div>
 
 The diagonal values should be stored, since it could change at any time (i.e. yellow value). So, do you need `sizeof(T)*(N)` bytes for storing the diagonal values on a vector and `sizeof(T)*(N*(N-1))/2` bytes for storing the lower or upper triangular part of the matrix.
 The type `PairwiseListMatrix{T, diagonal}` represents the symmetric matrix using only `sizeof(T)*(N*(N+1))/2` bytes instead of `sizeof(T)*(N*N)` bytes, saving almost a 50% of the memory (the percent depends on `N`):
@@ -141,7 +141,7 @@ PairwiseListMatrices.PairwiseListMatrix{Int64,false}
 
 The function `protovis` provides an **arc diagram** (since this could be a representation for an **adjacency matrix/list** of an undirected graph) and a **matrix visualization** on the web browser using [Protovis](http://mbostock.github.io/protovis/).
 
-<div style="text-align: center"><img width=600px src="https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png"></div>
+<div style="text-align: center"><img width=650px src="https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png"></div>
 
 # Benchmark
 
