@@ -7,7 +7,7 @@ modules: [PairwiseListMatrices]
 
 # Installation
 
-This package is registered on Julia's METADATA.jl and It can be installed through the Julia's REPL:
+This package is registered on Julia's METADATA.jl and it can be installed through the Julia's REPL:
 ```{.julia execute="false"}
 Pkg.add("PairwiseListMatrices")
 ```
@@ -55,14 +55,14 @@ If you are performing pairwise measures over `N` elements, storing all the `N*N`
 
 <div style="text-align: center"><img width=300px src="PLM.svg"></div>
 
-The diagonal values should be stored, since it could change at any time (i.e. yellow value). So, do you need `sizeof(T)*(N)` bytes for storing the diagonal values on a vector and `sizeof(T)*(N*(N-1))/2` bytes for storing the lower or upper triangular part of the matrix.
-The type `PairwiseListMatrix{T, diagonal}` represents the symmetric matrix using only `sizeof(T)*(N*(N+1))/2` bytes instead of `sizeof(T)*(N*N)` bytes, saving almost a 50% of the memory (the percent depends on `N`):
+The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need `sizeof(T)*(N)` bytes for storing the diagonal values on a vector and `sizeof(T)*(N*(N-1))/2` bytes for storing the lower or upper triangular part of the matrix.
+The type `PairwiseListMatrix{T, diagonal}` represents the symmetric matrix using only `sizeof(T)*(N*(N+1))/2` bytes instead of `sizeof(T)*(N*N)` bytes, saving almost 50% of the memory (the percent depends on `N`):
 ```julia
 using Gadfly
 plot(N -> 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ), 2, 500, Guide.xlabel("N"), Guide.ylabel("% of saved memory"))
 ```
 As you can see in the schematic diagram, the difference between `PairwiseListMatrix{T, true}` and `PairwiseListMatrix{T, false}` is where the diagonal values are stored.
-All the `PairwiseListMatrix{T, diagonal}` has a `list` field for storing the values. If `diagonal` is true, the diagonal values are included on the `list` (i.e. yellow value) and the `diag` is empty. But if the `diagonal` value is `false` the diagonal values are stored on the `diag` vector.
+All `PairwiseListMatrix{T, diagonal}` have a `list` field for storing the values. If `diagonal` is true, the diagonal values are included on the `list` (i.e. yellow value) and the `diag` is empty. But if the `diagonal` value is `false` the diagonal values are stored on the `diag` vector.
 ```{.julia execute="false"}
 type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
   list::Vector{T}
@@ -145,7 +145,7 @@ The function `protovis` provides an **arc diagram** (since this could be a repre
 
 # Benchmark
 
-`PairwiseListMatrix` is faster than a full matrix to make operatation like `sum` and `mean` in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.
+`PairwiseListMatrix` is faster than a full matrix to make operation like `sum` and `mean` in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.
 
  - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
  - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
