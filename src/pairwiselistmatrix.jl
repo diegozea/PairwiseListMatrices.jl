@@ -165,7 +165,7 @@ end
 "Get the labels/names of the row/columns of the matrix"
 labels(lm::PairwiseListMatrix) = lm.labels
 
-"You can use labels for add labels/names to the row/columns of the matrix"
+"You can use labels! for add labels/names to the row/columns of the matrix"
 function labels!(lm::PairwiseListMatrix, labels::IndexedArray)
   _test_nelements(labels, lm.nelements, "labels")
   lm.labels = labels

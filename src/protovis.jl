@@ -22,7 +22,10 @@ var plm = {"nodes":[""")
   nelem = size(mat, 1)
   for i in 1:nelem
     for j in i:nelem
-      print(io, """{"source":""", i-1 ,""", "target":""", j-1, """, "value":""", mat[i,j], (i==nelem && j==nelem) ? "}" : "},")
+      value = mat[i,j]
+      if !isnan(value)
+        print(io, """{"source":""", i-1 ,""", "target":""", j-1, """, "value":""", value, (i==nelem && j==nelem) ? "}" : "},")
+      end
     end
   end
   print(io, """]};
