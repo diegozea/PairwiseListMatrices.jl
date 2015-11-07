@@ -8,7 +8,7 @@ Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23
 
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
-[**Documentation**](http://diegozea.github.io/PairwiseListMatrices.jl/)
+**Documentation:** [http://diegozea.github.io/PairwiseListMatrices.jl/](http://diegozea.github.io/PairwiseListMatrices.jl/)
 
 This package allows you to use a paired list as a Matrix.
 
