@@ -9,9 +9,9 @@
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
    id="svg2"
-   viewBox="0 0 900.00003 440"
+   viewBox="0 0 800.00003 440"
    height="440"
-   width="900"
+   width="800"
    inkscape:version="0.91 r"
    sodipodi:docname="PLM_README.svg">
   <sodipodi:namedview
@@ -28,7 +28,7 @@
      id="namedview116"
      showgrid="false"
      inkscape:zoom="1"
-     inkscape:cx="133.5"
+     inkscape:cx="-111"
      inkscape:cy="164.43585"
      inkscape:window-x="0"
      inkscape:window-y="24"
@@ -151,7 +151,7 @@
      transform="translate(0,-260)" />
   <g
      id="g4331"
-     transform="translate(151.14735,-5e-6)">
+     transform="translate(101.14735,-5e-6)">
     <g
        transform="matrix(0.90748465,0,0,0.90748465,279.384,-291.69628)"
        id="g5973">
