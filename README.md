@@ -1,20 +1,19 @@
 # PairwiseListMatrices
 
-Julia 0.4: [![PairwiseListMatrices](http://pkg.julialang.org/badges/PairwiseListMatrices_0.4.svg)](http://pkg.julialang.org/?pkg=PairwiseListMatrices)
-
-Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)
-
-Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23gi85mg/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairwiselistmatrices-jl/branch/master)
-
+Julia 0.4: [![PairwiseListMatrices](http://pkg.julialang.org/badges/PairwiseListMatrices_0.4.svg)](http://pkg.julialang.org/?pkg=PairwiseListMatrices)  
+Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)  Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23gi85mg/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairwiselistmatrices-jl/branch/master)  
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
 **Documentation:** [http://diegozea.github.io/PairwiseListMatrices.jl/](http://diegozea.github.io/PairwiseListMatrices.jl/)
 
-This package allows you to use a paired list as a Matrix:  
+This package allows you to use a pairwise list as a Matrix:  
   
 ![PLM](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/PLM_README.png)  
+
+```
+```
   
-`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
+`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/measure of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
 Labels can be stored on the field `labels` as an `IndexedArray`.
