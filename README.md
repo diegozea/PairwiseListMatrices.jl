@@ -10,8 +10,10 @@ Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseL
 
 **Documentation:** [http://diegozea.github.io/PairwiseListMatrices.jl/](http://diegozea.github.io/PairwiseListMatrices.jl/)
 
-This package allows you to use a paired list as a Matrix.
-
+This package allows you to use a paired list as a Matrix:  
+  
+![PLM](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/PLM_README.png)  
+  
 `PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
