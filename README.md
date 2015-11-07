@@ -1,30 +1,49 @@
 # PairwiseListMatrices
 
 Julia 0.4: [![PairwiseListMatrices](http://pkg.julialang.org/badges/PairwiseListMatrices_0.4.svg)](http://pkg.julialang.org/?pkg=PairwiseListMatrices)  
-Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)  Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23gi85mg/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairwiselistmatrices-jl/branch/master)  
+Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)  
+Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23gi85mg/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairwiselistmatrices-jl/branch/master)  
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)
 
 **Documentation:** [http://diegozea.github.io/PairwiseListMatrices.jl/](http://diegozea.github.io/PairwiseListMatrices.jl/)
 
-This package allows you to use a pairwise list as a Matrix:  
+## Description 
+
+This package allows you to use a pairwise list as a matrix:  
   
 ![PLM](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/PLM_README.png)  
 
+```julia
+type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
+  list::Vector{T}
+  diag::Vector{T}
+  labels::IndexedArray
+  nelements::Int
+end
 ```
-```
-  
-`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/measure of `nelements`.
-If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
-If `diagonal` is `false`, the diagonal values are stored in a vector on the `diag` field.
-Labels can be stored on the field `labels` as an `IndexedArray`.
+`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of values of type `T` for the pairwise comparison/measure of `nelements`.  
+If the parameter `diagonal` is `true` the first element of the list is `1, 1`, otherwise is `1, 2`. The diagonal values are stored in a vector on the `diag` field when `diagonal` is `false`.  
+Labels can be stored on the field `labels` as an [IndexedArray](https://github.com/garrison/IndexedArrays.jl).  
 
-In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N+1)/2` instead of `N*N`. This is useful to compare a large number of elements.
+## Features
 
+#### Labels
 `PairwiseListMatrix` gives the option of save labels and allows to use them for indexing.
 
-Since this could be a representation for an **adjacency matrix/list**, the function `protovis` provides an **arc diagram** and and matrix visualization on the web browser using [Protovis](http://mbostock.github.io/protovis/).
-![Protovis example](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png)
+#### Space
+In pairwise calculations like `cor()` if results are saved as `PairwiseListMatrix` the space is `N(N+1)/2` instead of `N*N`. This is useful to compare a large number of elements, because you are **saving ~ 50% of the memory.**
 
+#### Time
+`PairwiseListMatrix` is **faster than a full matrix** to make operatation like `sum` and `mean` in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.
+
+ - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
+ - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
+
+#### Plots  
+Since this could be a representation for an **adjacency matrix/list** of an undirected graph, the function `protovis` provides an **arc diagram** and a **matrix visualization** on the web browser using [Protovis](http://mbostock.github.io/protovis/).  
+  
+![Protovis example](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/doc/protovis_example.png)  
+  
 ## Example
 
 ```julia
@@ -74,9 +93,3 @@ julia> full(list)
  20  30   0
 
 ```
-
-## Benchmark
-`PairwiseListMatrix` is faster than a full matrix to make operatation like `sum` and `mean` in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.
-
- - [Creation benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb)
- - [Statistics benchmark](http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb)
