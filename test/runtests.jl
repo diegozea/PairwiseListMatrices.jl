@@ -46,6 +46,24 @@ let list = [1,-2,3],
 
   print("""
 
+  Convert
+  -------
+  """)
+
+  @test list_diag_sym == convert(PairwiseListMatrix{Int, true},  list_diag_sym)
+  @test list_diag_sym == convert(PairwiseListMatrix{Int, false}, list_diag_sym)
+
+  @test convert(Matrix{Float64}, list_sym)  == convert(PairwiseListMatrix{Float64, true},  list_sym)
+  @test convert(Matrix{Float64}, list_sym)  == convert(PairwiseListMatrix{Float64, false}, list_sym)
+
+  @test convert(Matrix{Int}, pl_sym)  == list_sym
+  @test convert(Matrix{Int}, pld_sym) == list_diag_sym
+
+  @test convert(PairwiseListMatrix{Int, false}, pld_sym) == pld_sym
+  @test convert(PairwiseListMatrix{Int, true}, pl_sym)   == pl_sym
+
+  print("""
+
   Test unary operations
   ---------------------
   """)
@@ -219,7 +237,6 @@ let list = PairwiseListMatrix([true, true, true])
                          2  1  2
                          2  2  1 ]
 end
-
 
 print("""
 
@@ -398,6 +415,11 @@ let  list = PairwiseListMatrix([.5, .4, .3], true)
   @test isa(result, PairwiseListMatrix{Float64,true})
   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
 
+  print("""
+
+  JSON
+  ----
+  """)
   @test print_json(list) == nothing
 end
 

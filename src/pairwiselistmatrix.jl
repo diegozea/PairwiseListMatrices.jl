@@ -54,7 +54,61 @@ PairwiseListMatrix{T}(::Type{T}, nelements::Int, diagonal::Bool=false,
 
 convert{T, F, D}(::Type{PairwiseListMatrix{T, D}},
               mat::PairwiseListMatrix{F, D}) = PairwiseListMatrix{T, D}(convert(Vector{T}, mat.list),
-                                                                        convert(Vector{T}, mat.diag), mat.labels, mat.nelements)
+                                                                        convert(Vector{T}, mat.diag), copy(mat.labels), copy(mat.nelements))
+
+function convert{T, F}(::Type{PairwiseListMatrix{T, true}}, mat::PairwiseListMatrix{F, false})
+  N = copy(mat.nelements)
+  ncol = size(mat, 2)
+  list = Array(T, _list_with_diagonal_length(N))
+  k = 0
+  for i in 1:ncol
+    for j in i:ncol
+      @inbounds list[k += 1] = mat[i,j]
+    end
+  end
+  PairwiseListMatrix{T, true}(list, T[], copy(mat.labels), N)
+end
+
+function convert{T, F}(::Type{PairwiseListMatrix{T, false}}, mat::PairwiseListMatrix{F, true})
+  N = copy(mat.nelements)
+  ncol = size(mat, 2)
+  diag = Array(T, N)
+  matlist = mat.list
+  list = Array(T, length(matlist) - N)
+  l = 0
+  d = 0
+  m = 0
+  for i in 1:ncol
+    for j in i:ncol
+      if i != j
+        @inbounds list[l += 1] = matlist[m += 1]
+      else
+        @inbounds diag[d += 1] = matlist[m += 1]
+      end
+    end
+  end
+  PairwiseListMatrix{T, false}(list, diag, copy(mat.labels), N)
+end
+
+function convert{T, F, D}(::Type{PairwiseListMatrix{T, D}}, mat::Matrix{F})
+  N = size(mat, 1)
+  if N != size(mat, 2)
+    throw(ErrorException("It should be a squared matrix."))
+  end
+  plm = PairwiseListMatrix(T, N, D)
+  for i in 1:N
+    @inbounds for j in i:N
+      value = mat[i,j]
+      if i != j && value != mat[j,i]
+        throw(ErrorException("It should be a symmetric matrix."))
+      end
+      plm[i,j] = value
+    end
+  end
+  plm
+end
+
+convert{T <: PairwiseListMatrix, F}(::Type{Array{F,2}}, mat::T) = convert(Matrix{F}, full(mat))
 
 # From a list
 # -----------

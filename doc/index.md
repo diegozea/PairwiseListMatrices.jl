@@ -17,9 +17,11 @@ using PairwiseListMatrices
 ```
 
 # Introduction
+
 **PairwiseListMatrices** allows you to represent a (squared) **symmetric matrix** as a list of the values in the upper or lower triangular part of the matrix.
 This matrices are common for representing **pairwise measures/comparisons** between the elements of one group when the used metric/distance satisfies the symmetry condition.
 Also the **adjacency matrices of undirected graphs** can be represented with this kind of list/matrices.
+
 ## Simple example
 The following symmetric matrix has 9 values. Their values could be thinked as pairwise measures between 3 elements:
 ```{.julia execute="false"}
@@ -57,12 +59,14 @@ If you are performing pairwise measures over `N` elements, storing all the `N*N`
 
 The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need `sizeof(T)*(N)` bytes for storing the diagonal values on a vector and `sizeof(T)*(N*(N-1))/2` bytes for storing the lower or upper triangular part of the matrix.
 The type `PairwiseListMatrix{T, diagonal}` represents the symmetric matrix using only `sizeof(T)*(N*(N+1))/2` bytes instead of `sizeof(T)*(N*N)` bytes, saving almost 50% of the memory (the percent depends on `N`):
+
 ```julia
 using Gadfly
 plot(N -> 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ), 2, 500, Guide.xlabel("N"), Guide.ylabel("% of saved memory"))
 ```
 As you can see in the schematic diagram, the difference between `PairwiseListMatrix{T, true}` and `PairwiseListMatrix{T, false}` is where the diagonal values are stored.
 All `PairwiseListMatrix{T, diagonal}` have a `list` field for storing the values. If `diagonal` is true, the diagonal values are included on the `list` (i.e. yellow value) and the `diag` is empty. But if the `diagonal` value is `false` the diagonal values are stored on the `diag` vector.
+
 ```{.julia execute="false"}
 type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
   list::Vector{T}
