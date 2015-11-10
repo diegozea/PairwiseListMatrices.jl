@@ -108,7 +108,51 @@ function convert{T, F, D}(::Type{PairwiseListMatrix{T, D}}, mat::Matrix{F})
   plm
 end
 
-convert{T <: PairwiseListMatrix, F}(::Type{Array{F,2}}, mat::T) = convert(Matrix{F}, full(mat))
+# convert{T <: PairwiseListMatrix, F}(::Type{Array{F,2}}, mat::T) = convert(Matrix{F}, full(mat))
+
+# This is faster than list comprehension (2.4 x)
+function convert{T, F}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true})
+  N = lm.nelements
+  complete = Array(F, N, N)
+  list = lm.list
+  k = 0
+  for col in 1:N
+    @inbounds for row in col:N
+            complete[row, col] = complete[col, row] = F(list[k += 1])
+    end
+  end
+  complete
+end
+
+function convert{T, F}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false})
+  N = lm.nelements
+  complete = Array(F, N, N)
+  list = lm.list
+  diag = lm.diag
+  k = 0
+  l = 0
+  for col in 1:(N-1)
+    @inbounds for row in (col+1):N
+      complete[row, col] = F(list[k += 1])
+    end
+    @inbounds for row in (col+1):N
+      complete[col, row] = F(list[l += 1])
+    end
+  end
+  @inbounds for i in 1:N
+    complete[i, i] = F(diag[i])
+  end
+  complete
+end
+
+# full
+# ====
+
+"""Returns a full dense matrix.
+This converts a `PairwiseListMatrix{T, D}` into a `Matrix{T}`"""
+full{T, D}(lm::PairwiseListMatrix{T, D}) = convert(Array{T, 2}, lm)
+
+full{T, S <: PairwiseListMatrix}(m::Symmetric{T, S}) = full(m.data)
 
 # From a list
 # -----------
@@ -305,50 +349,12 @@ transpose!(lm::PairwiseListMatrix) = lm
 ctranspose(lm::PairwiseListMatrix) = lm
 ctranspose!(lm::PairwiseListMatrix) = lm
 
-# diag and full
-# =============
+# diag
+# ====
 
 diag{T}(lm::PairwiseListMatrix{T, false}) = lm.diag
 
 diag{T}(lm::PairwiseListMatrix{T, true}) = T[ lm[i,i] for i in 1:lm.nelements ]
-
-# This is faster than list comprehension (2.4 x)
-"Returns a full dense matrix"
-function full{T}(lm::PairwiseListMatrix{T, true})
-  N = lm.nelements
-  complete = Array(T, N, N)
-  list = lm.list
-  k = 0
-  for col in 1:N
-    @inbounds for row in col:N
-            complete[row, col] = complete[col, row] = list[k += 1]
-    end
-  end
-  complete
-end
-
-function full{T}(lm::PairwiseListMatrix{T, false})
-  N = lm.nelements
-  complete = Array(T, N, N)
-  list = lm.list
-  diag = lm.diag
-  k = 0
-  l = 0
-  for col in 1:(N-1)
-    @inbounds for row in (col+1):N
-      complete[row, col] = list[k += 1]
-    end
-    @inbounds for row in (col+1):N
-      complete[col, row] = list[l += 1]
-    end
-  end
-  @inbounds for i in 1:N
-    complete[i, i] = diag[i]
-  end
-  complete
-end
-
-full{T, S <: PairwiseListMatrix}(m::Symmetric{T, S}) = full(m.data)
 
 # Unary operations
 # ================
