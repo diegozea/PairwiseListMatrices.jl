@@ -37,8 +37,8 @@
 <pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">PairwiseListMatrix&#40;::Tuple&#123;Type&#123;T&#125;,Int64,IndexedArrays.IndexedArray&#123;T&#125;&#125;, ::Tuple&#123;Type&#123;T&#125;,Int64,IndexedArrays.IndexedArray&#123;T&#125;,Bool&#125;, ::Tuple&#123;Type&#123;T&#125;,Int64,IndexedArrays.IndexedArray&#123;T&#125;,Bool,T&#125;&#41;</code></pre>
 <p>An empty <code>PairwiseListMatrix</code> can be created for a given <code>Type</code> and a number of elements <code>nelements</code>. Optionally, the vector or IndexedArray can be used to declare names/labels to each element. The <code>diagonal</code> &#40;default to <code>false</code>&#41; can be declared as <code>true</code> to indicate that the list needs space for the diagonal elements. If <code>diagonal</code> is <code>false</code> the diagonal values are stored in a vector on the <code>diag</code> field instead of being on the list. This vector can be filled with the optional <code>diagonalvalue</code> arguments &#40;default to <code>0</code>&#41;.</p>
 <h2 id="full">full</h2>
-<pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">full&#123;T&#125;&#40;lm::PairwiseListMatrix&#123;T,true&#125;&#41;</code></pre>
-<p>Returns a full dense matrix</p>
+<pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">full&#123;T,D&#125;&#40;lm::PairwiseListMatrix&#123;T,D&#125;&#41;</code></pre>
+<p>Returns a full dense matrix. This converts a <code>PairwiseListMatrix&#123;T, D&#125;</code> into a <code>Matrix&#123;T&#125;</code></p>
 <h1 id="labels">Labels</h1>
 <h2 id="labels">labels</h2>
 <pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">labels&#40;lm::PairwiseListMatrix&#41;</code></pre>
@@ -100,9 +100,6 @@ julia&gt; from_table&#40;data, Int, false&#41;
  10   0  30
  20  30   0
 </code></pre>
-<h2 id="print_json">print_json</h2>
-<pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">print_json&#40;io::IO,mat::PairwiseListMatrix,groups::Vector&#123;Int&#125;&#41;</code></pre>
-<p>JSON representation of the <code>PairwiseListMatrix</code> for protovis &#40;networks&#41;</p>
 <h1 id="special-plots">Special plots</h1>
 <h2 id="protovis">protovis</h2>
 <pre><code class="language-&#123;.julia execute&#61;&quot;false&quot;&#125;">protovis&#40;mat::PairwiseListMatrix; groups::Vector&#123;Int&#125;&#61;ones&#40;Int,mat.nelements&#41;,htmlfile::ByteString&#61;string&#40;tempname&#40;&#41;,&quot;.html&quot;&#41;&#41;</code></pre>
@@ -166,9 +163,6 @@ julia&gt; from_table&#40;data, Int, false&#41;
 </li>
 <li>
     <a style="margin-left: 1.0em" class="toc-item" href="#from_table">from_table</a>
-</li>
-<li>
-    <a style="margin-left: 1.0em" class="toc-item" href="#print_json">print_json</a>
 </li>
 <li>
     <a style="margin-left: 0.5em" class="toc-item" href="#special-plots">Special plots</a>
