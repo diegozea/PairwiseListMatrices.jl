@@ -17,7 +17,7 @@ module PairwiseListMatrices
   sum_nodiag, mean_nodiag, zscore!, zscore,
   from_table, to_table,
 
-  print_json, protovis
+  protovis
 
   include("pairwiselistmatrix.jl")
   include("protovis.jl")

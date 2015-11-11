@@ -5,8 +5,10 @@ function _start_protovis_html(filename::ByteString)
   fh
 end
 
-"JSON representation of the `PairwiseListMatrix` for protovis (networks)"
-function print_json(io::IO, mat::PairwiseListMatrix, groups::Vector{Int})
+"""JSON representation of the `PairwiseListMatrix` for protovis (networks).
+If `scale` is true, the stored values will be between `start` and `start` + 1.
+`start` is 1.0 by default. NaN values aren't used."""
+function print_protovis_json(io::IO, mat::PairwiseListMatrix, groups::Vector{Int}, scale::Bool=true, start::Float64=1.0)
   names = labels(mat)
   hasnames = length(names) != 0
   nlabels = mat.nelements
@@ -20,11 +22,17 @@ var plm = {"nodes":[""")
   end
   print(io, """{"nodeName":\"""", hasnames ? names[nlabels] : nlabels,"""\", "group":""", groups[nlabels], "}], links:[")
   nelem = size(mat, 1)
+  minmat = _not_inf(minimum(mat))
+  rangemat = abs(_not_inf(maximum(mat)) - minmat)
   for i in 1:nelem
     for j in i:nelem
-      value = mat[i,j]
-      if !isnan(value)
+      value = scale ? ((mat[i,j] - minmat) / rangemat) : mat[i,j]
+      value = value + start
+      if !isnan(value) && !isinf(value) # NaN values are not used
         print(io, """{"source":""", i-1 ,""", "target":""", j-1, """, "value":""", value, (i==nelem && j==nelem) ? "}" : "},")
+      end
+      if !isnan(value) && isinf(value)
+        print(io, """{"source":""", i-1 ,""", "target":""", j-1, """, "value":""", value < 0.0 ? start : (start+1.0), (i==nelem && j==nelem) ? "}" : "},")
       end
     end
   end
@@ -32,9 +40,9 @@ var plm = {"nodes":[""")
 </script>""")
 end
 
-print_json(mat::PairwiseListMatrix, groups) = print_json(STDOUT, mat, groups)
-print_json(io::IO, mat::PairwiseListMatrix) = print_json(io, mat, ones(Int, mat.nelements))
-print_json(mat::PairwiseListMatrix) = print_json(STDOUT, mat, ones(Int, mat.nelements))
+print_protovis_json(mat::PairwiseListMatrix, groups) = print_protovis_json(STDOUT, mat, groups)
+print_protovis_json(io::IO, mat::PairwiseListMatrix) = print_protovis_json(io, mat, ones(Int, mat.nelements))
+print_protovis_json(mat::PairwiseListMatrix) = print_protovis_json(STDOUT, mat, ones(Int, mat.nelements))
 
 # open_file from Gadfly: https://github.com/dcjones/Gadfly.jl
 function _open_file(filename)
@@ -49,6 +57,19 @@ function _open_file(filename)
     end
 end
 
+"Returns x, but if the value is -Inf/Inf this function returns the previous floating point to Inf or the next of -Inf"
+function _not_inf(x)
+  if isinf(x)
+    if x == -Inf
+      return(nextfloat(x))
+    else
+      return(prevfloat(x))
+    end
+  else
+    return(x)
+  end
+end
+
 """
 Plots on the web browser an arc diagram and a matrix using Protovis.
 A vector of `groups`/clusters i.e. `Int[ 1, 1, 2, 3, 2 ...` can be used for each element.
@@ -56,9 +77,7 @@ You can save the plot on a `htmlfile`.
 """
 function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, mat.nelements), htmlfile::ByteString=string(tempname(), ".html"))
   fh = _start_protovis_html(htmlfile)
-  print_json(fh, mat, groups)
-  minmat = minimum(mat)
-  maxmat = maximum(mat)
+  print_protovis_json(fh, mat, groups)
   l = length(labels(mat)) > 0 ? 10 * length(string(labels(mat)[1])) : 90
   lenlabel = l <= 90 ? 90 : l > 300 ? 300 : l
   print(fh,"""
@@ -70,6 +89,8 @@ function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, mat.nel
 var w = document.body.clientWidth,
     h = document.body.clientHeight;
 
+var col = pv.Scale.linear(1.,1.5,2.).range('red', 'yellow', 'green');
+
 var vis = new pv.Panel()
     .width((w/2.2) - """, lenlabel,""")
     .height((w/2.2) - """, lenlabel,""")
@@ -80,14 +101,8 @@ var arc = vis.add(pv.Layout.Arc)
     .links(plm.links)
 
 arc.link.add(pv.Line)
-    .lineWidth(function(d, p) Math.abs(p.linkValue)""", maxmat <= 1. ? " * 10" : maxmat >= 50 ? " / 10" : "", """)
-    .strokeStyle(function(d, p) pv.Scale.linear(""",
-        minmat,
-        ",",
-        minmat < 0.0 ? 0.0 : minmat,
-        ",",
-        maxmat,
-        """).range('red', 'white', 'blue')(p.linkValue).alpha(.5));
+    .lineWidth(function(d, p) (Math.abs(p.linkValue) - 1) * 3)
+    .strokeStyle(function(d, p) col(p.linkValue).alpha(.5));
 
 arc.node.add(pv.Dot)
     .size(function(d) d.linkDegree + 4)
@@ -104,7 +119,7 @@ vis.render();
 var w = document.body.clientWidth,
     h = document.body.clientHeight;
 
-var color = pv.Colors.category19().by(function(d) d.group);
+var col = pv.Scale.linear(1.,1.5,2.).range('red', 'yellow', 'green');
 
 var vis = new pv.Panel()
     .width((w/2.2) - """, lenlabel,""")
@@ -113,22 +128,16 @@ var vis = new pv.Panel()
     .left(""", lenlabel, """);
 
 var layout = vis.add(pv.Layout.Matrix)
+    .directed(true)
     .nodes(plm.nodes)
-    .links(plm.links)
+    .links(plm.links);
 
 layout.link.add(pv.Bar)
-    .fillStyle(function(d) pv.Scale.linear(""",
-        minmat,
-        ",",
-        minmat < 0.0 ? 0.0 : minmat,
-        ",",
-        maxmat,
-        """).range('red', 'white', 'blue')(d.linkValue))
+    .fillStyle(function(d) { return d.linkValue ? col(d.linkValue) : "white";})
     .antialias(false)
     .lineWidth(1);
 
-layout.label.add(pv.Label)
-    .textStyle(color);
+layout.label.add(pv.Label);
 
 vis.render();
 

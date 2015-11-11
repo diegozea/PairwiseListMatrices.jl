@@ -29,7 +29,6 @@ modules: [PairwiseListMatrices]
 
 {{to_table}}
 {{from_table}}
-{{print_json}}
 
 # Special plots
 

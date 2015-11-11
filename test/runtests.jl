@@ -415,12 +415,6 @@ let  list = PairwiseListMatrix([.5, .4, .3], true)
   @test isa(result, PairwiseListMatrix{Float64,true})
   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
 
-  print("""
-
-  JSON
-  ----
-  """)
-  @test print_json(list) == nothing
 end
 
 print("""
