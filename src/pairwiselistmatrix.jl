@@ -436,8 +436,8 @@ for bin in (:*, :/)
 
 end
 
-# Faster mean
-# ===========
+# Faster mean and sum
+# ===================
 
 sum{T}(m::PairwiseListMatrix{T, false}) = 2*sum(m.list) + sum(m.diag)
 sum{T}(m::PairwiseListMatrix{T, true}) =  2*sum(m.list) - sum(diag(m))
@@ -551,7 +551,7 @@ mean_nodiag(m::PairwiseListMatrix, region::Int) = sum_nodiag(m, region) ./ (m.ne
 # Operations on Vector{PairwiseListMatrix}
 # ========================================
 
-# Sum
+# sum
 # ---
 
 @inline _has_diagonal{T, diagonal}(x::PairwiseListMatrix{T, diagonal}) = diagonal
