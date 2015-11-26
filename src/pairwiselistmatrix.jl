@@ -728,7 +728,7 @@ julia> to_table(list, false)
 """
 function to_table{T, D}(lm::PairwiseListMatrix{T, D}, diagonal::Bool=true)
   N = lm.nelements
-  labels = length(labels(lm)) != 0 ? lm.labels : IndexedArray(collect(1:lm.nelements))
+  labels = length(lm.labels) != 0 ? lm.labels : IndexedArray(collect(1:lm.nelements))
   list = lm.list
   if D
     if diagonal
