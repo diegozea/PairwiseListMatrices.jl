@@ -204,6 +204,8 @@ copy{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, di
 zeros{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(zeros(m.list), zeros(m.diag), copy(m.labels), copy(m.nelements))
 ones{T, diagonal}(m::PairwiseListMatrix{T, diagonal})  = PairwiseListMatrix{T, diagonal}(ones(m.list),  ones(m.diag),  copy(m.labels), copy(m.nelements))
 
+# TODO:  p = zeros(PairwiseListMatrix{Float64,false}, 3)
+
 # Indexing (getindex)
 # ===================
 
