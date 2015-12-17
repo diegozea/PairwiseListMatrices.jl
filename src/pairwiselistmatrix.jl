@@ -11,6 +11,8 @@ type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
   nelements::Int
 end
 
+@inline hasdiagonal{T, diagonal}(::PairwiseListMatrix{T, diagonal}) = diagonal
+
 # Creation
 # ========
 
@@ -196,8 +198,8 @@ eltype{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = T
 
 similar{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(similar(m.list), copy(m.diag),
                                                                                                     copy(m.labels), copy(m.nelements))
-similar{T, diagonal, S}(m::PairwiseListMatrix{T, diagonal}, ::Type{S}) = PairwiseListMatrix{S, diagonal}(similar(m.list, S), convert(Vector{S}, m.diag),
-                                                                                                                  copy(m.labels), S(copy(m.nelements)))
+similar{T, diagonal, S}(m::PairwiseListMatrix{T, diagonal}, ::Type{S}) = PairwiseListMatrix{S, diagonal}(similar(m.list, S), similar(m.diag, S),
+                                                                                                                  copy(m.labels), copy(m.nelements))
 
 copy{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = PairwiseListMatrix{T, diagonal}(copy(m.list), copy(m.diag), copy(m.labels), copy(m.nelements))
 
@@ -728,64 +730,16 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table{T, D}(lm::PairwiseListMatrix{T, D}, diagonal::Bool=true)
-  N = lm.nelements
-  labels = length(lm.labels) != 0 ? lm.labels : IndexedArray(collect(1:lm.nelements))
-  list = lm.list
-  if D
-    if diagonal
-      table = Array(Any, length(list), 3)
-      k = 0
-      for i in 1:N
-        for j in i:N
-          k += 1
-          table[k, 1] = labels[i]
-          table[k, 2] = labels[j]
-          table[k, 3] = list[k]
-        end
-      end
-    else
-      table = Array(Any, length(list) - N, 3)
-      k = 0
-      for i in 1:(N-1)
-        for j in (i+1):N
-          k += 1
-          table[k, 1] = labels[i]
-          table[k, 2] = labels[j]
-          table[k, 3] = lm[i,j]
-        end
-      end
-    end
-  else
-    if diagonal
-      table = Array(Any, length(list) + N, 3)
-      l = 0
-      t = 0
-      for i in 1:N
-        for j in i:N
-          t += 1
-          table[t, 1] = labels[i]
-          table[t, 2] = labels[j]
-          if i != j
-            l += 1
-            table[t, 3] = list[l]
-          else
-            table[t, 3] = lm.diag[i]
-          end
-        end
-      end
-    else
-      table = Array(Any, length(list), 3)
-      k = 0
-      for i in 1:(N-1)
-        for j in (i+1):N
-          k += 1
-          table[k, 1] = labels[i]
-          table[k, 2] = labels[j]
-          table[k, 3] = list[k]
-        end
-      end
-    end
+function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
+  N = plm.nelements
+  labels = length(plm.labels) != 0 ? plm.labels : IndexedArray(collect(1:N))
+  table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
+  t = 0
+  @iterateupper plm diagonal begin
+    t += 1
+    table[t, 1] = labels[i]
+    table[t, 2] = labels[j]
+    table[t, 3] = list[k]
   end
   table
 end
@@ -814,8 +768,71 @@ function from_table{T}(table::Matrix, value::Type{T}, diagonal::Bool, labelcols:
   PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), unique(table[:,labelcols]), diagonal)
 end
 
+# write...
+# ========
+
+"""
+This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+If the third positional argument is `true` (default) the diagonal is included in the output.
+The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
+
+julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+ 1  2  3
+ 2  4  5
+ 3  5  6
+
+julia> writedlm("example.txt", PLM, false, delim=' ')
+
+shell> cat example.txt
+1 2 2
+1 3 3
+2 3 5
+
+"""
+function writedlm(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true; delim::Char='\t')
+  open(filename, "w") do fh
+    if length(plm.labels) != 0
+      labels = plm.labels
+      @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
+    else
+      @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
+    end
+  end
+end
+
+"""
+This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+If the third positional argument is `true` (default) the diagonal is included in the output.
+
+julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+ 1  2  3
+ 2  4  5
+ 3  5  6
+
+julia> writecsv("example.csv", PLM)
+
+shell> cat example.csv
+1,1,1
+1,2,2
+1,3,3
+2,2,4
+2,3,5
+3,3,6
+
+julia> writecsv("example.csv", PLM, false)
+
+shell> cat example.csv
+1,2,2
+1,3,3
+2,3,5
+
+"""
+writecsv(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true) = writedlm(filename, plm, diagonal, delim=',')
+
 # triu! & triu
-# ############
+# ============
 
 triu!(::PairwiseListMatrix, args...) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
 triu(mat::PairwiseListMatrix, args...) = triu(full(mat), args...)

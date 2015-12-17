@@ -20,6 +20,12 @@ modules: [PairwiseListMatrices]
 {{getlabel}}
 {{setlabel!}}
 
+# Macros
+
+{{@iteratelist}}
+{{@iteratediag}}
+{{@iterateupper}}
+
 # Special statistics
 
 {{sum_nodiag}}
@@ -29,6 +35,8 @@ modules: [PairwiseListMatrices]
 
 {{to_table}}
 {{from_table}}
+{{writedlm}}
+{{writecsv}}
 
 # Special plots
 

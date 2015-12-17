@@ -10,6 +10,6 @@ notifications:
   email: false
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("PairwiseListMatrices"); Pkg.test("PairwiseListMatrices"; coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.add("DataFrames"); Pkg.clone(pwd()); Pkg.build("PairwiseListMatrices"); Pkg.test("PairwiseListMatrices"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("PairwiseListMatrices")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(Codecov.process_folder())'
