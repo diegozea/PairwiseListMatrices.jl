@@ -52,6 +52,18 @@ let list = [1,-2,3],
 
   print("""
 
+  Getters
+  -------
+  """)
+
+  @test getlist(pld_sym) == pld_sym.list
+  @test getlist(pl_sym)  ==  pl_sym.list
+
+  @test getdiag(pld_sym) == pld_sym.diag
+  @test getdiag(pl_sym)  ==  pl_sym.diag
+
+  print("""
+
   Convert
   -------
   """)

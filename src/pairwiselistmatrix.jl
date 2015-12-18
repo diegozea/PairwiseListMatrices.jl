@@ -11,7 +11,14 @@ type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
   nelements::Int
 end
 
+"Returns `true` if the list has diagonal values."
 @inline hasdiagonal{T, diagonal}(::PairwiseListMatrix{T, diagonal}) = diagonal
+
+"Retuns the `list` vector."
+@inline getlist(plm::PairwiseListMatrix) = plm.list
+
+"Retuns the `diag` vector (which contains the diagonal values if `diagonal` is `true`)."
+@inline getdiag(plm::PairwiseListMatrix) = plm.diag
 
 # Creation
 # ========
