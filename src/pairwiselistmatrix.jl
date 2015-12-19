@@ -843,3 +843,38 @@ writecsv(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true) = w
 
 triu!(::PairwiseListMatrix, args...) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
 triu(mat::PairwiseListMatrix, args...) = triu(full(mat), args...)
+
+# listlength
+# ==========
+
+"Returns the length of the `list` field"
+lengthlist(plm::PairwiseListMatrix) = length(getlist(plm))
+
+"""Returns the list length needed for a pairwise measures or comparisons of `nelements`.
+If `diagonal` is `true`, diagonal values are included in the list.
+
+```
+julia> using PairwiseListMatrices
+
+julia> PLM = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
+4x4 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+ 0  1  2  3
+ 1  0  4  5
+ 2  4  0  6
+ 3  5  6  0
+
+julia> lengthlist(4, false)
+6
+
+julia> lengthlist(PLM)
+6
+
+```
+"""
+function lengthlist(nelements::Int, diagonal::Bool)
+  if diagonal
+    return( _list_with_diagonal_length(nelements) )
+  else
+    return( _list_length(nelements) )
+  end
+end

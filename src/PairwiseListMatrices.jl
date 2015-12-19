@@ -17,7 +17,7 @@ module PairwiseListMatrices
   @iteratelist,
   @iteratediag,
 
-  PairwiseListMatrix, hasdiagonal,
+  PairwiseListMatrix, hasdiagonal, lengthlist,
   getlist, getdiag, labels, labels!, getlabel, setlabel!,
   sum_nodiag, mean_nodiag, zscore!, zscore,
   from_table, to_table,

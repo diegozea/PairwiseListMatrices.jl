@@ -64,6 +64,14 @@ let list = [1,-2,3],
 
   print("""
 
+  Length of the list
+  """)
+
+  @test lengthlist(2, true)  == lengthlist(pld_sym)
+  @test lengthlist(3, false) == lengthlist(pl_sym)
+
+  print("""
+
   Convert
   -------
   """)
