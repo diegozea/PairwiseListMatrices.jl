@@ -2,6 +2,12 @@
 
 ### Changes from v0.1 to v0.2
 
+* `hasdiagonal` returns the `diagonal` boolean value of `PairwiseListMatrix{T, diagonal}`
+
+* `getlist` and `getdiag` are defined for getting the `list`or `diag` fields of a `PairwiseListMatrix`.
+
+* `lengthlist` was added for returning the length of a list given a `PairwiseListMatrix` or a number of elements.
+
 * `@iterateupper`, `@iteratelist` and `@iteratediag` for easy iterations over a `PairwiseListMatrix` and its fields.
 
 * `protovis` was added for plotting a `PairwiseListMatrix` as a network using the javascript protovis library.
