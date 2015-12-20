@@ -29,8 +29,62 @@ function _test_nelements(vector, nelements::Int, name::ASCIIString)
   end
 end
 
-@inline _list_length(nelements) = @fastmath div(nelements*(nelements-1),2)
-@inline _list_with_diagonal_length(nelements) = @fastmath div(nelements*(nelements+1),2)
+# listlength
+# ==========
+
+"Returns the length of the `list` field"
+lengthlist(plm::PairwiseListMatrix) = length(getlist(plm))
+
+lengthlist{diagonal}(nelements::Int, ::Type{Val{diagonal}}) = diagonal ? div(nelements*(nelements+1),2) : div(nelements*(nelements-1),2)
+
+"""Returns the list length needed for a pairwise measures or comparisons of `nelements`.
+If `diagonal` is `true`, diagonal values are included in the list.
+
+```
+julia> using PairwiseListMatrices
+
+julia> PLM = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
+4x4 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+ 0  1  2  3
+ 1  0  4  5
+ 2  4  0  6
+ 3  5  6  0
+
+julia> lengthlist(4, false)
+6
+
+julia> lengthlist(PLM)
+6
+
+```
+"""
+lengthlist(nelements::Int, diagonal::Bool) = lengthlist(nelements, Val{diagonal})
+
+# Indexes: ij2k
+# =============
+
+ij2k{diagonal}(i::Int, j::Int, nelements::Int, ::Type{Val{diagonal}}) = div(diagonal ?  (nelements*(nelements+1))-((nelements-i)*(nelements-i+1)) :
+                                                                                        (nelements*(nelements-1))-((nelements-i)*(nelements-i-1)), 2) - nelements + j
+
+"""Returns the `k` index of the `list` from the indixes `i` and `j` with `i<j` from a matrix of `nelements` by `nelements`.
+`diagonal` should be `true` or `Val{true}` if the diagonal values are on the `list`. You must not use it with `i>j`.
+
+```
+julia> PLM = PairwiseListMatrix([10,20,30,40,50,60], true)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+julia> ij2k(1, 2, 3, true)
+2
+
+julia> getlist(PLM)[2]
+20
+
+```
+"""
+ij2k(i::Int, j::Int, nelements::Int, diagonal::Bool) = ij2k(i, j, nelements, Val{diagonal})
 
 # Empties
 # -------
@@ -46,9 +100,9 @@ function PairwiseListMatrix{T}(::Type{T}, nelements::Int, labels::IndexedArray,
                                   diagonal::Bool=false, diagonalvalue::T=zero(T))
   _test_nelements(labels, nelements, "labels")
   if diagonal
-    return PairwiseListMatrix{T, diagonal}(Array(T, _list_with_diagonal_length(nelements)), T[], labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(Array(T, lengthlist(nelements, Val{true})), T[], labels, nelements)
   else
-    return PairwiseListMatrix{T, diagonal}(Array(T, _list_length(nelements)), fill!(Array(T, nelements), diagonalvalue), labels, nelements)
+    return PairwiseListMatrix{T, diagonal}(Array(T, lengthlist(nelements, Val{false})), fill!(Array(T, nelements), diagonalvalue), labels, nelements)
   end
 end
 
@@ -68,7 +122,7 @@ convert{T, F, D}(::Type{PairwiseListMatrix{T, D}},
 function convert{T, F}(::Type{PairwiseListMatrix{T, true}}, mat::PairwiseListMatrix{F, false})
   N = copy(mat.nelements)
   ncol = size(mat, 2)
-  list = Array(T, _list_with_diagonal_length(N))
+  list = Array(T, lengthlist(N, Val{true}))
   k = 0
   for i in 1:ncol
     for j in i:ncol
@@ -218,29 +272,23 @@ ones{T, diagonal}(m::PairwiseListMatrix{T, diagonal})  = PairwiseListMatrix{T, d
 # Indexing (getindex)
 # ===================
 
-@inline _listindex(i, j, n) = @fastmath div((n*(n-1))-((n-i)*(n-i-1)),2) - n + j
-@inline _listindex_with_diagonal(i, j, n) = @fastmath div((n*(n+1))-((n-i)*(n-i+1)),2) - n + j
-
 function getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int, j::Int)
   if i <= j
-    return(lm.list[_listindex_with_diagonal(i, j, lm.nelements)])
+    return(lm.list[ij2k(i, j, lm.nelements, Val{true})])
   else
-    return(lm.list[_listindex_with_diagonal(j, i, lm.nelements)])
+    return(lm.list[ij2k(j, i, lm.nelements, Val{true})])
   end
 end
 
 function getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int, j::Int)
   if i < j
-    return(lm.list[_listindex(i, j, lm.nelements)])
+    return(lm.list[ij2k(i, j, lm.nelements, Val{false})])
   elseif i > j
-    return(lm.list[_listindex(j, i, lm.nelements)])
+    return(lm.list[ij2k(j, i, lm.nelements, Val{false})])
   else
     return(lm.diag[i])
   end
 end
-
-# i, n -> row: ceil(i/n) col: rem(i-1, n)+1
-# i, n -> row: ceil(i/n) col: i - n*(ceil(i/n)-1)
 
 Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
 
@@ -249,9 +297,9 @@ function getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int)
   row = Int(ceil(i/n))
   col = i - n*(row-1)
   if row <= col
-    @inbounds return lm.list[_listindex_with_diagonal(row, col, n)]
+    @inbounds return lm.list[ij2k(row, col, n, Val{true})]
   else
-    @inbounds return lm.list[_listindex_with_diagonal(col, row, n)]
+    @inbounds return lm.list[ij2k(col, row, n, Val{true})]
   end
 end
 
@@ -260,9 +308,9 @@ function getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int)
   row = Int(ceil(i/n))
   col = i - n*(row-1)
   if row < col
-    @inbounds return lm.list[_listindex(row, col, n)]
+    @inbounds return lm.list[ij2k(row, col, n, Val{false})]
   elseif row > col
-    @inbounds return lm.list[_listindex(col, row, n)]
+    @inbounds return lm.list[ij2k(col, row, n, Val{false})]
   else
     @inbounds return lm.diag[row]
   end
@@ -299,17 +347,17 @@ end
 
 function setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int, j::Int)
   if i <= j
-    return setindex!(lm.list, v, _listindex_with_diagonal(i, j, lm.nelements))
+    return setindex!(lm.list, v, ij2k(i, j, lm.nelements, Val{true}))
   else
-    return setindex!(lm.list, v, _listindex_with_diagonal(j, i, lm.nelements))
+    return setindex!(lm.list, v, ij2k(j, i, lm.nelements, Val{true}))
   end
 end
 
 function setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int, j::Int)
   if i < j
-    return setindex!(lm.list, v, _listindex(i, j, lm.nelements))
+    return setindex!(lm.list, v, ij2k(i, j, lm.nelements, Val{false}))
   elseif i > j
-    return setindex!(lm.list, v, _listindex(j, i, lm.nelements))
+    return setindex!(lm.list, v, ij2k(j, i, lm.nelements, Val{false}))
   else
     return setindex!(lm.diag, v, i)
   end
@@ -320,9 +368,9 @@ function setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int)
   row = Int(ceil(i/n))
   col = i - n*(row-1)
   if row <= col
-    return setindex!(lm.list, v, _listindex_with_diagonal(row, col, n))
+    return setindex!(lm.list, v, ij2k(row, col, n, Val{true}))
   else
-    return setindex!(lm.list, v, _listindex_with_diagonal(col, row, n))
+    return setindex!(lm.list, v, ij2k(col, row, n, Val{true}))
   end
 end
 
@@ -331,9 +379,9 @@ function setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int)
   row = Int(ceil(i/n))
   col = i - n*(row-1)
   if row < col
-    return setindex!(lm.list, v, _listindex(row, col, n))
+    return setindex!(lm.list, v, ij2k(row, col, n, Val{false}))
   elseif row > col
-    return setindex!(lm.list, v, _listindex(col, row, n))
+    return setindex!(lm.list, v, ij2k(col, row, n, Val{false}))
   else
     return setindex!(lm.diag, v, row)
   end
@@ -844,37 +892,3 @@ writecsv(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true) = w
 triu!(::PairwiseListMatrix, args...) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
 triu(mat::PairwiseListMatrix, args...) = triu(full(mat), args...)
 
-# listlength
-# ==========
-
-"Returns the length of the `list` field"
-lengthlist(plm::PairwiseListMatrix) = length(getlist(plm))
-
-"""Returns the list length needed for a pairwise measures or comparisons of `nelements`.
-If `diagonal` is `true`, diagonal values are included in the list.
-
-```
-julia> using PairwiseListMatrices
-
-julia> PLM = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
-4x4 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
- 0  1  2  3
- 1  0  4  5
- 2  4  0  6
- 3  5  6  0
-
-julia> lengthlist(4, false)
-6
-
-julia> lengthlist(PLM)
-6
-
-```
-"""
-function lengthlist(nelements::Int, diagonal::Bool)
-  if diagonal
-    return( _list_with_diagonal_length(nelements) )
-  else
-    return( _list_length(nelements) )
-  end
-end

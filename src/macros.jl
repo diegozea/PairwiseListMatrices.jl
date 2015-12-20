@@ -1,7 +1,8 @@
 """
 The macro `@iteratelist` writes a `for` loop over the `list` but avoiding `getfield` calls inside the loop.
 The first argument of the macro is the `PairwiseListMatrix` that is going to be iterated and the second is the body of the loop.
-In the body `list` will be the list field of the `PairwiseListMatrix` and `k` the index over that list. You must not modify the value of `k`.
+In the body `list` will be the list field of the `PairwiseListMatrix` and `k` the index over that list.
+Other variables should be interpolated in a quote. You must not modify the value of `k`.
 
 ```
 julia> PLM = PairwiseListMatrix([1,2,3], false)
@@ -29,7 +30,8 @@ end
 """
 The macro `@iteratediag` writes a `for` loop over the `diag` field of a `PairwiseListMatrix{T,false}` but avoiding calls to `getfield` inside the loop.
 The first argument of the macro is the `PairwiseListMatrix` that is going to be iterated and the second is the body of the loop.
-In the body `diag` will be the diag field of the `PairwiseListMatrix` and `k` the index over that vector. You must not modify the value of `k`.
+In the body `diag` will be the diag field of the `PairwiseListMatrix` and `k` the index over that vector.
+Other variables should be interpolated in a quote. You must not modify the value of `k`.
 
 ```
 julia> PLM = PairwiseListMatrix([1,2,3], false)
@@ -63,23 +65,26 @@ end
 The macro `@iterateupper` iterates over the upper triangular part of the `PairwiseListMatrix` that is given as first argument.
 The second argument should be `true` if the diagonal need to be included in the iteration or `false` otherwise.
 The last argument is the body of the loop, where `list` is the list and diag fields of the `PairwiseListMatrix` and `k` is the index over that `list`.
-You can also use the respective `i` and `j` indexes for that position `k` in the upper triangular part of the matrix.
+You can also use the respective `i` and `j` indexes for that position `k` in the upper triangular part of the matrix. Other variables should be interpolated in a quote.
 You must not modify the values of `i`, `j` or `k`.
 
 ```
-julia> PLM = PairwiseListMatrix([0, 0, 0], false)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
- 0  0  0
- 0  0  0
- 0  0  0
+julia> PLM = PairwiseListMatrix([1,2,3], true)
+2x2 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+ 1  2
+ 2  3
 
-julia> @iterateupper PLM true list[k] = 100i + 10j + k
+julia> mat = zeros(Int, 2, 2)
+2x2 Array{Int64,2}:
+ 0  0
+ 0  0
 
-julia> PLM
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
- 111  121  132
- 121  222  233
- 132  233  333
+julia> @iterateupper PLM true :(\$mat)[i,j] = list[k]
+
+julia> mat
+2x2 Array{Int64,2}:
+ 1  2
+ 0  3
 
 ```
 """
