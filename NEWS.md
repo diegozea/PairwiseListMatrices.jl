@@ -8,6 +8,8 @@
 
 * `lengthlist` was added for returning the length of a list given a `PairwiseListMatrix` or a number of elements.
 
+* `ij2k` was added for getting the indexes on the list given the `i` and `j` on the upper triangular part of the matrix.
+
 * `@iterateupper`, `@iteratelist` and `@iteratediag` for easy iterations over a `PairwiseListMatrix` and its fields.
 
 * `protovis` was added for plotting a `PairwiseListMatrix` as a network using the javascript protovis library.
