@@ -1,5 +1,11 @@
 ## PairwiseListMatrices.jl Release Notes
 
+### Changes from v0.2 to v0.3
+
+* `join` two PairwiseListMatrices by their labels
+
+* `PairwiseListMatrix` nows works with any `AbstractVector`. i.e. `DataArray`s
+
 ### Changes from v0.1 to v0.2
 
 * `hasdiagonal` returns the `diagonal` boolean value of `PairwiseListMatrix{T, diagonal}`

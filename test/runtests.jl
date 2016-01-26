@@ -543,6 +543,44 @@ let values   = [1,2,3,4,5,6],
 
 end
 
+print("""
+
+join
+----
+""")
+
+let left = PairwiseListMatrix(collect(1.:15.), Char['a','b','c','d','e'], true),
+    right = PairwiseListMatrix(collect(1.:10.), Char['a','e','i','o','u'], false)
+
+  a, b = join(left, right)
+  @test (a, b) == join(left, right, kind=:inner)
+  @test labels(a) == labels(b)
+  @test labels(a) == ['a', 'e']
+  @test size(a) == (2,2)
+  @test size(b) == (2,2)
+
+  a, b = join(left, right, kind=:left)
+  @test labels(a) == labels(b)
+  @test labels(a) == labels(left)
+  @test a == left
+  @test b != right
+
+  a, b = join(left, right, kind=:right)
+  @test labels(a) == labels(b)
+  @test labels(b) == labels(right)
+  @test a != left
+  @test b == right
+
+  a, b = join(left, right, kind=:outer)
+  @test labels(a) == labels(b)
+  @test labels(a) == ['a', 'b', 'c', 'd', 'e', 'i', 'o', 'u']
+  @test size(a) == (8,8)
+  @test size(b) == (8,8)
+  @test a != left
+  @test b != right
+
+end
+
 # #### DataFrames #### #
 
 if dataframes_installed

@@ -69,8 +69,8 @@ All `PairwiseListMatrix{T, diagonal}` have a `list` field for storing the values
 
 ```{.julia execute="false"}
 type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
-  list::Vector{T}
-  diag::Vector{T}
+  list::AbstractVector{T}
+  diag::AbstractVector{T}
   labels::IndexedArray
   nelements::Int
 end
