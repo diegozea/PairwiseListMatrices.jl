@@ -949,6 +949,10 @@ function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseList
   labels_left  = labels(left)
   labels_right = labels(right)
 
+  if labels_left == labels_right
+    return(left, right)
+  end
+
   if     kind == :inner
     out_labels = intersect(labels_left, labels_right)
     N = length(out_labels)
@@ -1008,4 +1012,5 @@ function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseList
   else
     throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
   end
+
 end
