@@ -5,9 +5,11 @@ function _start_protovis_html(filename::ByteString)
   fh
 end
 
-"""JSON representation of the `PairwiseListMatrix` for protovis (networks).
+"""
+JSON representation of the `PairwiseListMatrix` for protovis (networks).
 If `scale` is true, the stored values will be between `start` and `start` + 1.
-`start` is 1.0 by default. NaN values aren't used."""
+`start` is 1.0 by default. NaN values aren't used.
+"""
 function print_protovis_json(io::IO, mat::PairwiseListMatrix, groups::Vector{Int}, scale::Bool=true, start::Float64=1.0)
   names = labels(mat)
   hasnames = length(names) != 0

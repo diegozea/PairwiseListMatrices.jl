@@ -1,5 +1,9 @@
 ## PairwiseListMatrices.jl Release Notes
 
+## Changes from v0.3 to v0.4
+
+* Use Plots.jl
+
 ### Changes from v0.2 to v0.3
 
 * `join` two PairwiseListMatrices by their labels
