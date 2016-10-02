@@ -1,6 +1,7 @@
 # PairwiseListMatrices
 
 Julia 0.4: [![PairwiseListMatrices](http://pkg.julialang.org/badges/PairwiseListMatrices_0.4.svg)](http://pkg.julialang.org/?pkg=PairwiseListMatrices)
+Julia 0.5: [![PairwiseListMatrices](http://pkg.julialang.org/badges/PairwiseListMatrices_0.5.svg)](http://pkg.julialang.org/?pkg=PairwiseListMatrices)
 Linux, OSX: [![Build Status](https://travis-ci.org/diegozea/PairwiseListMatrices.jl.svg?branch=master)](https://travis-ci.org/diegozea/PairwiseListMatrices.jl)
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/p96sso5b23gi85mg/branch/master?svg=true)](https://ci.appveyor.com/project/diegozea/pairwiselistmatrices-jl/branch/master)
 Code Coverage: [![Coverage Status](https://coveralls.io/repos/diegozea/PairwiseListMatrices.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/diegozea/PairwiseListMatrices.jl?branch=master) [![codecov.io](http://codecov.io/github/diegozea/PairwiseListMatrices.jl/coverage.svg?branch=master)](http://codecov.io/github/diegozea/PairwiseListMatrices.jl?branch=master)

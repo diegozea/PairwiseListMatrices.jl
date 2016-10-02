@@ -1,4 +1,4 @@
-function _start_protovis_html(filename::ByteString)
+function _start_protovis_html(filename::String)
   fh = open(filename, "w")
   print(fh, _protovis_html)
   flush(fh)
@@ -75,7 +75,7 @@ Plots on the web browser an arc diagram and a matrix using Protovis.
 A vector of `groups`/clusters i.e. `Int[ 1, 1, 2, 3, 2 ...` can be used for each element.
 You can save the plot on a `htmlfile`.
 """
-function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, mat.nelements), htmlfile::ByteString=string(tempname(), ".html"))
+function protovis(mat::PairwiseListMatrix; groups::Vector{Int}=ones(Int, mat.nelements), htmlfile::String=string(tempname(), ".html"))
   fh = _start_protovis_html(htmlfile)
   print_protovis_json(fh, mat, groups)
   l = length(labels(mat)) > 0 ? 10 * length(string(labels(mat)[1])) : 90

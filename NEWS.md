@@ -1,5 +1,10 @@
 ## PairwiseListMatrices.jl Release Notes
 
+### Changes from v0.3 to v0.4
+
+PairwiseListMatrices v0.4 requires Julia v0.5.
+PairwiseListMatrices v0.3 was the last version with Julia 0.4 support.
+
 ### Changes from v0.2 to v0.3
 
 * `join` two PairwiseListMatrices by their labels

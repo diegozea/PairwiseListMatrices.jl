@@ -23,7 +23,7 @@ end
 # Creation
 # ========
 
-function _test_nelements(vector, nelements::Int, name::ASCIIString)
+function _test_nelements(vector, nelements::Int, name::String)
   if length(vector) != 0 && length(vector) != nelements
     throw(DimensionMismatch(string(name, " must have ", nelements, " names!")))
   end
@@ -845,7 +845,7 @@ shell> cat example.txt
 2 3 5
 
 """
-function writedlm(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true; delim::Char='\t')
+function writedlm(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true; delim::Char='\t')
   open(filename, "w") do fh
     if length(plm.labels) != 0
       labels = plm.labels
@@ -884,13 +884,15 @@ shell> cat example.csv
 2,3,5
 
 """
-writecsv(filename::ByteString, plm::PairwiseListMatrix, diagonal::Bool=true) = writedlm(filename, plm, diagonal, delim=',')
+writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true) = writedlm(filename, plm, diagonal, delim=',')
 
 # triu! & triu
 # ============
 
-triu!(::PairwiseListMatrix, args...) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
-triu(mat::PairwiseListMatrix, args...) = triu(full(mat), args...)
+triu!(mat::PairwiseListMatrix) = throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
+triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
+triu(mat::PairwiseListMatrix) = triu(full(mat))
+triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 
 # join
 # ====
