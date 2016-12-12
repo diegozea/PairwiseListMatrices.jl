@@ -2,7 +2,8 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module PairwiseListMatrices
 
-  using IndexedArrays
+  using NamedArrays
+  # using IndexedArrays
   using Requires
 
   import Base: size, getindex, setindex!, length, eltype,

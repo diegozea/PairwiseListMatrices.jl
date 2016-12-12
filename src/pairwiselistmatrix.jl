@@ -4,14 +4,29 @@ values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field.
 """
-type PairwiseListMatrix{T, diagonal} <: AbstractArray{T, 2}
-    list::Vector{T}
-    diag::Vector{T}
+type PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
+    list::VT
+    diag::VT
     nelements::Int
+
+    function PairwiseListMatrix(list::AbstractVector{T},
+                                diag::AbstractVector{T},
+                                N::Int)
+        @assert eltype(VT) === T "Field vectors must have the same element type than the PairwiseListMatrix"
+        if !diagonal
+            n_diag = length(diag)
+            n_list = _nelements(length(list))
+            @assert n_diag == N "There are $n_diag elements in the diag field instead of $N"
+        else
+            n_list = _nelements_with_diagonal(length(list))
+            @assert n_list == N "There are $n_list elements in the list field instead of $N"
+        end
+        new(list, diag, N)
+    end
 end
 
 "Returns `true` if the list has diagonal values."
-@inline hasdiagonal{T, diagonal}(::PairwiseListMatrix{T, diagonal}) = diagonal
+@inline hasdiagonal{T,D,VT}(::PairwiseListMatrix{T,D,VT}) = diagonal
 
 "Retuns the `list` vector."
 @inline getlist(plm::PairwiseListMatrix) = plm.list
@@ -58,7 +73,7 @@ lengthlist(nelements::Int, diagonal::Bool) = lengthlist(nelements, Val{diagonal}
 
 function ij2k{diagonal}(i::Int, j::Int, nelements::Int, ::Type{Val{diagonal}})
     div(diagonal ?  (nelements*(nelements+1))-((nelements-i)*(nelements-i+1)) :
-        (nelements*(nelements-1))-((nelements-i)*(nelements-i-1)), 2) - nelements + j
+    (nelements*(nelements-1))-((nelements-i)*(nelements-i-1)), 2) - nelements + j
 end
 
 """
@@ -94,46 +109,65 @@ values are stored in a vector on the `diag` field instead of being on the list.
 The `diag` vector can be filled with the optional `diagonalvalue` argument (default to `0`).
 """
 function (::Type{PairwiseListMatrix}){T}(::Type{T},
-                                         nelements::Int,
-                                         diagonal::Bool = false,
-                                         diagonalvalue::T = zero(T))
+                                        nelements::Int,
+                                        diagonal::Bool = false,
+                                        diagonalvalue::T = zero(T))
     if diagonal
-        return PairwiseListMatrix{T, true}(Array(T, lengthlist(nelements, Val{true})),
-                                           T[],
-                                           nelements)
+        return PairwiseListMatrix{T, true, Vector{T}}(
+            Array(T, lengthlist(nelements, Val{true})),
+            T[],
+            nelements)
     else
-        return PairwiseListMatrix{T, false}(Array(T, lengthlist(nelements, Val{false})),
-                                            fill!(Array(T, nelements), diagonalvalue),
-                                            nelements)
+        return PairwiseListMatrix{T, false, Vector{T}}(
+            Array(T, lengthlist(nelements, Val{false})),
+            fill!(Array(T, nelements), diagonalvalue),
+            nelements)
+    end
+end
+
+function (::Type{PairwiseListMatrix{T,diagonal,VT}}){T,diagonal,VT}(nelements::Int)
+    if diagonal
+        return PairwiseListMatrix{T,true,VT}(
+            convert(VT, Array(T, lengthlist(nelements, Val{true}))),
+            convert(VT, T[]),
+            nelements)
+    else
+        return PairwiseListMatrix{T, false, VT}(
+            Array(T, lengthlist(nelements, Val{false})),
+            convert(VT, Array(T, nelements)),
+            nelements)
     end
 end
 
 # Convert
 # -------
 
-function Base.convert{T,F,D}(::Type{PairwiseListMatrix{T,D}}, mat::PairwiseListMatrix{F,D})
-    PairwiseListMatrix{T,D}(convert(Vector{T}, mat.list),
-                            convert(Vector{T}, mat.diag),
-                            copy(mat.nelements))
+function Base.convert{T,F,D,VT,VF}(::Type{PairwiseListMatrix{T,D,VT}},
+                                  mat::PairwiseListMatrix{F,D,VF})
+    PairwiseListMatrix{T,D,VT}(convert(VT, mat.list),
+        convert(VT, mat.diag),
+        copy(mat.nelements))
 end
 
-function Base.convert{T,F}(::Type{PairwiseListMatrix{T,true}}, mat::PairwiseListMatrix{F,false})
+function Base.convert{T,F,VT,VF}(::Type{PairwiseListMatrix{T,true,VT}},
+                                mat::PairwiseListMatrix{F,false,VF})
     N = copy(mat.nelements)
-    list = Array(T, lengthlist(N, Val{true}))
+    list = convert(VT, Array(T, lengthlist(N, Val{true})))
     k = 0
     @inbounds for i in 1:N
         for j in i:N
-             list[k += 1] = mat[i,j]
+            list[k += 1] = mat[i,j]
         end
     end
-    PairwiseListMatrix{T, true}(list, T[], N)
+    PairwiseListMatrix{T, true}(list, convert(VT,T[]), N)
 end
 
-function Base.convert{T,F}(::Type{PairwiseListMatrix{T, false}}, mat::PairwiseListMatrix{F, true})
+function Base.convert{T,F,VT,VF}(::Type{PairwiseListMatrix{T, false, VT}},
+                                mat::PairwiseListMatrix{F, true, VF})
     N = copy(mat.nelements)
-    diag = Array(T, N)
+    diag = convert(VT, Array(T, N))
     matlist = mat.list
-    list = Array(T, length(matlist) - N)
+    list = convert(VT, Array(T, length(matlist) - N))
     l = 0
     d = 0
     m = 0
@@ -146,15 +180,15 @@ function Base.convert{T,F}(::Type{PairwiseListMatrix{T, false}}, mat::PairwiseLi
             end
         end
     end
-    PairwiseListMatrix{T, false}(list, diag, N)
+    PairwiseListMatrix{T, false, VT}(list, diag, N)
 end
 
-function Base.convert{T,F,D}(::Type{PairwiseListMatrix{T, D}}, mat::Matrix{F})
+function Base.convert{T,F,D,VT}(::Type{PairwiseListMatrix{T,D,VT}}, mat::Matrix{F})
     N = size(mat, 1)
     if N != size(mat, 2)
         throw(ErrorException("It should be a squared matrix."))
     end
-    plm = PairwiseListMatrix(T, N, D)
+    plm = PairwiseListMatrix{T,D,VT}(N)
     @inbounds for i in 1:N
         for j in i:N
             value = mat[i,j]
@@ -168,7 +202,7 @@ function Base.convert{T,F,D}(::Type{PairwiseListMatrix{T, D}}, mat::Matrix{F})
 end
 
 # This is faster than list comprehension (2.4 x)
-function Base.convert{T,F}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true})
+function Base.convert{T,F,VT}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true, VT})
     N = lm.nelements
     complete = Array(F, N, N)
     list = lm.list
@@ -181,7 +215,7 @@ function Base.convert{T,F}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true})
     complete
 end
 
-function Base.convert{T,F}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false})
+function Base.convert{T,F,VT}(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false, VT})
     N = lm.nelements
     complete = Array(F, N, N)
     list = lm.list
@@ -206,9 +240,9 @@ end
 Returns a full dense matrix.
 This converts a `PairwiseListMatrix{T, D}` into a `Matrix{T}`
 """
-Base.full{T,D}(lm::PairwiseListMatrix{T, D}) = convert(Array{T, 2}, lm)
+Base.full{T,D,VT}(lm::PairwiseListMatrix{T, D, VT}) = convert(Array{T, 2}, lm)
 
-Base.full{T,D}(m::Symmetric{T, PairwiseListMatrix{T,D}}) = full(m.data)
+Base.full{T,D,VT}(m::Symmetric{T, PairwiseListMatrix{T,D,VT}}) = full(m.data)
 
 # From a list
 # -----------
@@ -224,16 +258,17 @@ instead of being on the list. The `diag` vector can be filled with the optional
 `diagonalvalue` argument (default to `0`).
 """
 function (::Type{PairwiseListMatrix}){T}(list::AbstractVector{T},
-                                         diagonal::Bool = false,
-                                         diagonalvalue::T = zero(T))
+                                        diagonal::Bool = false,
+                                        diagonalvalue::T = zero(T))
+    VT = typeof(list)
     if diagonal
         nelements = _nelements_with_diagonal(length(list))
-        return PairwiseListMatrix{T, true}(list, T[], nelements)
+        return PairwiseListMatrix{T, true, VT}(list, convert(VT,T[]), nelements)
     else
         nelements = _nelements(length(list))
-        return PairwiseListMatrix{T, false}(list,
-                                            fill!(Array(T, nelements), diagonalvalue),
-                                            nelements)
+        return PairwiseListMatrix{T, false, VT}(list,
+            fill!(convert(VT, Array(T, nelements)), diagonalvalue),
+            nelements)
     end
 end
 
@@ -243,22 +278,24 @@ end
 Base.size(m::PairwiseListMatrix) = (m.nelements, m.nelements)
 Base.length(m::PairwiseListMatrix) = m.nelements * m.nelements
 
-Base.eltype{T, diagonal}(m::PairwiseListMatrix{T, diagonal}) = T
+Base.eltype{T, diagonal, VT}(m::PairwiseListMatrix{T, diagonal, VT}) = T
 
 for F in [:similar, :copy, :zeros, :ones]
     @eval begin
-        function Base.$F{T, diagonal}(m::PairwiseListMatrix{T, diagonal})
-            PairwiseListMatrix{T, diagonal}($F(m.list),
-                                            $F(m.diag),
-                                            copy(m.nelements))
+        function Base.$F{T, diagonal, VT}(m::PairwiseListMatrix{T, diagonal, VT})
+            list = $F(m.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(m.diag))
+            PairwiseListMatrix{T, diagonal, VOUT}(list, diag, copy(m.nelements))
         end
     end
 end
 
-function Base.similar{T, diagonal, S}(m::PairwiseListMatrix{T, diagonal}, ::Type{S})
-    PairwiseListMatrix{S, diagonal}(similar(m.list, S),
-                                    similar(m.diag, S),
-                                    copy(m.nelements))
+function Base.similar{T, diagonal, VT, S}(m::PairwiseListMatrix{T, diagonal, VT}, ::Type{S})
+    list = similar(m.list, S)
+    VOUT = typeof(list)
+    diag = convert(VOUT, similar(m.diag, S))
+    PairwiseListMatrix{S, diagonal, VOUT}(list, diag, copy(m.nelements))
 end
 
 # TODO:  p = zeros(PairwiseListMatrix{Float64,false}, 3)
@@ -266,7 +303,7 @@ end
 # Indexing (getindex)
 # ===================
 
-function Base.getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int, j::Int)
+function Base.getindex{T, VT}(lm::PairwiseListMatrix{T, true, VT}, i::Int, j::Int)
     if i <= j
         return(lm.list[ij2k(i, j, lm.nelements, Val{true})])
     else
@@ -274,7 +311,7 @@ function Base.getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int, j::Int)
     end
 end
 
-function Base.getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int, j::Int)
+function Base.getindex{T, VT}(lm::PairwiseListMatrix{T, false, VT}, i::Int, j::Int)
     if i < j
         return(lm.list[ij2k(i, j, lm.nelements, Val{false})])
     elseif i > j
@@ -286,7 +323,7 @@ end
 
 # Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
 
-function Base.getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int)
+function Base.getindex{T, VT}(lm::PairwiseListMatrix{T, true, VT}, i::Int)
     n = lm.nelements
     row = Int(ceil(i/n))
     col = i - n*(row-1)
@@ -297,7 +334,7 @@ function Base.getindex{T}(lm::PairwiseListMatrix{T, true}, i::Int)
     end
 end
 
-function Base.getindex{T}(lm::PairwiseListMatrix{T, false}, i::Int)
+function Base.getindex{T, VT}(lm::PairwiseListMatrix{T, false, VT}, i::Int)
     n = lm.nelements
     row = Int(ceil(i/n))
     col = i - n*(row-1)
@@ -313,7 +350,7 @@ end
 # Set values (setindex!)
 # ======================
 
-function Base.setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int, j::Int)
+function Base.setindex!{T, VT}(lm::PairwiseListMatrix{T, true, VT}, v, i::Int, j::Int)
     if i <= j
         return setindex!(lm.list, v, ij2k(i, j, lm.nelements, Val{true}))
     else
@@ -321,7 +358,7 @@ function Base.setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int, j::Int)
     end
 end
 
-function Base.setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int, j::Int)
+function Base.setindex!{T, VT}(lm::PairwiseListMatrix{T, false, VT}, v, i::Int, j::Int)
     if i < j
         return setindex!(lm.list, v, ij2k(i, j, lm.nelements, Val{false}))
     elseif i > j
@@ -331,7 +368,7 @@ function Base.setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int, j::Int)
     end
 end
 
-function Base.setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int)
+function Base.setindex!{T, VT}(lm::PairwiseListMatrix{T, true, VT}, v, i::Int)
     n = lm.nelements
     row = Int(ceil(i/n))
     col = i - n*(row-1)
@@ -342,7 +379,7 @@ function Base.setindex!{T}(lm::PairwiseListMatrix{T, true}, v, i::Int)
     end
 end
 
-function Base.setindex!{T}(lm::PairwiseListMatrix{T, false}, v, i::Int)
+function Base.setindex!{T, VT}(lm::PairwiseListMatrix{T, false, VT}, v, i::Int)
     n = lm.nelements
     row = Int(ceil(i/n))
     col = i - n*(row-1)
@@ -367,23 +404,26 @@ Base.ctranspose!(lm::PairwiseListMatrix) = lm
 # Diagonal
 # ========
 
-diagonal{T}(lm::PairwiseListMatrix{T, false}) = lm.diag
+diagonal{T,VT}(lm::PairwiseListMatrix{T, false, VT}) = lm.diag
 
-diagonal{T}(lm::PairwiseListMatrix{T, true}) = T[ lm[i,i] for i in 1:lm.nelements ]
+diagonal{T,VT}(lm::PairwiseListMatrix{T, true, VT}) = T[ lm[i,i] for i in 1:lm.nelements ]
 
 # Unary operations (faster than default methods)
 # ==============================================
 
 for F in (:abs, :-)
     @eval begin
-        function Base.$F{T}(lm::PairwiseListMatrix{T, true})
-            list = $F(lm.list)
-            PairwiseListMatrix{eltype(list), true}(list, lm.diag, lm.nelements)
+        function Base.$F{T,VT}(lm::PairwiseListMatrix{T,true,VT})
+                list = $F(lm.list)
+                VOUT = typeof(list)
+                diag = convert(VOUT, lm.diag)
+                PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, lm.nelements)
         end
-        function Base.$F{T}(lm::PairwiseListMatrix{T, false})
+        function Base.$F{T,VT}(lm::PairwiseListMatrix{T,false,VT})
             list = $F(lm.list)
-            diag = $F(lm.diag)
-            PairwiseListMatrix{eltype(list), true}(list, diag, lm.nelements)
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(lm.diag))
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, lm.nelements)
         end
     end
 end
@@ -395,35 +435,43 @@ Base.svd(m::PairwiseListMatrix) = svd(full(m))
 
 for F in ( :-,  :.-, :+, :.+, :.*, :./ )
     @eval begin
-        function Base.$F{T,S}(A::PairwiseListMatrix{T, true}, B::PairwiseListMatrix{S, true})
+        function Base.$F{T,S,VT,VS}(A::PairwiseListMatrix{T,true,VT},
+                                    B::PairwiseListMatrix{S,true,VS})
             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
             list = $F(A.list, B.list)
-            PairwiseListMatrix{eltype(list), true}(list, copy(A.diag), copy(A.nelements))
+            VOUT = typeof(list)
+            diag = convert(VOUT, T[])
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
         end
 
-        function Base.$F{T,S}(A::PairwiseListMatrix{T, false}, B::PairwiseListMatrix{S, false})
+        function Base.$F{T,S,VT,VS}(A::PairwiseListMatrix{T,false,VT},
+                                    B::PairwiseListMatrix{S,false,VS})
             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
             list = $F(A.list, B.list)
-            diag = $F(A.diag, B.diag)
-            PairwiseListMatrix{eltype(list), false}(list, diag, copy(A.nelements))
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(A.diag, B.diag))
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
     end
 end
 
 for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
     @eval begin
-        function Base.$F{T, S <: Number}(A::PairwiseListMatrix{T, true}, B::S)
+        function Base.$F{T,S <: Number,VT}(A::PairwiseListMatrix{T,true,VT}, B::S)
             list = $F(A.list, B)
-            PairwiseListMatrix{eltype(list), true}(list, copy(A.diag), copy(A.nelements))
+            VOUT = typeof(list)
+            diag = convert(VOUT, T[])
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
         end
 
-        function Base.$F{T, S <: Number}(A::PairwiseListMatrix{T, false}, B::S)
+        function Base.$F{T,S <: Number,VT}(A::PairwiseListMatrix{T, false, VT}, B::S)
             list = $F(A.list, B)
-            diag = $F(A.diag, B)
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(A.diag, B))
             PairwiseListMatrix{eltype(list), false}(list, diag, copy(A.nelements))
         end
 
-        Base.$F{T,D,S <: Number}(B::S, A::PairwiseListMatrix{T,D}) = $F(A, B)
+        Base.$F{T,D,S <: Number,VT}(B::S, A::PairwiseListMatrix{T,D,VT}) = $F(A, B)
     end
 end
 
@@ -476,13 +524,13 @@ function _test_and_set_sum{T}(::Type{T}, region, N)
     sum_i
 end
 
-function Base.sum{T}(lm::PairwiseListMatrix{T, true}, region::Int)
+function Base.sum{T,VT}(lm::PairwiseListMatrix{T,true,VT}, region::Int)
     N = lm.nelements
     sum_i = _test_and_set_sum(T, region, N)
     _sum_kernel!(sum_i, lm.list, N)
 end
 
-function Base.sum{T}(lm::PairwiseListMatrix{T, false}, region::Int)
+function Base.sum{T, VT}(lm::PairwiseListMatrix{T,false,VT}, region::Int)
     N = lm.nelements
     sum_i = _test_and_set_sum(T, region, N)
     _sum_kernel!(sum_i, lm.diag, lm.list, N)
@@ -495,10 +543,10 @@ Base.mean(m::PairwiseListMatrix, region::Int) = sum(m, region) ./ m.nelements
 # ------------------------------------------
 
 "Sum the values outside the diagonal"
-sum_nodiag{T}(m::PairwiseListMatrix{T, false}) = T(2) * sum(m.list)
-sum_nodiag{T}(m::PairwiseListMatrix{T, true}) = T(2) * sum(m.list) - sum(diagonal(m))
+sum_nodiag{T,VT}(m::PairwiseListMatrix{T,false,VT}) = T(2) * sum(m.list)
+sum_nodiag{T,VT}(m::PairwiseListMatrix{T,true,VT}) = T(2) * sum(m.list) - sum(diagonal(m))
 
-function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, true}, N)
+function _sum_nodiag_kernel!{T,VT}(sum_i, lm::PairwiseListMatrix{T,true,VT}, N)
     list = lm.list
     k = 0
     @inbounds for i in 1:N
@@ -514,7 +562,7 @@ function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, true}, N)
     sum_i
 end
 
-function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, false}, N)
+function _sum_nodiag_kernel!{T,VT}(sum_i, lm::PairwiseListMatrix{T,false,VT}, N)
     list = lm.list
     k = 0
     l = 0
@@ -529,7 +577,7 @@ function _sum_nodiag_kernel!{T}(sum_i, lm::PairwiseListMatrix{T, false}, N)
     sum_i
 end
 
-function sum_nodiag{T, diagonal}(lm::PairwiseListMatrix{T, diagonal}, region::Int)
+function sum_nodiag{T,diagonal,VT}(lm::PairwiseListMatrix{T,diagonal,VT}, region::Int)
     N = lm.nelements
     sum_i = _test_and_set_sum(T, region, N)
     _sum_nodiag_kernel!(sum_i, lm, N)
@@ -545,9 +593,9 @@ mean_nodiag(m::PairwiseListMatrix, region::Int) = sum_nodiag(m, region) ./ (m.ne
 # sum
 # ---
 
-@inline _has_diagonal{T, diagonal}(x::PairwiseListMatrix{T, diagonal}) = diagonal
+@inline _has_diagonal{T,diagonal,VT}(x::PairwiseListMatrix{T,diagonal,VT}) = diagonal
 
-function Base.sum{T, diagonal}(list::Vector{PairwiseListMatrix{T, diagonal}})
+function Base.sum{T,diagonal,VT}(list::Vector{PairwiseListMatrix{T,diagonal,VT}})
     samples = length(list)
     if samples == 0
         throw(ErrorException("Empty list"))
@@ -588,7 +636,8 @@ end
 # std
 # ---
 
-function Base.varm{T, D}(list::Vector{PairwiseListMatrix{T, D}}, mean::PairwiseListMatrix{T, D})
+function Base.varm{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}},
+                             mean::PairwiseListMatrix{T,D,VT})
     samples = length(list)
     if samples < 2
         throw(ErrorException("You need at least 2 samples."))
@@ -619,7 +668,7 @@ function Base.varm{T, D}(list::Vector{PairwiseListMatrix{T, D}}, mean::PairwiseL
     out ./ samples
 end
 
-function Base.var{T, D}(list::Vector{PairwiseListMatrix{T, D}}; mean=nothing)
+function Base.var{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing)
     if mean === nothing
         varm(list, Base.mean(list))
     else
@@ -627,15 +676,15 @@ function Base.var{T, D}(list::Vector{PairwiseListMatrix{T, D}}; mean=nothing)
     end
 end
 
-function Base.std{T, D}(list::Vector{PairwiseListMatrix{T, D}}; mean=nothing)
+function Base.std{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing)
     sqrt(var(list, mean=mean))
 end
 
 # zscore
 # ======
 
-function zscore!{E <: AbstractFloat, D}(list::Vector{PairwiseListMatrix{E,D}},
-                                        mat::PairwiseListMatrix{E,D})
+function zscore!{E <: AbstractFloat,D,VE}(list::Vector{PairwiseListMatrix{E,D,VE}},
+                                         mat::PairwiseListMatrix{E,D,VE})
     list_mean = mean(list)
     if size(mat) != size(list_mean)
         throw(ErrorException("PairwiseListMatrices must have the same size"))
@@ -648,319 +697,323 @@ function zscore!{E <: AbstractFloat, D}(list::Vector{PairwiseListMatrix{E,D}},
 
     ElementType = eltype(mat_list)
 
-    @inbounds for i in 1:length(mat_list)
-        s = std_list[i]
-        m = mean_list[i]
-        value = mat_list[i]
-        if (m - value + one(ElementType)) ≉ one(ElementType)
-            if (s + one(ElementType)) ≉ one(ElementType)
-                mat_list[i] = (value - m)/s
-            else
-                mat_list[i] = NaN
-            end
-        else
-            mat_list[i] = zero(ElementType)
-        end
-    end
-
-    if D
-        mat_diag = mat.diag
-        std_diag = list_std.diag
-        mean_diag = list_mean.diag
-        @inbounds for i in 1:length(mat_diag)
-            s = std_diag[i]
-            m = mean_diag[i]
-            value = mat_diag[i]
+        @inbounds for i in 1:length(mat_list)
+            s = std_list[i]
+            m = mean_list[i]
+            value = mat_list[i]
             if (m - value + one(ElementType)) ≉ one(ElementType)
                 if (s + one(ElementType)) ≉ one(ElementType)
-                    mat_diag[i] = (value - m)/s
+                    mat_list[i] = (value - m)/s
                 else
-                    mat_diag[i] = NaN
+                    mat_list[i] = NaN
                 end
             else
-                mat_diag[i] = zero(ElementType)
+                mat_list[i] = zero(ElementType)
             end
+        end
+
+        if D
+            mat_diag = mat.diag
+            std_diag = list_std.diag
+            mean_diag = list_mean.diag
+            @inbounds for i in 1:length(mat_diag)
+                s = std_diag[i]
+                m = mean_diag[i]
+                value = mat_diag[i]
+                if (m - value + one(ElementType)) ≉ one(ElementType)
+                    if (s + one(ElementType)) ≉ one(ElementType)
+                        mat_diag[i] = (value - m)/s
+                    else
+                        mat_diag[i] = NaN
+                    end
+                else
+                    mat_diag[i] = zero(ElementType)
+                end
+            end
+        end
+
+        mat
+    end
+
+    zscore(list, mat) = zscore!(list, copy(mat))
+
+    # NamedArrays (labels)
+    # ====================
+
+
+    # Tables
+    # ======
+
+    """
+    Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
+    Labels are stored in the columns 1 and 2, and the values in the column 3.
+    Diagonal values are included by default.
+
+    ```
+    julia> list
+    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+    0  1  2
+    1  0  3
+    2  3  0
+
+    julia> to_table(list)
+    6x3 Array{Any,2}:
+    "A"  "A"  0
+    "A"  "B"  1
+    "A"  "C"  2
+    "B"  "B"  0
+    "B"  "C"  3
+    "C"  "C"  0
+
+    julia> to_table(list, false)
+    3x3 Array{Any,2}:
+    "A"  "B"  1
+    "A"  "C"  2
+    "B"  "C"  3
+
+    ```
+    """
+    function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
+        N = plm.nelements
+        labels = 1:N
+        table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
+        t = 0
+        @iterateupper plm diagonal begin
+            t += 1
+            table[t, 1] = labels[i]
+            table[t, 2] = labels[j]
+            table[t, 3] = list[k]
+        end
+        table
+    end
+
+    """
+    Creation of a `PairwiseListMatrix` from a `Matrix`.
+    By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
+    Values are taken from the column 3 by default.
+
+    ```
+    julia> data = readcsv("example.csv")
+    3x3 Array{Any,2}:
+    "A"  "B"  10
+    "A"  "C"  20
+    "B"  "C"  30
+
+    julia> from_table(data, Int, false)
+    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+    0  10  20
+    10   0  30
+    20  30   0
+
+    ```
+    """
+    function from_table{T}(table::Matrix,
+        value::Type{T},
+        diagonal::Bool,
+        labelcols::Vector{Int}=[1,2],
+        valuecol::Int=3)
+        PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]),
+        # unique(table[:,labelcols]),
+        diagonal)
+    end
+
+    # write...
+    # ========
+
+    """
+    This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+    If the third positional argument is `true` (default) the diagonal is included in the output.
+    The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
+
+    julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+    1  2  3
+    2  4  5
+    3  5  6
+
+    julia> writedlm("example.txt", PLM, false, delim=' ')
+
+    shell> cat example.txt
+    1 2 2
+    1 3 3
+    2 3 5
+
+    """
+    function Base.writedlm(filename::String,
+        plm::PairwiseListMatrix,
+        diagonal::Bool=true;
+        delim::Char='\t')
+        open(filename, "w") do fh
+            # if length(plm.labels) != 0
+            #    labels = plm.labels
+            #    @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
+            # else
+            @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
+            # end
         end
     end
 
-    mat
-end
+    """
+    This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+    If the third positional argument is `true` (default) the diagonal is included in the output.
 
-zscore(list, mat) = zscore!(list, copy(mat))
+    julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+    1  2  3
+    2  4  5
+    3  5  6
 
-# Tables
-# ======
+    julia> writecsv("example.csv", PLM)
 
-"""
-Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
-Labels are stored in the columns 1 and 2, and the values in the column 3.
-Diagonal values are included by default.
+    shell> cat example.csv
+    1,1,1
+    1,2,2
+    1,3,3
+    2,2,4
+    2,3,5
+    3,3,6
 
-```
-julia> list
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-0  1  2
-1  0  3
-2  3  0
+    julia> writecsv("example.csv", PLM, false)
 
-julia> to_table(list)
-6x3 Array{Any,2}:
-"A"  "A"  0
-"A"  "B"  1
-"A"  "C"  2
-"B"  "B"  0
-"B"  "C"  3
-"C"  "C"  0
+    shell> cat example.csv
+    1,2,2
+    1,3,3
+    2,3,5
 
-julia> to_table(list, false)
-3x3 Array{Any,2}:
-"A"  "B"  1
-"A"  "C"  2
-"B"  "C"  3
-
-```
-"""
-function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
-    N = plm.nelements
-    labels = 1:N
-    table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
-    t = 0
-    @iterateupper plm diagonal begin
-        t += 1
-        table[t, 1] = labels[i]
-        table[t, 2] = labels[j]
-        table[t, 3] = list[k]
+    """
+    function Base.writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true)
+        writedlm(filename, plm, diagonal, delim=',')
     end
-    table
-end
 
-"""
-Creation of a `PairwiseListMatrix` from a `Matrix`.
-By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
-Values are taken from the column 3 by default.
+    # triu! & triu
+    # ============
 
-```
-julia> data = readcsv("example.csv")
-3x3 Array{Any,2}:
-"A"  "B"  10
-"A"  "C"  20
-"B"  "C"  30
-
-julia> from_table(data, Int, false)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-0  10  20
-10   0  30
-20  30   0
-
-```
-"""
-function from_table{T}(table::Matrix,
-                       value::Type{T},
-                       diagonal::Bool,
-                       labelcols::Vector{Int}=[1,2],
-                       valuecol::Int=3)
-    PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]),
-                       # unique(table[:,labelcols]),
-                       diagonal)
-end
-
-# write...
-# ========
-
-"""
-This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-If the third positional argument is `true` (default) the diagonal is included in the output.
-The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
-
-julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-1  2  3
-2  4  5
-3  5  6
-
-julia> writedlm("example.txt", PLM, false, delim=' ')
-
-shell> cat example.txt
-1 2 2
-1 3 3
-2 3 5
-
-"""
-function Base.writedlm(filename::String,
-                  plm::PairwiseListMatrix,
-                  diagonal::Bool=true;
-                  delim::Char='\t')
-    open(filename, "w") do fh
-        # if length(plm.labels) != 0
-        #    labels = plm.labels
-        #    @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
-        # else
-        @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
-        # end
+    function Base.triu!(mat::PairwiseListMatrix)
+        throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
     end
-end
+    Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
+    Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
+    Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 
-"""
-This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-If the third positional argument is `true` (default) the diagonal is included in the output.
-
-julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-1  2  3
-2  4  5
-3  5  6
-
-julia> writecsv("example.csv", PLM)
-
-shell> cat example.csv
-1,1,1
-1,2,2
-1,3,3
-2,2,4
-2,3,5
-3,3,6
-
-julia> writecsv("example.csv", PLM, false)
-
-shell> cat example.csv
-1,2,2
-1,3,3
-2,3,5
-
-"""
-function Base.writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true)
-    writedlm(filename, plm, diagonal, delim=',')
-end
-
-# triu! & triu
-# ============
-
-function Base.triu!(mat::PairwiseListMatrix)
-    throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
-end
-Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
-Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
-Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
-
-# # join
-# # ====
-#
-# """
-# This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
-# There are 4 `kind` of joins:
-# - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
-# - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
-# - `:left` : Only use labels form the first argument.
-# - `:right` : Only use labels form the second argument.
-# `NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
-#
-# ```
-# julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
-# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0  2.0
-# 1.0  0.0  3.0
-# 2.0  3.0  0.0
-#
-# julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
-# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0  2.0
-# 1.0  0.0  3.0
-# 2.0  3.0  0.0
-#
-# julia> join(l, r, kind=:inner)                                    #   b c
-# (
-# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  3.0
-# 3.0  0.0,
-#
-# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0
-# 1.0  0.0)
-#
-# julia> join(l, r, kind=:outer)                                    # a b c d
-# (
-#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-#     0.0    1.0    2.0  NaN
-#     1.0    0.0    3.0  NaN
-#     2.0    3.0    0.0  NaN
-#     NaN    NaN    NaN    NaN,
-#
-#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-#     NaN  NaN    NaN    NaN
-#     NaN    0.0    1.0    2.0
-#     NaN    1.0    0.0    3.0
-#     NaN    2.0    3.0    0.0)
-#
-#     ```
-#     """
-#     function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseListMatrix{L, DL}, right::PairwiseListMatrix{R, DR}; kind::Symbol = :inner ,
-#         missing::Tuple{L,R} = (L(NaN), R(NaN)) )
-#
-#         labels_left  = labels(left)
-#         labels_right = labels(right)
-#
-#         if labels_left == labels_right
-#             return(left, right)
-#         end
-#
-#         if     kind == :inner
-#             out_labels = intersect(labels_left, labels_right)
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = getlabel(left,  li, lj)
-#                     out_R[i,j] = getlabel(right, li, lj)
-#                 end
-#             end
-#             return(out_L, out_R)
-#         elseif kind == :left
-#             out_labels = labels_left
-#             N = length(out_labels)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_r = li in labels_right
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-#                 end
-#             end
-#             return(left, out_R)
-#         elseif kind == :right
-#             out_labels = labels_right
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_l = li in labels_left
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? getlabel(left,  li, lj) : missing[1]
-#                 end
-#             end
-#             return(out_L, right)
-#         elseif kind == :outer
-#             out_labels = union(labels_left, labels_right)
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_l = li in labels_left
-#                 flag_i_r = li in labels_right
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = (flag_i_l && (lj in labels_left))  ? getlabel(left,  li, lj) : missing[1]
-#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-#                 end
-#             end
-#             return(out_L, out_R)
-#         else
-#             throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
-#         end
-#
-#     end
+    # # join
+    # # ====
+    #
+    # """
+    # This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
+    # There are 4 `kind` of joins:
+    # - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
+    # - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
+    # - `:left` : Only use labels form the first argument.
+    # - `:right` : Only use labels form the second argument.
+    # `NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
+    #
+    # ```
+    # julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
+    # 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    # 0.0  1.0  2.0
+    # 1.0  0.0  3.0
+    # 2.0  3.0  0.0
+    #
+    # julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
+    # 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    # 0.0  1.0  2.0
+    # 1.0  0.0  3.0
+    # 2.0  3.0  0.0
+    #
+    # julia> join(l, r, kind=:inner)                                    #   b c
+    # (
+    # 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    # 0.0  3.0
+    # 3.0  0.0,
+    #
+    # 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    # 0.0  1.0
+    # 1.0  0.0)
+    #
+    # julia> join(l, r, kind=:outer)                                    # a b c d
+    # (
+    #     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    #     0.0    1.0    2.0  NaN
+    #     1.0    0.0    3.0  NaN
+    #     2.0    3.0    0.0  NaN
+    #     NaN    NaN    NaN    NaN,
+    #
+    #     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+    #     NaN  NaN    NaN    NaN
+    #     NaN    0.0    1.0    2.0
+    #     NaN    1.0    0.0    3.0
+    #     NaN    2.0    3.0    0.0)
+    #
+    #     ```
+    #     """
+    #     function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseListMatrix{L, DL}, right::PairwiseListMatrix{R, DR}; kind::Symbol = :inner ,
+    #         missing::Tuple{L,R} = (L(NaN), R(NaN)) )
+    #
+    #         labels_left  = labels(left)
+    #         labels_right = labels(right)
+    #
+    #         if labels_left == labels_right
+    #             return(left, right)
+    #         end
+    #
+    #         if     kind == :inner
+    #             out_labels = intersect(labels_left, labels_right)
+    #             N = length(out_labels)
+    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+    #             for i in 1:N
+    #                 li = out_labels[i]
+    #                 for j in i:N
+    #                     lj = out_labels[j]
+    #                     out_L[i,j] = getlabel(left,  li, lj)
+    #                     out_R[i,j] = getlabel(right, li, lj)
+    #                 end
+    #             end
+    #             return(out_L, out_R)
+    #         elseif kind == :left
+    #             out_labels = labels_left
+    #             N = length(out_labels)
+    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+    #             for i in 1:N
+    #                 li = out_labels[i]
+    #                 flag_i_r = li in labels_right
+    #                 for j in i:N
+    #                     lj = out_labels[j]
+    #                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
+    #                 end
+    #             end
+    #             return(left, out_R)
+    #         elseif kind == :right
+    #             out_labels = labels_right
+    #             N = length(out_labels)
+    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+    #             for i in 1:N
+    #                 li = out_labels[i]
+    #                 flag_i_l = li in labels_left
+    #                 for j in i:N
+    #                     lj = out_labels[j]
+    #                     out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? getlabel(left,  li, lj) : missing[1]
+    #                 end
+    #             end
+    #             return(out_L, right)
+    #         elseif kind == :outer
+    #             out_labels = union(labels_left, labels_right)
+    #             N = length(out_labels)
+    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+    #             for i in 1:N
+    #                 li = out_labels[i]
+    #                 flag_i_l = li in labels_left
+    #                 flag_i_r = li in labels_right
+    #                 for j in i:N
+    #                     lj = out_labels[j]
+    #                     out_L[i,j] = (flag_i_l && (lj in labels_left))  ? getlabel(left,  li, lj) : missing[1]
+    #                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
+    #                 end
+    #             end
+    #             return(out_L, out_R)
+    #         else
+    #             throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
+    #         end
+    #
+    #     end
