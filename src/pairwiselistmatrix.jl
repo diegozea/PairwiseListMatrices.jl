@@ -26,7 +26,7 @@ type PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
 end
 
 "Returns `true` if the list has diagonal values."
-@inline hasdiagonal{T,D,VT}(::PairwiseListMatrix{T,D,VT}) = diagonal
+@inline hasdiagonal{T,diagonal,VT}(::PairwiseListMatrix{T,diagonal,VT}) = diagonal
 
 "Retuns the `list` vector."
 @inline getlist(plm::PairwiseListMatrix) = plm.list
@@ -411,19 +411,19 @@ diagonal{T,VT}(lm::PairwiseListMatrix{T, true, VT}) = T[ lm[i,i] for i in 1:lm.n
 # Unary operations (faster than default methods)
 # ==============================================
 
-for F in (:abs, :-)
+for F in (:abs, :-, :sqrt)
     @eval begin
         function Base.$F{T,VT}(lm::PairwiseListMatrix{T,true,VT})
-                list = $F(lm.list)
-                VOUT = typeof(list)
-                diag = convert(VOUT, lm.diag)
-                PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, lm.nelements)
+            list = $F(lm.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, lm.diag)
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, lm.nelements)
         end
         function Base.$F{T,VT}(lm::PairwiseListMatrix{T,false,VT})
             list = $F(lm.list)
             VOUT = typeof(list)
             diag = convert(VOUT, $F(lm.diag))
-            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, lm.nelements)
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, lm.nelements)
         end
     end
 end
@@ -677,7 +677,7 @@ end
 
 function Base.var{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing)
     if mean === nothing
-        varm(list, mean(list))
+        varm(list, Base.mean(list))
     else
         varm(list, mean)
     end
@@ -742,9 +742,14 @@ end
 
 zscore(list, mat) = zscore!(list, copy(mat))
 
-# NamedArrays (labels)
-# ====================
+# labels
+# ------
 
+function get_labels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV})
+    String[ string(i) for i in 1:(plm.nelements) ]
+end
+
+get_labels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = names(nplm)[1]
 
 # Tables
 # ======
@@ -778,9 +783,8 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
+function to_table(plm::PairwiseListMatrix; diagonal::Bool=true, labels=get_labels(plm))
     N = plm.nelements
-    labels = 1:N
     table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
     @iterateupper plm diagonal begin
@@ -790,6 +794,12 @@ function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
         table[t, 3] = list[k]
     end
     table
+end
+
+function to_table{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
+                            diagonal::Bool=true,
+                            labels=get_labels(nplm))
+    to_table(array(nplm), diagonal=diagonal, labels=labels)
 end
 
 """
@@ -813,13 +823,21 @@ julia> from_table(data, Int, false)
 ```
 """
 function from_table{T}(table::Matrix,
-    value::Type{T},
-    diagonal::Bool,
-    labelcols::Vector{Int}=[1,2],
-    valuecol::Int=3)
-    PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]),
-    # unique(table[:,labelcols]),
-    diagonal)
+                       value::Type{T},
+                       diagonal::Bool;
+                       labelcols::Vector{Int}=[1,2],
+                       valuecol::Int=3)
+    plm  = PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), diagonal)
+    NE = plm.nelements
+    nplm = NamedArray(plm)
+    if length(labelcols) != 0
+        labels = String[ string(lab) for lab in unique(table[:,labelcols]) ]
+        NL = length(labels)
+        @assert NL == NE "The number of elements, $NE, must be equal to the number of labels, $NL"
+        setnames!(nplm, labels, 1)
+        setnames!(nplm, labels, 2)
+    end
+    nplm
 end
 
 # write...
@@ -844,18 +862,22 @@ shell> cat example.txt
 2 3 5
 
 """
-function Base.writedlm(filename::String,
-    plm::PairwiseListMatrix,
-    diagonal::Bool=true;
-    delim::Char='\t')
+function Base.writedlm{T,D,TV}(filename::String,
+                               plm::PairwiseListMatrix{T,D,TV};
+                               diagonal::Bool=true,
+                               delim::Char='\t',
+                               labels = get_labels(plm))
     open(filename, "w") do fh
-        # if length(plm.labels) != 0
-        #    labels = plm.labels
-        #    @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
-        # else
-        @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
-        # end
+        @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
     end
+end
+
+function Base.writedlm{T,D,TV,DN}(filename::String,
+                                  nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
+                                  diagonal::Bool=true,
+                                  delim::Char='\t',
+                                  labels=get_labels(nplm))
+    writedlm(filename, array(nplm), diagonal=diagonal, delim=delim, labels=labels)
 end
 
 """
@@ -886,9 +908,21 @@ shell> cat example.csv
 2,3,5
 
 """
-function Base.writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true)
-    writedlm(filename, plm, diagonal, delim=',')
+function Base.writecsv{T,D,TV}(filename::String,
+                               plm::PairwiseListMatrix{T,D,TV};
+                               diagonal::Bool=true,
+                               labels=get_labels(plm))
+    writedlm(filename, plm, diagonal=diagonal, delim=',', labels=labels)
 end
+
+function Base.writecsv{T,D,TV,DN}(filename::String,
+                                  nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
+                                  diagonal::Bool=true,
+                                  labels=get_labels(nplm))
+    writedlm(filename, array(nplm), diagonal=diagonal, delim=',', labels=labels)
+end
+
+
 
 # triu! & triu
 # ============
