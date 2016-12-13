@@ -468,7 +468,7 @@ for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
             list = $F(A.list, B)
             VOUT = typeof(list)
             diag = convert(VOUT, $F(A.diag, B))
-            PairwiseListMatrix{eltype(list), false}(list, diag, copy(A.nelements))
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
 
         Base.$F{T,D,S <: Number,VT}(B::S, A::PairwiseListMatrix{T,D,VT}) = $F(A, B)
@@ -633,11 +633,18 @@ function Base.sum{T,diagonal,VT}(list::Vector{PairwiseListMatrix{T,diagonal,VT}}
     end
 end
 
+# mean
+# ----
+
+function Base.mean{T,diagonal,VT}(list::Vector{PairwiseListMatrix{T,diagonal,VT}})
+    sum(list) ./ length(list)
+end
+
 # std
 # ---
 
 function Base.varm{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}},
-                             mean::PairwiseListMatrix{T,D,VT})
+                           mean::PairwiseListMatrix{T,D,VT})
     samples = length(list)
     if samples < 2
         throw(ErrorException("You need at least 2 samples."))
@@ -670,7 +677,7 @@ end
 
 function Base.var{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing)
     if mean === nothing
-        varm(list, Base.mean(list))
+        varm(list, mean(list))
     else
         varm(list, mean)
     end
@@ -684,7 +691,7 @@ end
 # ======
 
 function zscore!{E <: AbstractFloat,D,VE}(list::Vector{PairwiseListMatrix{E,D,VE}},
-                                         mat::PairwiseListMatrix{E,D,VE})
+                                          mat::PairwiseListMatrix{E,D,VE})
     list_mean = mean(list)
     if size(mat) != size(list_mean)
         throw(ErrorException("PairwiseListMatrices must have the same size"))
@@ -695,325 +702,323 @@ function zscore!{E <: AbstractFloat,D,VE}(list::Vector{PairwiseListMatrix{E,D,VE
     std_list = list_std.list
     mean_list = list_mean.list
 
-    ElementType = eltype(mat_list)
+    @inbounds for i in 1:length(mat_list)
+        s = std_list[i]
+        m = mean_list[i]
+        value = mat_list[i]
+        if (m - value + one(E)) ≉ one(E)
+            if (s + one(E)) ≉ one(E)
+                mat_list[i] = (value - m)/s
+            else
+                mat_list[i] = NaN
+            end
+        else
+            mat_list[i] = zero(E)
+        end
+    end
 
-        @inbounds for i in 1:length(mat_list)
-            s = std_list[i]
-            m = mean_list[i]
-            value = mat_list[i]
-            if (m - value + one(ElementType)) ≉ one(ElementType)
-                if (s + one(ElementType)) ≉ one(ElementType)
-                    mat_list[i] = (value - m)/s
+    if D
+        mat_diag = mat.diag
+        std_diag = list_std.diag
+        mean_diag = list_mean.diag
+        @inbounds for i in 1:length(mat_diag)
+            s = std_diag[i]
+            m = mean_diag[i]
+            value = mat_diag[i]
+            if (m - value + one(E)) ≉ one(E)
+                if (s + one(E)) ≉ one(E)
+                    mat_diag[i] = (value - m)/s
                 else
-                    mat_list[i] = NaN
+                    mat_diag[i] = NaN
                 end
             else
-                mat_list[i] = zero(ElementType)
+                mat_diag[i] = zero(E)
             end
         end
-
-        if D
-            mat_diag = mat.diag
-            std_diag = list_std.diag
-            mean_diag = list_mean.diag
-            @inbounds for i in 1:length(mat_diag)
-                s = std_diag[i]
-                m = mean_diag[i]
-                value = mat_diag[i]
-                if (m - value + one(ElementType)) ≉ one(ElementType)
-                    if (s + one(ElementType)) ≉ one(ElementType)
-                        mat_diag[i] = (value - m)/s
-                    else
-                        mat_diag[i] = NaN
-                    end
-                else
-                    mat_diag[i] = zero(ElementType)
-                end
-            end
-        end
-
-        mat
     end
 
-    zscore(list, mat) = zscore!(list, copy(mat))
+    mat
+end
 
-    # NamedArrays (labels)
-    # ====================
+zscore(list, mat) = zscore!(list, copy(mat))
+
+# NamedArrays (labels)
+# ====================
 
 
-    # Tables
-    # ======
+# Tables
+# ======
 
-    """
-    Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
-    Labels are stored in the columns 1 and 2, and the values in the column 3.
-    Diagonal values are included by default.
+"""
+Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
+Labels are stored in the columns 1 and 2, and the values in the column 3.
+Diagonal values are included by default.
 
-    ```
-    julia> list
-    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-    0  1  2
-    1  0  3
-    2  3  0
+```
+julia> list
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+0  1  2
+1  0  3
+2  3  0
 
-    julia> to_table(list)
-    6x3 Array{Any,2}:
-    "A"  "A"  0
-    "A"  "B"  1
-    "A"  "C"  2
-    "B"  "B"  0
-    "B"  "C"  3
-    "C"  "C"  0
+julia> to_table(list)
+6x3 Array{Any,2}:
+"A"  "A"  0
+"A"  "B"  1
+"A"  "C"  2
+"B"  "B"  0
+"B"  "C"  3
+"C"  "C"  0
 
-    julia> to_table(list, false)
-    3x3 Array{Any,2}:
-    "A"  "B"  1
-    "A"  "C"  2
-    "B"  "C"  3
+julia> to_table(list, false)
+3x3 Array{Any,2}:
+"A"  "B"  1
+"A"  "C"  2
+"B"  "C"  3
 
-    ```
-    """
-    function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
-        N = plm.nelements
-        labels = 1:N
-        table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
-        t = 0
-        @iterateupper plm diagonal begin
-            t += 1
-            table[t, 1] = labels[i]
-            table[t, 2] = labels[j]
-            table[t, 3] = list[k]
-        end
-        table
+```
+"""
+function to_table(plm::PairwiseListMatrix, diagonal::Bool=true)
+    N = plm.nelements
+    labels = 1:N
+    table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
+    t = 0
+    @iterateupper plm diagonal begin
+        t += 1
+        table[t, 1] = labels[i]
+        table[t, 2] = labels[j]
+        table[t, 3] = list[k]
     end
+    table
+end
 
-    """
-    Creation of a `PairwiseListMatrix` from a `Matrix`.
-    By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
-    Values are taken from the column 3 by default.
+"""
+Creation of a `PairwiseListMatrix` from a `Matrix`.
+By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
+Values are taken from the column 3 by default.
 
-    ```
-    julia> data = readcsv("example.csv")
-    3x3 Array{Any,2}:
-    "A"  "B"  10
-    "A"  "C"  20
-    "B"  "C"  30
+```
+julia> data = readcsv("example.csv")
+3x3 Array{Any,2}:
+"A"  "B"  10
+"A"  "C"  20
+"B"  "C"  30
 
-    julia> from_table(data, Int, false)
-    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-    0  10  20
-    10   0  30
-    20  30   0
+julia> from_table(data, Int, false)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
+0  10  20
+10   0  30
+20  30   0
 
-    ```
-    """
-    function from_table{T}(table::Matrix,
-        value::Type{T},
-        diagonal::Bool,
-        labelcols::Vector{Int}=[1,2],
-        valuecol::Int=3)
-        PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]),
-        # unique(table[:,labelcols]),
-        diagonal)
+```
+"""
+function from_table{T}(table::Matrix,
+    value::Type{T},
+    diagonal::Bool,
+    labelcols::Vector{Int}=[1,2],
+    valuecol::Int=3)
+    PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]),
+    # unique(table[:,labelcols]),
+    diagonal)
+end
+
+# write...
+# ========
+
+"""
+This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+If the third positional argument is `true` (default) the diagonal is included in the output.
+The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
+
+julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+1  2  3
+2  4  5
+3  5  6
+
+julia> writedlm("example.txt", PLM, false, delim=' ')
+
+shell> cat example.txt
+1 2 2
+1 3 3
+2 3 5
+
+"""
+function Base.writedlm(filename::String,
+    plm::PairwiseListMatrix,
+    diagonal::Bool=true;
+    delim::Char='\t')
+    open(filename, "w") do fh
+        # if length(plm.labels) != 0
+        #    labels = plm.labels
+        #    @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
+        # else
+        @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
+        # end
     end
+end
 
-    # write...
-    # ========
+"""
+This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
+If the third positional argument is `true` (default) the diagonal is included in the output.
 
-    """
-    This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-    If the third positional argument is `true` (default) the diagonal is included in the output.
-    The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
+julia> PLM  = PairwiseListMatrix(collect(1:6), true)
+3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
+1  2  3
+2  4  5
+3  5  6
 
-    julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-    1  2  3
-    2  4  5
-    3  5  6
+julia> writecsv("example.csv", PLM)
 
-    julia> writedlm("example.txt", PLM, false, delim=' ')
+shell> cat example.csv
+1,1,1
+1,2,2
+1,3,3
+2,2,4
+2,3,5
+3,3,6
 
-    shell> cat example.txt
-    1 2 2
-    1 3 3
-    2 3 5
+julia> writecsv("example.csv", PLM, false)
 
-    """
-    function Base.writedlm(filename::String,
-        plm::PairwiseListMatrix,
-        diagonal::Bool=true;
-        delim::Char='\t')
-        open(filename, "w") do fh
-            # if length(plm.labels) != 0
-            #    labels = plm.labels
-            #    @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
-            # else
-            @iterateupper plm diagonal println(fh, i, delim, j, delim, list[k])
-            # end
-        end
-    end
+shell> cat example.csv
+1,2,2
+1,3,3
+2,3,5
 
-    """
-    This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-    If the third positional argument is `true` (default) the diagonal is included in the output.
+"""
+function Base.writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true)
+    writedlm(filename, plm, diagonal, delim=',')
+end
 
-    julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-    3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-    1  2  3
-    2  4  5
-    3  5  6
+# triu! & triu
+# ============
 
-    julia> writecsv("example.csv", PLM)
+function Base.triu!(mat::PairwiseListMatrix)
+    throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
+end
+Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
+Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
+Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 
-    shell> cat example.csv
-    1,1,1
-    1,2,2
-    1,3,3
-    2,2,4
-    2,3,5
-    3,3,6
-
-    julia> writecsv("example.csv", PLM, false)
-
-    shell> cat example.csv
-    1,2,2
-    1,3,3
-    2,3,5
-
-    """
-    function Base.writecsv(filename::String, plm::PairwiseListMatrix, diagonal::Bool=true)
-        writedlm(filename, plm, diagonal, delim=',')
-    end
-
-    # triu! & triu
-    # ============
-
-    function Base.triu!(mat::PairwiseListMatrix)
-        throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
-    end
-    Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
-    Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
-    Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
-
-    # # join
-    # # ====
-    #
-    # """
-    # This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
-    # There are 4 `kind` of joins:
-    # - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
-    # - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
-    # - `:left` : Only use labels form the first argument.
-    # - `:right` : Only use labels form the second argument.
-    # `NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
-    #
-    # ```
-    # julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
-    # 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    # 0.0  1.0  2.0
-    # 1.0  0.0  3.0
-    # 2.0  3.0  0.0
-    #
-    # julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
-    # 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    # 0.0  1.0  2.0
-    # 1.0  0.0  3.0
-    # 2.0  3.0  0.0
-    #
-    # julia> join(l, r, kind=:inner)                                    #   b c
-    # (
-    # 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    # 0.0  3.0
-    # 3.0  0.0,
-    #
-    # 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    # 0.0  1.0
-    # 1.0  0.0)
-    #
-    # julia> join(l, r, kind=:outer)                                    # a b c d
-    # (
-    #     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    #     0.0    1.0    2.0  NaN
-    #     1.0    0.0    3.0  NaN
-    #     2.0    3.0    0.0  NaN
-    #     NaN    NaN    NaN    NaN,
-    #
-    #     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-    #     NaN  NaN    NaN    NaN
-    #     NaN    0.0    1.0    2.0
-    #     NaN    1.0    0.0    3.0
-    #     NaN    2.0    3.0    0.0)
-    #
-    #     ```
-    #     """
-    #     function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseListMatrix{L, DL}, right::PairwiseListMatrix{R, DR}; kind::Symbol = :inner ,
-    #         missing::Tuple{L,R} = (L(NaN), R(NaN)) )
-    #
-    #         labels_left  = labels(left)
-    #         labels_right = labels(right)
-    #
-    #         if labels_left == labels_right
-    #             return(left, right)
-    #         end
-    #
-    #         if     kind == :inner
-    #             out_labels = intersect(labels_left, labels_right)
-    #             N = length(out_labels)
-    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-    #             for i in 1:N
-    #                 li = out_labels[i]
-    #                 for j in i:N
-    #                     lj = out_labels[j]
-    #                     out_L[i,j] = getlabel(left,  li, lj)
-    #                     out_R[i,j] = getlabel(right, li, lj)
-    #                 end
-    #             end
-    #             return(out_L, out_R)
-    #         elseif kind == :left
-    #             out_labels = labels_left
-    #             N = length(out_labels)
-    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-    #             for i in 1:N
-    #                 li = out_labels[i]
-    #                 flag_i_r = li in labels_right
-    #                 for j in i:N
-    #                     lj = out_labels[j]
-    #                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-    #                 end
-    #             end
-    #             return(left, out_R)
-    #         elseif kind == :right
-    #             out_labels = labels_right
-    #             N = length(out_labels)
-    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-    #             for i in 1:N
-    #                 li = out_labels[i]
-    #                 flag_i_l = li in labels_left
-    #                 for j in i:N
-    #                     lj = out_labels[j]
-    #                     out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? getlabel(left,  li, lj) : missing[1]
-    #                 end
-    #             end
-    #             return(out_L, right)
-    #         elseif kind == :outer
-    #             out_labels = union(labels_left, labels_right)
-    #             N = length(out_labels)
-    #             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-    #             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-    #             for i in 1:N
-    #                 li = out_labels[i]
-    #                 flag_i_l = li in labels_left
-    #                 flag_i_r = li in labels_right
-    #                 for j in i:N
-    #                     lj = out_labels[j]
-    #                     out_L[i,j] = (flag_i_l && (lj in labels_left))  ? getlabel(left,  li, lj) : missing[1]
-    #                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-    #                 end
-    #             end
-    #             return(out_L, out_R)
-    #         else
-    #             throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
-    #         end
-    #
-    #     end
+# # join
+# # ====
+#
+# """
+# This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
+# There are 4 `kind` of joins:
+# - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
+# - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
+# - `:left` : Only use labels form the first argument.
+# - `:right` : Only use labels form the second argument.
+# `NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
+#
+# ```
+# julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
+# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+# 0.0  1.0  2.0
+# 1.0  0.0  3.0
+# 2.0  3.0  0.0
+#
+# julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
+# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+# 0.0  1.0  2.0
+# 1.0  0.0  3.0
+# 2.0  3.0  0.0
+#
+# julia> join(l, r, kind=:inner)                                    #   b c
+# (
+# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+# 0.0  3.0
+# 3.0  0.0,
+#
+# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+# 0.0  1.0
+# 1.0  0.0)
+#
+# julia> join(l, r, kind=:outer)                                    # a b c d
+# (
+#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+#     0.0    1.0    2.0  NaN
+#     1.0    0.0    3.0  NaN
+#     2.0    3.0    0.0  NaN
+#     NaN    NaN    NaN    NaN,
+#
+#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+#     NaN  NaN    NaN    NaN
+#     NaN    0.0    1.0    2.0
+#     NaN    1.0    0.0    3.0
+#     NaN    2.0    3.0    0.0)
+#
+#     ```
+#     """
+#     function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseListMatrix{L, DL}, right::PairwiseListMatrix{R, DR}; kind::Symbol = :inner ,
+#         missing::Tuple{L,R} = (L(NaN), R(NaN)) )
+#
+#         labels_left  = labels(left)
+#         labels_right = labels(right)
+#
+#         if labels_left == labels_right
+#             return(left, right)
+#         end
+#
+#         if     kind == :inner
+#             out_labels = intersect(labels_left, labels_right)
+#             N = length(out_labels)
+#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+#             for i in 1:N
+#                 li = out_labels[i]
+#                 for j in i:N
+#                     lj = out_labels[j]
+#                     out_L[i,j] = getlabel(left,  li, lj)
+#                     out_R[i,j] = getlabel(right, li, lj)
+#                 end
+#             end
+#             return(out_L, out_R)
+#         elseif kind == :left
+#             out_labels = labels_left
+#             N = length(out_labels)
+#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+#             for i in 1:N
+#                 li = out_labels[i]
+#                 flag_i_r = li in labels_right
+#                 for j in i:N
+#                     lj = out_labels[j]
+#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
+#                 end
+#             end
+#             return(left, out_R)
+#         elseif kind == :right
+#             out_labels = labels_right
+#             N = length(out_labels)
+#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+#             for i in 1:N
+#                 li = out_labels[i]
+#                 flag_i_l = li in labels_left
+#                 for j in i:N
+#                     lj = out_labels[j]
+#                     out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? getlabel(left,  li, lj) : missing[1]
+#                 end
+#             end
+#             return(out_L, right)
+#         elseif kind == :outer
+#             out_labels = union(labels_left, labels_right)
+#             N = length(out_labels)
+#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
+#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
+#             for i in 1:N
+#                 li = out_labels[i]
+#                 flag_i_l = li in labels_left
+#                 flag_i_r = li in labels_right
+#                 for j in i:N
+#                     lj = out_labels[j]
+#                     out_L[i,j] = (flag_i_l && (lj in labels_left))  ? getlabel(left,  li, lj) : missing[1]
+#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
+#                 end
+#             end
+#             return(out_L, out_R)
+#         else
+#             throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
+#         end
+#
+#     end
