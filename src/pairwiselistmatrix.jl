@@ -751,6 +751,21 @@ end
 
 get_labels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = names(nplm)[1]
 
+function set_labels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
+                                labels::Vector{String})
+    NE = array(nplm).nelements
+    NL = length(labels)
+    @assert NL == NE "The number of elements, $NE, must be equal to the number of labels, $NL"
+    setnames!(nplm, labels, 1)
+    setnames!(nplm, labels, 2)
+    nplm
+end
+
+function set_labels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
+    nplm = NamedArray(plm)
+    set_labels!(nplm, labels)
+end
+
 # Tables
 # ======
 
@@ -783,7 +798,7 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table(plm::PairwiseListMatrix; diagonal::Bool=true, labels=get_labels(plm))
+function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = get_labels(plm))
     N = plm.nelements
     table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
@@ -797,8 +812,8 @@ function to_table(plm::PairwiseListMatrix; diagonal::Bool=true, labels=get_label
 end
 
 function to_table{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
-                            diagonal::Bool=true,
-                            labels=get_labels(nplm))
+                            diagonal::Bool = true,
+                            labels::Vector{String} = get_labels(nplm))
     to_table(array(nplm), diagonal=diagonal, labels=labels)
 end
 
@@ -825,17 +840,13 @@ julia> from_table(data, Int, false)
 function from_table{T}(table::Matrix,
                        value::Type{T},
                        diagonal::Bool;
-                       labelcols::Vector{Int}=[1,2],
-                       valuecol::Int=3)
+                       labelcols::Vector{Int} = [1,2],
+                       valuecol::Int = 3)
     plm  = PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), diagonal)
-    NE = plm.nelements
     nplm = NamedArray(plm)
     if length(labelcols) != 0
         labels = String[ string(lab) for lab in unique(table[:,labelcols]) ]
-        NL = length(labels)
-        @assert NL == NE "The number of elements, $NE, must be equal to the number of labels, $NL"
-        setnames!(nplm, labels, 1)
-        setnames!(nplm, labels, 2)
+        set_labels!(nplm, labels)
     end
     nplm
 end
@@ -864,9 +875,9 @@ shell> cat example.txt
 """
 function Base.writedlm{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
-                               diagonal::Bool=true,
-                               delim::Char='\t',
-                               labels = get_labels(plm))
+                               diagonal::Bool = true,
+                               delim::Char = '\t',
+                               labels::Vector{String} = get_labels(plm))
     open(filename, "w") do fh
         @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
     end
@@ -874,9 +885,9 @@ end
 
 function Base.writedlm{T,D,TV,DN}(filename::String,
                                   nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
-                                  diagonal::Bool=true,
-                                  delim::Char='\t',
-                                  labels=get_labels(nplm))
+                                  diagonal::Bool = true,
+                                  delim::Char = '\t',
+                                  labels::Vector{String} = get_labels(nplm))
     writedlm(filename, array(nplm), diagonal=diagonal, delim=delim, labels=labels)
 end
 
@@ -910,19 +921,17 @@ shell> cat example.csv
 """
 function Base.writecsv{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
-                               diagonal::Bool=true,
-                               labels=get_labels(plm))
+                               diagonal::Bool = true,
+                               labels::Vector{String} = get_labels(plm))
     writedlm(filename, plm, diagonal=diagonal, delim=',', labels=labels)
 end
 
 function Base.writecsv{T,D,TV,DN}(filename::String,
                                   nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
-                                  diagonal::Bool=true,
-                                  labels=get_labels(nplm))
+                                  diagonal::Bool = true,
+                                  labels::Vector{String} = get_labels(nplm))
     writedlm(filename, array(nplm), diagonal=diagonal, delim=',', labels=labels)
 end
-
-
 
 # triu! & triu
 # ============
@@ -934,125 +943,129 @@ Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
 Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
 Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 
-# # join
-# # ====
-#
-# """
-# This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
-# There are 4 `kind` of joins:
-# - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
-# - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
-# - `:left` : Only use labels form the first argument.
-# - `:right` : Only use labels form the second argument.
-# `NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
-#
-# ```
-# julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
-# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0  2.0
-# 1.0  0.0  3.0
-# 2.0  3.0  0.0
-#
-# julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
-# 3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0  2.0
-# 1.0  0.0  3.0
-# 2.0  3.0  0.0
-#
-# julia> join(l, r, kind=:inner)                                    #   b c
-# (
-# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  3.0
-# 3.0  0.0,
-#
-# 2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-# 0.0  1.0
-# 1.0  0.0)
-#
-# julia> join(l, r, kind=:outer)                                    # a b c d
-# (
-#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-#     0.0    1.0    2.0  NaN
-#     1.0    0.0    3.0  NaN
-#     2.0    3.0    0.0  NaN
-#     NaN    NaN    NaN    NaN,
-#
-#     4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-#     NaN  NaN    NaN    NaN
-#     NaN    0.0    1.0    2.0
-#     NaN    1.0    0.0    3.0
-#     NaN    2.0    3.0    0.0)
-#
-#     ```
-#     """
-#     function join{L <: AbstractFloat, R <: AbstractFloat, DL, DR}(left::PairwiseListMatrix{L, DL}, right::PairwiseListMatrix{R, DR}; kind::Symbol = :inner ,
-#         missing::Tuple{L,R} = (L(NaN), R(NaN)) )
-#
-#         labels_left  = labels(left)
-#         labels_right = labels(right)
-#
-#         if labels_left == labels_right
-#             return(left, right)
-#         end
-#
-#         if     kind == :inner
-#             out_labels = intersect(labels_left, labels_right)
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = getlabel(left,  li, lj)
-#                     out_R[i,j] = getlabel(right, li, lj)
-#                 end
-#             end
-#             return(out_L, out_R)
-#         elseif kind == :left
-#             out_labels = labels_left
-#             N = length(out_labels)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_r = li in labels_right
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-#                 end
-#             end
-#             return(left, out_R)
-#         elseif kind == :right
-#             out_labels = labels_right
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_l = li in labels_left
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? getlabel(left,  li, lj) : missing[1]
-#                 end
-#             end
-#             return(out_L, right)
-#         elseif kind == :outer
-#             out_labels = union(labels_left, labels_right)
-#             N = length(out_labels)
-#             out_L = PairwiseListMatrix(L, N, out_labels, DL)
-#             out_R = PairwiseListMatrix(R, N, out_labels, DR)
-#             for i in 1:N
-#                 li = out_labels[i]
-#                 flag_i_l = li in labels_left
-#                 flag_i_r = li in labels_right
-#                 for j in i:N
-#                     lj = out_labels[j]
-#                     out_L[i,j] = (flag_i_l && (lj in labels_left))  ? getlabel(left,  li, lj) : missing[1]
-#                     out_R[i,j] = (flag_i_r && (lj in labels_right)) ? getlabel(right, li, lj) : missing[2]
-#                 end
-#             end
-#             return(out_L, out_R)
-#         else
-#             throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
-#         end
-#
-#     end
+# join
+# ====
+
+"""
+This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
+There are 4 `kind` of joins:
+- `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
+- `:outer` : Union. Include the labels of the two PairwiseListMatrices.
+- `:left` : Only use labels form the first argument.
+- `:right` : Only use labels form the second argument.
+`NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
+
+```
+julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
+3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+0.0  1.0  2.0
+1.0  0.0  3.0
+2.0  3.0  0.0
+
+julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
+3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+0.0  1.0  2.0
+1.0  0.0  3.0
+2.0  3.0  0.0
+
+julia> join(l, r, kind=:inner)                                    #   b c
+(
+2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+0.0  3.0
+3.0  0.0,
+
+2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+0.0  1.0
+1.0  0.0)
+
+julia> join(l, r, kind=:outer)                                    # a b c d
+(
+4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+0.0    1.0    2.0  NaN
+1.0    0.0    3.0  NaN
+2.0    3.0    0.0  NaN
+NaN    NaN    NaN    NaN,
+
+4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
+NaN  NaN    NaN    NaN
+NaN    0.0    1.0    2.0
+NaN    1.0    0.0    3.0
+NaN    2.0    3.0    0.0)
+
+```
+"""
+function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
+        left::NamedArray{L,2,PairwiseListMatrix{L,DL,VL},NL},
+        right::NamedArray{R,2,PairwiseListMatrix{L,DR,VR},NR};
+        kind::Symbol = :inner,
+        missing::Tuple{L,R} = (L(NaN), R(NaN))
+        )
+
+    labels_left = get_labels(left),
+    labels_right = get_labels(right),
+
+    if labels_left == labels_right
+        return(left, right)
+    end
+
+    if kind == :inner
+        out_labels = intersect(labels_left, labels_right)
+        N = length(out_labels)
+        out_L = PairwiseListMatrix(L, N, out_labels, DL)
+        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        for i in 1:N
+            li = out_labels[i]
+            for j in i:N
+                lj = out_labels[j]
+                out_L[i,j] = left[li, lj]
+                out_R[i,j] = right[li, lj]
+            end
+        end
+        return(set_labels(out_L, out_labels), set_labels(out_R, out_labels))
+    elseif kind == :left
+        out_labels = labels_left
+        N = length(out_labels)
+        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        for i in 1:N
+            li = out_labels[i]
+            flag_i_r = li in labels_right
+            for j in i:N
+                lj = out_labels[j]
+                out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
+            end
+        end
+        return(left, set_labels(out_R, out_labels))
+    elseif kind == :right
+        out_labels = labels_right
+        N = length(out_labels)
+        out_L = PairwiseListMatrix(L, N, out_labels, DL)
+        for i in 1:N
+            li = out_labels[i]
+            flag_i_l = li in labels_left
+            for j in i:N
+                lj = out_labels[j]
+                out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? left[li, lj] : missing[1]
+            end
+        end
+        return(set_labels(out_L, out_labels), right)
+    elseif kind == :outer
+        out_labels = union(labels_left, labels_right)
+        N = length(out_labels)
+        out_L = PairwiseListMatrix(L, N, out_labels, DL)
+        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        for i in 1:N
+            li = out_labels[i]
+            flag_i_l = li in labels_left
+            flag_i_r = li in labels_right
+            for j in i:N
+                lj = out_labels[j]
+                out_L[i,j] = (flag_i_l && (lj in labels_left))  ? left[li, lj] : missing[1]
+                out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
+            end
+        end
+        return(set_labels(out_L , out_labels), set_labels(out_R, out_labels))
+    else
+        throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
+    end
+
+end
