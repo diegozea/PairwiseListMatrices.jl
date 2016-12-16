@@ -159,7 +159,7 @@ function Base.convert{T,F,VT,VF}(::Type{PairwiseListMatrix{T,true,VT}},
             list[k += 1] = mat[i,j]
         end
     end
-    PairwiseListMatrix{T, true}(list, convert(VT,T[]), N)
+    PairwiseListMatrix{T, true, VT}(list, convert(VT,T[]), N)
 end
 
 function Base.convert{T,F,VT,VF}(::Type{PairwiseListMatrix{T, false, VT}},
@@ -457,21 +457,24 @@ end
 
 for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
     @eval begin
-        function Base.$F{T,S <: Number,VT}(A::PairwiseListMatrix{T,true,VT}, B::S)
+        function Base.$F{T,VT}(A::PairwiseListMatrix{T,true,VT}, B::Number)
             list = $F(A.list, B)
             VOUT = typeof(list)
             diag = convert(VOUT, T[])
             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
         end
 
-        function Base.$F{T,S <: Number,VT}(A::PairwiseListMatrix{T, false, VT}, B::S)
+        function Base.$F{T,VT}(A::PairwiseListMatrix{T, false, VT}, B::Number)
             list = $F(A.list, B)
             VOUT = typeof(list)
             diag = convert(VOUT, $F(A.diag, B))
             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
 
-        Base.$F{T,D,S <: Number,VT}(B::S, A::PairwiseListMatrix{T,D,VT}) = $F(A, B)
+        Base.$F{T,D,VT}(B::Number, A::PairwiseListMatrix{T,D,VT}) = $F(A, B)
+
+        # Because previous definitions are ambiguous with:
+        # +(A::AbstractArray{Bool,N<:Any}, x::Bool)
     end
 end
 
@@ -513,7 +516,7 @@ function _sum_kernel!(sum_i, diag, list, N)
     sum_i
 end
 
-function _test_and_set_sum{T}(::Type{T}, region, N)
+function _test_and_setsum{T}(::Type{T}, region, N)
     if region == 1
         sum_i = zeros(T, 1, N)
     elseif region == 2
@@ -526,13 +529,13 @@ end
 
 function Base.sum{T,VT}(lm::PairwiseListMatrix{T,true,VT}, region::Int)
     N = lm.nelements
-    sum_i = _test_and_set_sum(T, region, N)
+    sum_i = _test_and_setsum(T, region, N)
     _sum_kernel!(sum_i, lm.list, N)
 end
 
 function Base.sum{T, VT}(lm::PairwiseListMatrix{T,false,VT}, region::Int)
     N = lm.nelements
-    sum_i = _test_and_set_sum(T, region, N)
+    sum_i = _test_and_setsum(T, region, N)
     _sum_kernel!(sum_i, lm.diag, lm.list, N)
 end
 
@@ -579,7 +582,7 @@ end
 
 function sum_nodiag{T,diagonal,VT}(lm::PairwiseListMatrix{T,diagonal,VT}, region::Int)
     N = lm.nelements
-    sum_i = _test_and_set_sum(T, region, N)
+    sum_i = _test_and_setsum(T, region, N)
     _sum_nodiag_kernel!(sum_i, lm, N)
 end
 
@@ -745,15 +748,15 @@ zscore(list, mat) = zscore!(list, copy(mat))
 # labels
 # ------
 
-function get_labels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV})
+function getlabels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV})
     String[ string(i) for i in 1:(plm.nelements) ]
 end
 
-get_labels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = names(nplm)[1]
+getlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = names(nplm)[1]
 
-function set_labels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
-                                labels::Vector{String})
-    NE = array(nplm).nelements
+function setlabels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
+                               labels::Vector{String})
+    NE = NamedArrays.array(nplm).nelements
     NL = length(labels)
     @assert NL == NE "The number of elements, $NE, must be equal to the number of labels, $NL"
     setnames!(nplm, labels, 1)
@@ -761,9 +764,13 @@ function set_labels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},
     nplm
 end
 
-function set_labels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
+function setlabels!{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
     nplm = NamedArray(plm)
-    set_labels!(nplm, labels)
+    setlabels!(nplm, labels)
+end
+
+function setlabels{T,D,TV,DN}(nplm, labels::Vector{String})
+    setlabels!(copy(nplm), labels)
 end
 
 # Tables
@@ -798,7 +805,7 @@ julia> to_table(list, false)
 
 ```
 """
-function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = get_labels(plm))
+function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = getlabels(plm))
     N = plm.nelements
     table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
@@ -813,8 +820,8 @@ end
 
 function to_table{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                             diagonal::Bool = true,
-                            labels::Vector{String} = get_labels(nplm))
-    to_table(array(nplm), diagonal=diagonal, labels=labels)
+                            labels::Vector{String} = getlabels(nplm))
+    to_table(NamedArrays.array(nplm), diagonal=diagonal, labels=labels)
 end
 
 """
@@ -837,16 +844,15 @@ julia> from_table(data, Int, false)
 
 ```
 """
-function from_table{T}(table::Matrix,
-                       value::Type{T},
-                       diagonal::Bool;
-                       labelcols::Vector{Int} = [1,2],
-                       valuecol::Int = 3)
-    plm  = PairwiseListMatrix(convert(Vector{T}, table[:,valuecol]), diagonal)
+function from_table(table::Matrix,
+                    diagonal::Bool;
+                    labelcols::Vector{Int} = [1,2],
+                    valuecol::Int = 3)
+    plm  = PairwiseListMatrix(table[:,valuecol], diagonal)
     nplm = NamedArray(plm)
-    if length(labelcols) != 0
+    if length(labelcols) == 2
         labels = String[ string(lab) for lab in unique(table[:,labelcols]) ]
-        set_labels!(nplm, labels)
+        setlabels!(nplm, labels)
     end
     nplm
 end
@@ -877,7 +883,7 @@ function Base.writedlm{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
                                diagonal::Bool = true,
                                delim::Char = '\t',
-                               labels::Vector{String} = get_labels(plm))
+                               labels::Vector{String} = getlabels(plm))
     open(filename, "w") do fh
         @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
     end
@@ -887,8 +893,8 @@ function Base.writedlm{T,D,TV,DN}(filename::String,
                                   nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                                   diagonal::Bool = true,
                                   delim::Char = '\t',
-                                  labels::Vector{String} = get_labels(nplm))
-    writedlm(filename, array(nplm), diagonal=diagonal, delim=delim, labels=labels)
+                                  labels::Vector{String} = getlabels(nplm))
+    writedlm(filename, NamedArrays.array(nplm), diagonal=diagonal, delim=delim, labels=labels)
 end
 
 """
@@ -922,15 +928,15 @@ shell> cat example.csv
 function Base.writecsv{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
                                diagonal::Bool = true,
-                               labels::Vector{String} = get_labels(plm))
+                               labels::Vector{String} = getlabels(plm))
     writedlm(filename, plm, diagonal=diagonal, delim=',', labels=labels)
 end
 
 function Base.writecsv{T,D,TV,DN}(filename::String,
                                   nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                                   diagonal::Bool = true,
-                                  labels::Vector{String} = get_labels(nplm))
-    writedlm(filename, array(nplm), diagonal=diagonal, delim=',', labels=labels)
+                                  labels::Vector{String} = getlabels(nplm))
+    writedlm(filename, NamedArrays.array(nplm), diagonal=diagonal, delim=',', labels=labels)
 end
 
 # triu! & triu
@@ -1001,8 +1007,8 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
         missing::Tuple{L,R} = (L(NaN), R(NaN))
         )
 
-    labels_left = get_labels(left),
-    labels_right = get_labels(right),
+    labels_left = getlabels(left),
+    labels_right = getlabels(right),
 
     if labels_left == labels_right
         return(left, right)
@@ -1021,7 +1027,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = right[li, lj]
             end
         end
-        return(set_labels(out_L, out_labels), set_labels(out_R, out_labels))
+        return(setlabels!(out_L, out_labels), setlabels!(out_R, out_labels))
     elseif kind == :left
         out_labels = labels_left
         N = length(out_labels)
@@ -1034,7 +1040,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
             end
         end
-        return(left, set_labels(out_R, out_labels))
+        return(left, setlabels!(out_R, out_labels))
     elseif kind == :right
         out_labels = labels_right
         N = length(out_labels)
@@ -1047,7 +1053,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? left[li, lj] : missing[1]
             end
         end
-        return(set_labels(out_L, out_labels), right)
+        return(setlabels!(out_L, out_labels), right)
     elseif kind == :outer
         out_labels = union(labels_left, labels_right)
         N = length(out_labels)
@@ -1063,7 +1069,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
             end
         end
-        return(set_labels(out_L , out_labels), set_labels(out_R, out_labels))
+        return(setlabels!(out_L , out_labels), setlabels!(out_R, out_labels))
     else
         throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
     end

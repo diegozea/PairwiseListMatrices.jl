@@ -1,611 +1,507 @@
-dataframes_installed = haskey(Pkg.installed(), "DataFrames")
-
-if dataframes_installed
-  using DataFrames
-end
-
 using PairwiseListMatrices
+using DataFrames
 using Base.Test
 
-print("""
+@testset "PairwiseListMatrices" begin
 
-Test PairwiseListMatrices
-=======================
-""")
-
-let list = [1,-2,3],
+    list = [1,-2,3]
     list_diag_triu =  [ 1 -2
-                        0 3 ],
+                        0 3 ]
     list_diag_tril =  [ 1 0
-                       -2 3 ],
+                       -2 3 ]
     list_triu = [ 0 1 -2
                   0 0 3
-                  0 0 0 ],
+                  0 0 0 ]
     list_tril = [ 0 0 0
                   1 0 0
-                 -2 3 0 ],
+                 -2 3 0 ]
     list_diag_sym = [ 1 -2
-                     -2 3 ],
+                     -2 3 ]
     list_sym = [ 0 1 -2
                  1 0 3
                 -2 3 0 ]
 
-  print("""
+    pld_triu = UpperTriangular(PairwiseListMatrix(list, true))
+    pld_tril = LowerTriangular(PairwiseListMatrix(list, true))
+    pl_triu  = UpperTriangular(PairwiseListMatrix(list))
+    pl_tril  = LowerTriangular(PairwiseListMatrix(list))
+    pld_sym  = PairwiseListMatrix(list, true)
+    pl_sym   = PairwiseListMatrix(list)
 
-  Test creations from list
-  ------------------------
-  """)
+    @testset "Creation from list" begin
 
-  pld_triu = UpperTriangular(PairwiseListMatrix(list, true))
-  pld_tril = LowerTriangular(PairwiseListMatrix(list, true))
-  pl_triu  = UpperTriangular(PairwiseListMatrix(list))
-  pl_tril  = LowerTriangular(PairwiseListMatrix(list))
-  pld_sym  = PairwiseListMatrix(list, true)
-  pl_sym   = PairwiseListMatrix(list)
+        @test pld_triu == list_diag_triu
+        @test pld_tril == list_diag_tril
+        @test pl_triu  == list_triu
+        @test pl_tril  == list_tril
+        @test pld_sym  == list_diag_sym
+        @test pl_sym   == list_sym
+    end
 
-  @test pld_triu == list_diag_triu
-  @test pld_tril == list_diag_tril
-  @test pl_triu  == list_triu
-  @test pl_tril  == list_tril
-  @test pld_sym  == list_diag_sym
-  @test pl_sym   == list_sym
+    @testset "Getters" begin
 
-  print("""
+        @test getlist(pld_sym) == pld_sym.list
+        @test getlist(pl_sym)  ==  pl_sym.list
 
-  Getters
-  -------
-  """)
+        @test getdiag(pld_sym) == pld_sym.diag
+        @test getdiag(pl_sym)  ==  pl_sym.diag
+    end
 
-  @test getlist(pld_sym) == pld_sym.list
-  @test getlist(pl_sym)  ==  pl_sym.list
+    @testset "Length" begin
 
-  @test getdiag(pld_sym) == pld_sym.diag
-  @test getdiag(pl_sym)  ==  pl_sym.diag
+        @test lengthlist(2, true)  == lengthlist(pld_sym)
+        @test lengthlist(3, false) == lengthlist(pl_sym)
+    end
 
-  print("""
+    @testset "Convert" begin
 
-  Length of the list
-  """)
+        @test list_diag_sym ==
+                convert(PairwiseListMatrix{Int, true, Vector{Int}},  list_diag_sym)
+        @test list_diag_sym ==
+                convert(PairwiseListMatrix{Int, false, Vector{Int}}, list_diag_sym)
 
-  @test lengthlist(2, true)  == lengthlist(pld_sym)
-  @test lengthlist(3, false) == lengthlist(pl_sym)
+        @test convert(Matrix{Float64}, list_sym) ==
+                convert(PairwiseListMatrix{Float64, true, Vector{Float64}},  list_sym)
+        @test convert(Matrix{Float64}, list_sym) ==
+                convert(PairwiseListMatrix{Float64, false, Vector{Float64}}, list_sym)
 
-  print("""
+        @test convert(Matrix{Int}, pl_sym)  == list_sym
+        @test convert(Matrix{Int}, pld_sym) == list_diag_sym
 
-  Convert
-  -------
-  """)
+        @test convert(PairwiseListMatrix{Int, false, Vector{Int}}, pld_sym) == pld_sym
+        @test convert(PairwiseListMatrix{Int, true, Vector{Int}}, pl_sym)   == pl_sym
+    end
 
-  @test list_diag_sym == convert(PairwiseListMatrix{Int, true},  list_diag_sym)
-  @test list_diag_sym == convert(PairwiseListMatrix{Int, false}, list_diag_sym)
+    @testset "Unary operations" begin
 
-  @test convert(Matrix{Float64}, list_sym)  == convert(PairwiseListMatrix{Float64, true},  list_sym)
-  @test convert(Matrix{Float64}, list_sym)  == convert(PairwiseListMatrix{Float64, false}, list_sym)
+        for f in [ -, abs, x -> sqrt(abs(x))]
+            @test f(pld_triu) == f(list_diag_triu)
+            @test f(pld_tril) == f(list_diag_tril)
+            @test f(pl_triu ) == f(list_triu)
+            @test f(pl_tril ) == f(list_tril)
+            @test f(pld_sym ) == f(list_diag_sym)
+            @test f(pl_sym  ) == f(list_sym)
+        end
+    end
 
-  @test convert(Matrix{Int}, pl_sym)  == list_sym
-  @test convert(Matrix{Int}, pld_sym) == list_diag_sym
+    @testset "Binary operations" begin
 
-  @test convert(PairwiseListMatrix{Int, false}, pld_sym) == pld_sym
-  @test convert(PairwiseListMatrix{Int, true}, pl_sym)   == pl_sym
+        for f in [ -, +, .-, .+, .* ]
+            @test f(pld_triu, pld_triu) == f(list_diag_triu, list_diag_triu)
+            @test f(pld_tril, pld_tril) == f(list_diag_tril, list_diag_tril)
+            @test f(pl_triu , pl_triu ) == f(list_triu,      list_triu     )
+            @test f(pl_tril , pl_tril ) == f(list_tril,      list_tril     )
+            @test f(pld_sym , pld_sym ) == f(list_diag_sym,  list_diag_sym )
+            @test f(pl_sym  , pl_sym  ) == f(list_sym,       list_sym      )
+        end
 
-  print("""
+        @test pld_sym ./ pld_sym == list_diag_sym ./ list_diag_sym
 
-  Test unary operations
-  ---------------------
-  """)
+        # https://github.com/JuliaLang/julia/issues/19615
+        for f in [ .*, ./, / ]
+            @test f(pld_triu, 2) == f(list_diag_triu, 2)
+            @test f(pld_tril, 2) == f(list_diag_tril, 2)
+            @test f(pl_triu , 2) == f(list_triu,      2)
+            @test f(pl_tril , 2) == f(list_tril,      2)
+        end
 
-  @test -pld_triu == -list_diag_triu
-  @test -pld_tril == -list_diag_tril
-  @test -pl_triu  == -list_triu
-  @test -pl_tril  == -list_tril
-  @test -pld_sym  == -list_diag_sym
-  @test -pl_sym   == -list_sym
+        for f in [ -, +, .-, .+, .*, ./, / ]
+            @test f(pld_sym , 2) == f(list_diag_sym,  2)
+            @test f(pl_sym  , 2) == f(list_sym,       2)
+        end
+    end
 
-  @test abs(pld_triu) == abs(list_diag_triu)
-  @test abs(pld_tril) == abs(list_diag_tril)
-  @test abs(pl_triu ) == abs(list_triu)
-  @test abs(pl_tril ) == abs(list_tril)
-  @test abs(pld_sym ) == abs(list_diag_sym)
-  @test abs(pl_sym  ) == abs(list_sym)
+    @testset "Transpose" begin
 
-  print("""
+        @test transpose(pld_triu) == pld_tril == list_diag_triu.'
+        @test transpose(pld_tril) == pld_triu == list_diag_tril.'
+        @test transpose(pl_triu) == pl_tril == list_triu.'
+        @test transpose(pl_tril) == pl_triu == list_tril.'
 
-  Test binary operations
-  ----------------------
-  """)
+        @test ctranspose(pld_triu) == pld_tril == list_diag_triu'
+        @test ctranspose(pld_tril) == pld_triu == list_diag_tril'
+        @test ctranspose(pl_triu) == pl_tril == list_triu'
+        @test ctranspose(pl_tril) == pl_triu == list_tril'
 
-  @test pld_triu - pld_triu == list_diag_triu - list_diag_triu
-  @test pld_tril - pld_tril == list_diag_tril - list_diag_tril
-  @test pl_triu  - pl_triu  == list_triu - list_triu
-  @test pl_tril  - pl_tril  == list_tril - list_tril
-  @test pld_sym  - pld_sym  == list_diag_sym - list_diag_sym
-  @test pl_sym   - pl_sym   == list_sym - list_sym
+        @test transpose(pld_sym) == pld_sym == list_diag_sym.'
+        @test transpose(pl_sym) == pl_sym == list_sym.'
 
-  @test pld_triu + pld_triu == list_diag_triu + list_diag_triu
-  @test pld_tril + pld_tril == list_diag_tril + list_diag_tril
-  @test pl_triu  + pl_triu  == list_triu + list_triu
-  @test pl_tril  + pl_tril  == list_tril + list_tril
-  @test pld_sym  + pld_sym  == list_diag_sym + list_diag_sym
-  @test pl_sym   + pl_sym   == list_sym + list_sym
+        @test ctranspose(pld_sym) == pld_sym == list_diag_sym'
+        @test ctranspose(pl_sym) == pl_sym == list_sym'
 
-  @test pld_triu .* pld_triu == list_diag_triu .* list_diag_triu
-  @test pld_tril .* pld_tril == list_diag_tril .* list_diag_tril
-  @test pl_triu  .* pl_triu  == list_triu .* list_triu
-  @test pl_tril  .* pl_tril  == list_tril .* list_tril
-  @test pld_sym  .* pld_sym  == list_diag_sym .* list_diag_sym
-  @test pl_sym   .* pl_sym   == list_sym .* list_sym
+        @test transpose!(pl_sym) == pl_sym
+        @test ctranspose!(pl_sym) == pl_sym
+    end
 
-  @test pld_sym  .* 2 == list_diag_sym .* 2
-  @test pl_sym   .* 2 == list_sym .* 2
-  @test pld_sym  .+ 2 == list_diag_sym .+ 2
-  @test pl_sym   .+ 2 == list_sym .+ 2
-  @test pld_sym  .- 2 == list_diag_sym .- 2
-  @test pl_sym   .- 2 == list_sym .- 2
-  @test pld_sym  ./ 2 == list_diag_sym ./ 2
-  @test pl_sym   ./ 2 == list_sym ./ 2
-  @test pld_sym  .* 2 == list_diag_sym .* 2
-  @test pl_sym   + 2 == list_sym + 2
-  @test pld_sym  + 2 == list_diag_sym + 2
-  @test pl_sym   - 2 == list_sym - 2
-  @test pld_sym  - 2 == list_diag_sym - 2
-  @test pl_sym   / 2 == list_sym / 2
-  @test pld_sym  / 2 == list_diag_sym / 2
+    @testset "Linear algebra" begin
 
-  print("""
+        @test pld_triu * pld_triu == list_diag_triu * list_diag_triu
+        @test pld_tril * pld_tril == list_diag_tril * list_diag_tril
+        @test pl_triu  * pl_triu  == list_triu      * list_triu
+        @test pl_tril  * pl_tril  == list_tril      * list_tril
+        @test pld_sym  * pld_sym  == list_diag_sym  * list_diag_sym
+        @test pl_sym   * pl_sym   == list_sym       * list_sym
+        @test Symmetric(pl_sym) * Symmetric(pl_sym) == Symmetric(list_sym) * Symmetric(list_sym)
 
-  Transpose
-  ---------
-  """)
+        @test pld_triu / pld_triu == list_diag_triu / list_diag_triu
+        @test pld_tril / pld_tril == list_diag_tril / list_diag_tril
+        @test pld_sym  / pld_sym  == list_diag_sym  / list_diag_sym
+        @test pl_sym   / pl_sym   == list_sym       / list_sym
 
-  @test transpose(pld_triu) == pld_tril == list_diag_triu.'
-  @test transpose(pld_tril) == pld_triu == list_diag_tril.'
-  @test transpose(pl_triu) == pl_tril == list_triu.'
-  @test transpose(pl_tril) == pl_triu == list_tril.'
+        @test svd(pld_triu) == svd(list_diag_triu)
+        @test svd(pld_tril) == svd(list_diag_tril)
+        @test svd(pl_triu ) == svd(list_triu)
+        @test svd(pl_tril ) == svd(list_tril)
+        @test svd(pld_sym ) == svd(list_diag_sym)
+        @test svd(pl_sym  ) == svd(list_sym)
+    end
 
-  @test ctranspose(pld_triu) == pld_tril == list_diag_triu'
-  @test ctranspose(pld_tril) == pld_triu == list_diag_tril'
-  @test ctranspose(pl_triu) == pl_tril == list_triu'
-  @test ctranspose(pl_tril) == pl_triu == list_tril'
+    @testset "Stats" begin
 
-  @test transpose(pld_sym) == pld_sym == list_diag_sym.'
-  @test transpose(pl_sym) == pl_sym == list_sym.'
+        for f in [ mean, std ]
+            @test f(pld_triu) == f(list_diag_triu)
+            @test f(pld_tril) == f(list_diag_tril)
+            @test f(pl_triu ) == f(list_triu)
+            @test f(pl_tril ) == f(list_tril)
+            @test f(pld_sym ) == f(list_diag_sym)
+            @test f(pl_sym  ) == f(list_sym)
 
-  @test ctranspose(pld_sym) == pld_sym == list_diag_sym'
-  @test ctranspose(pl_sym) == pl_sym == list_sym'
+            @test f(pld_sym,1) == f(list_diag_sym, 1)
+            @test f(pl_sym ,1) == f(list_sym, 1)
+            @test f(pld_sym,2) == f(list_diag_sym, 2)
+            @test f(pl_sym ,2) == f(list_sym, 2)
+        end
 
-  @test transpose!(pl_sym) == pl_sym
-  @test ctranspose!(pl_sym) == pl_sym
+        @test cor(pld_sym ) == cor(list_diag_sym)
+        @test cor(pl_sym  ) == cor(list_sym)
+    end
 
-  print("""
+    @testset "triu" begin
 
-  Linear algebra
-  --------------
-  """)
+        @test triu(pld_sym ) == triu(list_diag_sym)
+        @test triu(pl_sym  ) == triu(list_sym)
 
-  @test pld_triu * pld_triu == list_diag_triu * list_diag_triu
-  @test pld_tril * pld_tril == list_diag_tril * list_diag_tril
-  @test pl_triu  * pl_triu  == list_triu      * list_triu
-  @test pl_tril  * pl_tril  == list_tril      * list_tril
-  @test pld_sym  * pld_sym  == list_diag_sym  * list_diag_sym
-  @test pl_sym   * pl_sym   == list_sym       * list_sym
-  @test Symmetric(pl_sym) * Symmetric(pl_sym) == Symmetric(list_sym) * Symmetric(list_sym)
+        @test triu(pld_sym,1) == triu(list_diag_sym, 1)
+        @test triu(pl_sym, 1) == triu(list_sym, 1)
 
-  @test pld_triu / pld_triu == list_diag_triu / list_diag_triu
-  @test pld_tril / pld_tril == list_diag_tril / list_diag_tril
-  @test pld_sym  / pld_sym  == list_diag_sym  / list_diag_sym
-  @test pl_sym   / pl_sym   == list_sym       / list_sym
+        @test_throws ErrorException triu!(pl_sym)
+        @test_throws ErrorException triu!(pl_sym, 1)
+    end
 
-  @test svd(pld_triu) == svd(list_diag_triu)
-  @test svd(pld_tril) == svd(list_diag_tril)
-  @test svd(pl_triu ) == svd(list_triu)
-  @test svd(pl_tril ) == svd(list_tril)
-  @test svd(pld_sym ) == svd(list_diag_sym)
-  @test svd(pl_sym  ) == svd(list_sym)
+    # + and - definitions are ambiguous with:
+    # +(A::AbstractArray{Bool,N<:Any}, x::Bool)
+    #
+    # @testset "Boolean binary op" begin
+    #
+    #     list = PairwiseListMatrix([true, true, true])
+    #
+    #     @test list - true == [ -1  0  0
+    #                                  0 -1  0
+    #                                  0  0 -1 ]
+    #
+    #     @test list + true == [ 1  2  2
+    #                                 2  1  2
+    #                                 2  2  1 ]
+    # end
 
-  print("""
+    @testset "Mean without diagonal"
 
-  Stats
-  -----
-  """)
+        diag_false = PairwiseListMatrix([10,20,30], false)
+        diag_true  = PairwiseListMatrix([0,10,20,0,30,0], true)
 
-  @test mean(pld_triu) == mean(list_diag_triu)
-  @test mean(pld_tril) == mean(list_diag_tril)
-  @test mean(pl_triu ) == mean(list_triu)
-  @test mean(pl_tril ) == mean(list_tril)
-  @test mean(pld_sym ) == mean(list_diag_sym)
-  @test mean(pl_sym  ) == mean(list_sym)
-
-  @test mean(pld_sym,1) == mean(list_diag_sym, 1)
-  @test mean(pl_sym ,1) == mean(list_sym, 1)
-
-  @test mean(pld_sym,2) == mean(list_diag_sym, 2)
-  @test mean(pl_sym ,2) == mean(list_sym, 2)
-
-  @test std(pld_triu) == std(list_diag_triu)
-  @test std(pld_tril) == std(list_diag_tril)
-  @test std(pl_triu ) == std(list_triu)
-  @test std(pl_tril ) == std(list_tril)
-  @test std(pld_sym ) == std(list_diag_sym)
-  @test std(pl_sym  ) == std(list_sym)
-
-  @test std(pld_sym,1) == std(list_diag_sym, 1)
-  @test std(pl_sym, 1) == std(list_sym, 1)
-
-  @test std(pld_sym,2) == std(list_diag_sym, 2)
-  @test std(pl_sym, 2) == std(list_sym, 2)
-
-  @test cor(pld_sym ) == cor(list_diag_sym)
-  @test cor(pl_sym  ) == cor(list_sym)
-
-  print("""
-
-  triu
-  ----
-  """)
-
-  @test triu(pld_sym ) == triu(list_diag_sym)
-  @test triu(pl_sym  ) == triu(list_sym)
-
-  @test triu(pld_sym,1) == triu(list_diag_sym, 1)
-  @test triu(pl_sym, 1) == triu(list_sym, 1)
-
-  @test_throws ErrorException triu!(pl_sym)
-  @test_throws ErrorException triu!(pl_sym, 1)
-
+        for list in [diag_false, diag_true]
+            @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
+            @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
+            @test mean_nodiag(list) == 20.
+        end
+    end
 end
 
-let list = PairwiseListMatrix([true, true, true])
+@testset "Named PairwiseListMatrix" begin
 
-  @test list - true == [ -1  0  0
-                         0 -1  0
-                         0  0 -1 ]
-  @test list + true == [ 1  2  2
-                         2  1  2
-                         2  2  1 ]
+    list =  [1,2,3]
+    labels= ["a", "b", "c"]
+    labels_diag = ["A", "B"]
+
+    list_diag = setlabels!(PairwiseListMatrix(list, true), labels_diag)
+    list = setlabels!(PairwiseListMatrix(list), labels)
+
+    @testset "set and get labels" begin
+
+        @test isa(list_diag, NamedArray)
+        @test isa(list, NamedArray)
+        @test isa(NamedArrays.array(list_diag), PairwiseListMatrix)
+        @test isa(NamedArrays.array(list), PairwiseListMatrix)
+
+        @test_throws AssertionError setlabels!(list_diag, labels)
+        @test_throws AssertionError setlabels!(list, labels_diag)
+
+        @test getlabels(list_diag) == labels_diag
+        @test getlabels(list) == labels
+
+        setlabels!(list, ["A","B","C"])
+        @test getlabels(list) == ["A","B","C"]
+        setlabels!(list, ["a","b","c"])
+    end
+
+    @testset "get/setindex" begin
+
+        for i in 1:2
+            for j in 2:3
+                @test list[labels[i], labels[j]] == list[labels[j], labels[i]]
+            end
+        end
+
+        @test list_diag["A", "B"] == list_diag["B", "A"]
+
+        list_diag["A", "B"] = 20
+        @test list_diag["B", "A"] == 20
+        list_diag["B", "A"] = 2
+        @test list_diag["A", "B"] == 2
+    end
 end
 
-print("""
+@testset "Vector{PairwiseListMatrix}" begin
 
-List with Labels
-----------------
-""")
+    list_samples = [ PairwiseListMatrix(rand(10), true) for i in 1:100 ]
+    list_diag_samples = [ PairwiseListMatrix(rand(6), false) for i in 1:100 ]
+    full_samples = Matrix{Int}[ full(mat) for mat in list_samples ]
+    full_diag_samples = Matrix{Int}[ full(mat) for mat in list_diag_samples ]
 
-let list = [1,2,3], labels=['a', 'b', 'c'], labels_diag = ['A', 'B'],
-    list_diag_triu =  UpperTriangular(PairwiseListMatrix(list, labels_diag, true)),
-    list_diag_tril =  LowerTriangular(PairwiseListMatrix(list, labels_diag, true)),
-    list_triu = UpperTriangular(PairwiseListMatrix(list, labels)),
-    list_tril = LowerTriangular(PairwiseListMatrix(list, labels)),
-    list_diag_sym = PairwiseListMatrix(list, labels_diag, true),
-    list_sym = PairwiseListMatrix(list, labels)
+    for f in [sum, mean, std]
+        @test f(list_samples) == f(full_samples)
+        @test f(list_diag_samples) == f(full_diag_samples)
+    end
 
-  print("""
-  labels(!) & copy
-  """)
+    @test sum(list_samples[1:1]) == list_samples[1]
+    @test sum(list_diag_samples[1:1]) == list_diag_samples[1]
 
-  @test PairwiseListMatrices.labels(list_diag_sym) == labels_diag
-
-  copy_lm = copy(list_sym)
-  labels!(copy_lm, ['A', 'B', 'C'])
-  @test PairwiseListMatrices.labels(copy_lm) == ['A', 'B', 'C']
-
-  @test PairwiseListMatrices.labels(list_sym) == labels
-
-  @test diag(list_diag_sym) == [1, 3]
-  @test diag(list_sym) == [0, 0, 0]
-
-  print("""
-  getlabel & getindex
-  """)
-
-  @test getlabel(list_diag_sym, 'A', 'B') == list_diag_sym[1,2] == 2
-  @test getlabel(list_diag_sym, 'B', 'A') == list_diag_sym[2,1] == 2
-
-  @test getlabel(list_sym, 'a', 'b') == list_sym[1,2] == 1
-  @test getlabel(list_sym, 'b', 'a') == list_sym[2,1] == 1
-
-  print("""
-  setlabel! & setindex!
-  """)
-
-  list_diag_sym[1,2] = 30
-  @test list_diag_sym[1,2] == 30
-  list_diag_sym[2] = 40
-  @test list_diag_sym[2] == 40
-
-  setlabel!(list_diag_sym, 20, 'A', 'B')
-  @test list_diag_sym[1,2] == 20
-  setlabel!(list_diag_sym, 10, 'B', 'A')
-  @test list_diag_sym[2,1] == 10
-
-  setlabel!(list_sym, 20, 'a', 'b')
-  @test list_sym[1,2] == 20
-  setlabel!(list_sym, 10, 'b', 'a')
-  @test list_sym[2,1] == 10
-
-  list_diag_sym[1,2] = 10
-  @test list_diag_sym[2,1] == 10
-
-  list_sym[1,2] = 15
-  @test list_sym[2,1] == 15
-  list_sym[2] = 30
-  @test list_sym[2] == 30
-
-  list_diag_sym[1,2] = 15
-  @test list_diag_sym[2,1] == 15
-  list_diag_sym[2] = 30
-  @test list_diag_sym[2] == 30
-
+    @test_throws ErrorException sum(PairwiseListMatrix{Int, true, Array{Int,1}}[])
+    @test_throws ErrorException sum(PairwiseListMatrix{Int, true, Array{Int,1}}[
+                                        PairwiseListMatrix([1, 1, 1], true),
+                                        PairwiseListMatrix([1, 1, 1, 1, 1, 1], true) ])
+    @test_throws ErrorException std(PairwiseListMatrix{Int, true, Array{Int,1}}[
+                                        PairwiseListMatrix([1, 1, 1], true) ])
 end
 
-
-print("""
-
-Vector{PairwiseListMatrix}
---------------------------
-""")
-
-let list_samples = [ PairwiseListMatrix(Int, 4, false) for i in 1:100 ],
-  list_diag_samples = [ PairwiseListMatrix(Int, 4, true) for i in 1:100 ],
-  full_samples = Matrix{Int}[ full(mat) for mat in list_samples ],
-  full_diag_samples = Matrix{Int}[ full(mat) for mat in list_diag_samples ]
-
-  @test sum(list_samples) == sum(full_samples)
-  @test sum(list_diag_samples) == sum(full_diag_samples)
-
-  @test mean(list_samples) == mean(full_samples)
-  @test mean(list_diag_samples) == mean(full_diag_samples)
-end
-
-@test sum(PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]) ]) == PairwiseListMatrix([1, 1, 1])
-@test sum(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true) ]) == PairwiseListMatrix([1, 1, 1], true)
-
-@test_throws ErrorException sum(PairwiseListMatrix{Int, true}[])
-@test_throws ErrorException sum(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([1, 1, 1, 1, 1, 1], true) ])
-@test_throws ErrorException std(PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true) ])
-
-let list_samples = [ ones(PairwiseListMatrix(Int, 4, false)) for i in 1:100 ],
-  list_diag_samples = [ zeros(PairwiseListMatrix(Int, 4, true)) for i in 1:100 ]
-
-  @test std(list_samples) == std(list_diag_samples)
-end
-
-print("""
-
-Mean without diagonal
----------------------
-""")
-
-let list = PairwiseListMatrix([10,20,30], ["A", "B", "C"])
-
-  @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
-  @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
-  @test mean_nodiag(list) == 20.
-end
-
-let list = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
-
-  @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
-  @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
-  @test mean_nodiag(list) == 20.
-end
-
-print("""
-
-To and from table
------------------
-""")
-
-let table = [ "A" "B" 10
-              "A" "C" 20
-              "B" "C" 30 ],
-  list = PairwiseListMatrix([10,20,30], ["A", "B", "C"]),
-  list_diag = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
-
-  @test to_table(list, false) == table
-  @test from_table(table, Int64, false) == list
-
-  @test to_table(list) == [ "A" "A" 0
-                            "A" "B" 10
-                            "A" "C" 20
-                            "B" "B" 0
-                            "B" "C" 30
-                            "C" "C" 0]
-  @test to_table(list) == to_table(list_diag)
-  @test to_table(list, false) == to_table(list_diag, false)
-end
-
-print("""
-
-./ Int & Float64
-----------------
-""")
-
-let  list = PairwiseListMatrix([.5, .4, .3])
-
-  result =  list ./ 4
-  @test isa(result, PairwiseListMatrix{Float64,false})
-  @test sum(result) == 0.6
-
-  result =  list ./ 4.
-  @test isa(result, PairwiseListMatrix{Float64,false})
-  @test sum(result) == 0.6
-end
-
-let  list = PairwiseListMatrix([.5, .4, .3], true)
-
-  result =  list ./ 4
-  @test isa(result, PairwiseListMatrix{Float64,true})
-  @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4
-
-  result =  list ./ 4.
-  @test isa(result, PairwiseListMatrix{Float64,true})
-  @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
-
-end
-
-print("""
-
-Z score
--------
-""")
-
-let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), PairwiseListMatrix([3, 3, 3]) ],
-  mat = PairwiseListMatrix([2, 2, 2])
-
-  @test std(list) == PairwiseListMatrix([1., 1., 1.])
-  @test mean(list) == mat
-  @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
-
-  @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2], true))
-  @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2]))
-end
-
-let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([3, 3, 3], true) ],
-  mat = PairwiseListMatrix([2, 2, 2], true)
-
-  @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
-  @test mean(list) == mat
-  @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
-
-  @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2]))
-  @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2], true))
-end
-
-print("""
-
-macros
-------
-""")
-
-let PLM = PairwiseListMatrix([1,2,3], false)
-  @iteratelist PLM Base.Test.@test list[k] == k
-end
-
-values   = [1,2,3,4,5,6]
-PLMtrue  = PairwiseListMatrix(values, true)
-PLMfalse = PairwiseListMatrix(values, false)
-full_t   = full(PLMtrue)
-full_f   = full(PLMfalse)
-
-@iteratelist PLMtrue  Base.Test.@test list[k] == Main.values[k]
-@iteratelist PLMfalse Base.Test.@test list[k] == Main.values[k]
-
-@iteratediag PLMtrue  Base.Test.@test false
-@iteratediag PLMfalse Base.Test.@test diag[k] == 0
-
-@iterateupper PLMtrue  true  list[k] = Main.values[k]
-@iterateupper PLMfalse false list[k] = Main.values[k]
-
-@iterateupper PLMtrue  true  list[k] = Main.full_t[i,j]
-@iterateupper PLMtrue  false list[k] = Main.full_t[i,j]
-
-@iterateupper PLMtrue  true  list[k] = Main.full_f[i,j]
-@iterateupper PLMfalse false list[k] = Main.full_f[i,j]
-
-print("""
-
-write...
---------
-""")
-
-let values   = [1,2,3,4,5,6],
-    PLMtrue  = PairwiseListMatrix(values, true),
-    PLMfalse = PairwiseListMatrix(values, false),
-    filename = "test.temp"
-
-  try
-    writecsv(filename, PLMtrue, true)
-    @test all( readcsv(filename) .== to_table(PLMtrue, true) )
-  finally
-    rm(filename)
-  end
-
-  try
-    writecsv(filename, PLMtrue, false)
-    @test all( readcsv(filename) .== to_table(PLMtrue, false) )
-  finally
-    rm(filename)
-  end
-
-  try
-    writecsv(filename, PLMfalse, true)
-    @test all( readcsv(filename) .== to_table(PLMfalse, true) )
-  finally
-    rm(filename)
-  end
-
-  try
-    writecsv(filename, PLMfalse, false)
-    @test all( readcsv(filename) .== to_table(PLMfalse, false) )
-  finally
-    rm(filename)
-  end
-
-end
-
-print("""
-
-join
-----
-""")
-
-let left = PairwiseListMatrix(collect(1.:15.), Char['a','b','c','d','e'], true),
-    right = PairwiseListMatrix(collect(1.:10.), Char['a','e','i','o','u'], false)
-
-  a, b = join(left, right)
-  @test (a, b) == join(left, right, kind=:inner)
-  @test labels(a) == labels(b)
-  @test labels(a) == ['a', 'e']
-  @test size(a) == (2,2)
-  @test size(b) == (2,2)
-
-  a, b = join(left, right, kind=:left)
-  @test labels(a) == labels(b)
-  @test labels(a) == labels(left)
-  @test a == left
-  @test b != right
-
-  a, b = join(left, right, kind=:right)
-  @test labels(a) == labels(b)
-  @test labels(b) == labels(right)
-  @test a != left
-  @test b == right
-
-  a, b = join(left, right, kind=:outer)
-  @test labels(a) == labels(b)
-  @test labels(a) == ['a', 'b', 'c', 'd', 'e', 'i', 'o', 'u']
-  @test size(a) == (8,8)
-  @test size(b) == (8,8)
-  @test a != left
-  @test b != right
-
-end
-
-# #### DataFrames #### #
-
-if dataframes_installed
-  print("""
-
-  # DataFrames
-  # ==========
-  """)
-
-  let values   = [1,2,3,4,5,6],
-    PLMtrue  = PairwiseListMatrix(values, true),
-    PLMfalse = PairwiseListMatrix(values, false)
-
-    df = to_dataframe(PLMtrue)
-    @test PLMtrue == from_dataframe(df, true)
-
-    df = to_dataframe(PLMtrue, false)
-    @test triu(PLMtrue,1) == triu(from_dataframe(df, false),1)
-
-    df = to_dataframe(PLMfalse)
-    @test PLMfalse == from_dataframe(df, true)
-
-    df = to_dataframe(PLMfalse, false)
-    @test PLMfalse == from_dataframe(df, false)
-
-  end
-
-end
+#
+# print("""
+#
+# To and from table
+# -----------------
+# """)
+#
+# let table = [ "A" "B" 10
+#               "A" "C" 20
+#               "B" "C" 30 ],
+#   list = PairwiseListMatrix([10,20,30], ["A", "B", "C"]),
+#   list_diag = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
+#
+#   @test to_table(list, false) == table
+#   @test from_table(table, Int64, false) == list
+#
+#   @test to_table(list) == [ "A" "A" 0
+#                             "A" "B" 10
+#                             "A" "C" 20
+#                             "B" "B" 0
+#                             "B" "C" 30
+#                             "C" "C" 0]
+#   @test to_table(list) == to_table(list_diag)
+#   @test to_table(list, false) == to_table(list_diag, false)
+# end
+#
+# print("""
+#
+# ./ Int & Float64
+# ----------------
+# """)
+#
+# let  list = PairwiseListMatrix([.5, .4, .3])
+#
+#   result =  list ./ 4
+#   @test isa(result, PairwiseListMatrix{Float64,false})
+#   @test sum(result) == 0.6
+#
+#   result =  list ./ 4.
+#   @test isa(result, PairwiseListMatrix{Float64,false})
+#   @test sum(result) == 0.6
+# end
+#
+# let  list = PairwiseListMatrix([.5, .4, .3], true)
+#
+#   result =  list ./ 4
+#   @test isa(result, PairwiseListMatrix{Float64,true})
+#   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4
+#
+#   result =  list ./ 4.
+#   @test isa(result, PairwiseListMatrix{Float64,true})
+#   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
+#
+# end
+#
+# print("""
+#
+# Z score
+# -------
+# """)
+#
+# let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), PairwiseListMatrix([3, 3, 3]) ],
+#   mat = PairwiseListMatrix([2, 2, 2])
+#
+#   @test std(list) == PairwiseListMatrix([1., 1., 1.])
+#   @test mean(list) == mat
+#   @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
+#
+#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2], true))
+#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2]))
+# end
+#
+# let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([3, 3, 3], true) ],
+#   mat = PairwiseListMatrix([2, 2, 2], true)
+#
+#   @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
+#   @test mean(list) == mat
+#   @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
+#
+#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2]))
+#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2], true))
+# end
+#
+# print("""
+#
+# macros
+# ------
+# """)
+#
+# let PLM = PairwiseListMatrix([1,2,3], false)
+#   @iteratelist PLM Base.Test.@test list[k] == k
+# end
+#
+# values   = [1,2,3,4,5,6]
+# PLMtrue  = PairwiseListMatrix(values, true)
+# PLMfalse = PairwiseListMatrix(values, false)
+# full_t   = full(PLMtrue)
+# full_f   = full(PLMfalse)
+#
+# @iteratelist PLMtrue  Base.Test.@test list[k] == Main.values[k]
+# @iteratelist PLMfalse Base.Test.@test list[k] == Main.values[k]
+#
+# @iteratediag PLMtrue  Base.Test.@test false
+# @iteratediag PLMfalse Base.Test.@test diag[k] == 0
+#
+# @iterateupper PLMtrue  true  list[k] = Main.values[k]
+# @iterateupper PLMfalse false list[k] = Main.values[k]
+#
+# @iterateupper PLMtrue  true  list[k] = Main.full_t[i,j]
+# @iterateupper PLMtrue  false list[k] = Main.full_t[i,j]
+#
+# @iterateupper PLMtrue  true  list[k] = Main.full_f[i,j]
+# @iterateupper PLMfalse false list[k] = Main.full_f[i,j]
+#
+# print("""
+#
+# write...
+# --------
+# """)
+#
+# let values   = [1,2,3,4,5,6],
+#     PLMtrue  = PairwiseListMatrix(values, true),
+#     PLMfalse = PairwiseListMatrix(values, false),
+#     filename = "test.temp"
+#
+#   try
+#     writecsv(filename, PLMtrue, true)
+#     @test all( readcsv(filename) .== to_table(PLMtrue, true) )
+#   finally
+#     rm(filename)
+#   end
+#
+#   try
+#     writecsv(filename, PLMtrue, false)
+#     @test all( readcsv(filename) .== to_table(PLMtrue, false) )
+#   finally
+#     rm(filename)
+#   end
+#
+#   try
+#     writecsv(filename, PLMfalse, true)
+#     @test all( readcsv(filename) .== to_table(PLMfalse, true) )
+#   finally
+#     rm(filename)
+#   end
+#
+#   try
+#     writecsv(filename, PLMfalse, false)
+#     @test all( readcsv(filename) .== to_table(PLMfalse, false) )
+#   finally
+#     rm(filename)
+#   end
+#
+# end
+#
+# print("""
+#
+# join
+# ----
+# """)
+#
+# let left = PairwiseListMatrix(collect(1.:15.), Char['a','b','c','d','e'], true),
+#     right = PairwiseListMatrix(collect(1.:10.), Char['a','e','i','o','u'], false)
+#
+#   a, b = join(left, right)
+#   @test (a, b) == join(left, right, kind=:inner)
+#   @test labels(a) == labels(b)
+#   @test labels(a) == ['a', 'e']
+#   @test size(a) == (2,2)
+#   @test size(b) == (2,2)
+#
+#   a, b = join(left, right, kind=:left)
+#   @test labels(a) == labels(b)
+#   @test labels(a) == labels(left)
+#   @test a == left
+#   @test b != right
+#
+#   a, b = join(left, right, kind=:right)
+#   @test labels(a) == labels(b)
+#   @test labels(b) == labels(right)
+#   @test a != left
+#   @test b == right
+#
+#   a, b = join(left, right, kind=:outer)
+#   @test labels(a) == labels(b)
+#   @test labels(a) == ['a', 'b', 'c', 'd', 'e', 'i', 'o', 'u']
+#   @test size(a) == (8,8)
+#   @test size(b) == (8,8)
+#   @test a != left
+#   @test b != right
+#
+# end
+#
+# # #### DataFrames #### #
+#
+# if dataframes_installed
+#   print("""
+#
+#   # DataFrames
+#   # ==========
+#   """)
+#
+#   let values   = [1,2,3,4,5,6],
+#     PLMtrue  = PairwiseListMatrix(values, true),
+#     PLMfalse = PairwiseListMatrix(values, false)
+#
+#     df = to_dataframe(PLMtrue)
+#     @test PLMtrue == from_dataframe(df, true)
+#
+#     df = to_dataframe(PLMtrue, false)
+#     @test triu(PLMtrue,1) == triu(from_dataframe(df, false),1)
+#
+#     df = to_dataframe(PLMfalse)
+#     @test PLMfalse == from_dataframe(df, true)
+#
+#     df = to_dataframe(PLMfalse, false)
+#     @test PLMfalse == from_dataframe(df, false)
+#
+#   end
+#
+# end

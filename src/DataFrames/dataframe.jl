@@ -1,5 +1,3 @@
-using DataFrames
-
 export to_dataframe, from_dataframe
 
 """
@@ -26,18 +24,22 @@ julia> to_dataframe(PLM, false, colname=:score)
 
 ```
 """
-function to_dataframe{T, diagonal}(plm::PairwiseListMatrix{T, diagonal}, diag::Bool=true; colname::Symbol=:value)
-  N = plm.nelements
-  labels = length(plm.labels) != 0 ? plm.labels : IndexedArray(collect(1:N))
-  df = DataFrames.DataFrame([eltype(labels), eltype(labels), T], [:i, :j, colname], diag ? div(N*(N+1),2) : div(N*(N-1),2))
-  t = 0
-  @iterateupper plm diag begin
-    t += 1
-    df[t, :i] = labels[i]
-    df[t, :j] = labels[j]
-    df[t, colname] = list[k]
-  end
-  df
+function to_dataframe{T,D,TV}(plm::PairwiseListMatrix{T,D,TV},
+                              diag::Bool=true;
+                              labels::Vector{String} = labels(plm),
+                              colname::Symbol=:value)
+    N = plm.nelements
+    df = DataFrames.DataFrame([String, String, T],
+                              [:i, :j, colname],
+                              diag ? div(N*(N+1),2) : div(N*(N-1),2))
+    t = 0
+    @iterateupper plm diag begin
+        t += 1
+        df[t, :i] = labels[i]
+        df[t, :j] = labels[j]
+        df[t, colname] = list[k]
+    end
+    df
 end
 
 """
@@ -45,7 +47,15 @@ Creation of a `PairwiseListMatrix` from a `DataFrame`.
 By default the columns with the labels for i (slow) and j (fast) are 1 and 2. Values are taken from the column 3 by default.
 The second argument `diagonal` should be true if the diagonal values are included in the `DataFrame`.
 """
-function from_dataframe(df::DataFrames.DataFrame, diagonal::Bool, labelcols=[1,2], valuecol=3)
-  labs = unique(vcat(df[labelcols[1]],df[labelcols[2]]))
-  PairwiseListMatrix(df[:,valuecol], convert(Vector{eltype(labs)}, labs), diagonal)
+function from_dataframe(df::DataFrames.DataFrame,
+                        diagonal::Bool;
+                        labelcols::Vector{Int} = [1,2],
+                        valuecol::Int = 3)
+    plm = PairwiseListMatrix(df[:, valuecol], diagonal)
+    nplm = NamedArray(plm)
+    if length(labelcols) == 2
+        labels = unique(vcat(df[labelcols[1]], df[labelcols[2]]))
+        setlabels!(nplm, String[ string(lab) for lab in labels ])
+    end
+    nplm
 end

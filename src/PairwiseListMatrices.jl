@@ -2,37 +2,41 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module PairwiseListMatrices
 
-  using NamedArrays
+"Function from MLPlots.jl, written by Tom Breloff."
+function _is_installed(name::String)
+    try
+        Pkg.installed(name) === nothing ? false: true
+    catch
+        false
+    end
+end
 
-  export @iterateupper,
-  @iteratelist,
-  @iteratediag,
+if _is_installed("DataFrames")
+    using DataFrames
+    import DataFrames: join, zscore, zscore!
+end
 
-  PairwiseListMatrix,
-  hasdiagonal,
-  getlist, getdiag,
-  lengthlist, ij2k,
-  sum_nodiag, mean_nodiag,
-  zscore!, zscore,
-  from_table, to_table
+using NamedArrays
 
-  # protovis
+export  @iterateupper,
+        @iteratelist,
+        @iteratediag,
 
-  "Function from MLPlots.jl, written by Tom Breloff."
-  function _is_installed(name::String)
-      try
-          Pkg.installed(name) === nothing ? false: true
-      catch
-          false
-      end
-  end
+        PairwiseListMatrix,
+        hasdiagonal,
+        getlist, getdiag,
+        lengthlist, ij2k,
+        sum_nodiag, mean_nodiag,
+        zscore!, zscore,
+        getlabels,
+        setlabels, setlabels!,
+        from_table, to_table
 
-  include("macros.jl")
-  include("pairwiselistmatrix.jl")
-  # include("protovis.jl")
+include("macros.jl")
+include("pairwiselistmatrix.jl")
 
-  if _is_installed("DataFrames")
-      include(joinpath("DataFrames","dataframe.jl"))
-  end
+if _is_installed("DataFrames")
+    include(joinpath("DataFrames","dataframe.jl"))
+end
 
 end

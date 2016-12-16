@@ -19,12 +19,12 @@ julia> @iteratelist PLM println(list[k])
 ```
 """
 macro iteratelist(plm, exp)
-  quote
-    list = $(esc(plm)).list
-    for k in 1:length(list)
-      $exp
+    quote
+        list = $(esc(plm)).list
+        for k in 1:length(list)
+            $exp
+        end
     end
-  end
 end
 
 """
@@ -51,14 +51,14 @@ julia> PLM
 ```
 """
 macro iteratediag(plm, exp)
-  quote
-    if !hasdiagonal($(esc(plm)))
-      diag = $(esc(plm)).diag
-      for k in 1:length(diag)
-        $(exp)
-      end
+    quote
+        if !hasdiagonal($(esc(plm)))
+            diag = $(esc(plm)).diag
+            for k in 1:length(diag)
+                $(exp)
+            end
+        end
     end
-  end
 end
 
 """
@@ -89,57 +89,57 @@ julia> mat
 ```
 """
 macro iterateupper(plm, use_diag, exp)
-  quote
-    N = $(esc(plm)).nelements
-    if hasdiagonal($(esc(plm)))
-      if $(esc(use_diag))
-        k = 0
-        list = $(esc(plm)).list
-        for i in 1:N
-          for j in i:N
-            k += 1
-            $exp
-          end
-        end
-      else
-        k = 0
-        list = $(esc(plm)).list
-        for i in 1:N
-          for j in i:N
-            k += 1
-            if i != j
-              $exp
-            end
-          end
-        end
-      end
-    else
-      if $(esc(use_diag))
-        k = 0
-        diag = $(esc(plm)).diag
-        list = $(esc(plm)).list
-        for i in 1:N
-          for j in i:N
-            if i != j
-              k += 1
-              $exp
+    quote
+        N = $(esc(plm)).nelements
+        if hasdiagonal($(esc(plm)))
+            if $(esc(use_diag))
+                k = 0
+                list = $(esc(plm)).list
+                for i in 1:N
+                    for j in i:N
+                        k += 1
+                        $exp
+                    end
+                end
             else
-              let list = diag, k = i
-                $exp
-              end
+                k = 0
+                list = $(esc(plm)).list
+                for i in 1:N
+                    for j in i:N
+                        k += 1
+                        if i != j
+                            $exp
+                        end
+                    end
+                end
             end
-          end
+        else
+            if $(esc(use_diag))
+                k = 0
+                diag = $(esc(plm)).diag
+                list = $(esc(plm)).list
+                for i in 1:N
+                    for j in i:N
+                        if i != j
+                            k += 1
+                            $exp
+                        else
+                            let list = diag, k = i
+                                $exp
+                            end
+                        end
+                    end
+                end
+            else
+                k = 0
+                list = $(esc(plm)).list
+                for i in 1:(N-1)
+                    for j in (i+1):N
+                        k += 1
+                        $exp
+                    end
+                end
+            end
         end
-      else
-        k = 0
-        list = $(esc(plm)).list
-        for i in 1:(N-1)
-          for j in (i+1):N
-            k += 1
-            $exp
-          end
-        end
-      end
     end
-  end
 end
