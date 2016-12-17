@@ -1,4 +1,5 @@
 using PairwiseListMatrices
+using NamedArrays
 using DataFrames
 using Base.Test
 
@@ -109,6 +110,21 @@ using Base.Test
             @test f(pld_sym , 2) == f(list_diag_sym,  2)
             @test f(pl_sym  , 2) == f(list_sym,       2)
         end
+
+        @testset "./ with Float64 & Int" begin
+
+            for value in  (4, 4.0)
+                list = PairwiseListMatrix([.5, .4, .3])
+                result =  list ./ value
+                @test isa(result, PairwiseListMatrix{Float64,false,Vector{Float64}})
+                @test sum(result) ≈ 0.6
+
+                list = PairwiseListMatrix([.5, .4, .3], true)
+                result =  list ./ value
+                @test isa(result, PairwiseListMatrix{Float64,true,Vector{Float64}})
+                @test sum(result) ≈ (0.5 + 0.4*2.0 + 0.3)/4
+            end
+        end
     end
 
     @testset "Transpose" begin
@@ -204,7 +220,7 @@ using Base.Test
     #                                 2  2  1 ]
     # end
 
-    @testset "Mean without diagonal"
+    @testset "Mean without diagonal" begin
 
         diag_false = PairwiseListMatrix([10,20,30], false)
         diag_true  = PairwiseListMatrix([0,10,20,0,30,0], true)
@@ -265,10 +281,10 @@ end
 
     list_samples = [ PairwiseListMatrix(rand(10), true) for i in 1:100 ]
     list_diag_samples = [ PairwiseListMatrix(rand(6), false) for i in 1:100 ]
-    full_samples = Matrix{Int}[ full(mat) for mat in list_samples ]
-    full_diag_samples = Matrix{Int}[ full(mat) for mat in list_diag_samples ]
+    full_samples = Matrix{Float64}[ full(mat) for mat in list_samples ]
+    full_diag_samples = Matrix{Float64}[ full(mat) for mat in list_diag_samples ]
 
-    for f in [sum, mean, std]
+    for f in [sum, mean]
         @test f(list_samples) == f(full_samples)
         @test f(list_diag_samples) == f(full_diag_samples)
     end
@@ -282,62 +298,43 @@ end
                                         PairwiseListMatrix([1, 1, 1, 1, 1, 1], true) ])
     @test_throws ErrorException std(PairwiseListMatrix{Int, true, Array{Int,1}}[
                                         PairwiseListMatrix([1, 1, 1], true) ])
+
+    full_samples = reshape(hcat(full_samples...), (4,4,100))
+    full_diag_samples = reshape(hcat(full_diag_samples...), (4,4,100))
+    # @test std(list_samples) ≈ std(full_samples,3)[:,:,1] # It uses n - 1
+    @test std(list_samples) ≈ sqrt(mean(abs2.(full_samples .- mean(full_samples,3)),3))
+    # @test std(list_diag_samples) ≈ std(full_diag_samples,3)[:,:,1] # It uses n - 1
+    @test std(list_diag_samples) ≈ sqrt(mean(abs2.(full_diag_samples .- mean(full_diag_samples,3)),3))
 end
 
-#
-# print("""
-#
-# To and from table
-# -----------------
-# """)
-#
-# let table = [ "A" "B" 10
-#               "A" "C" 20
-#               "B" "C" 30 ],
-#   list = PairwiseListMatrix([10,20,30], ["A", "B", "C"]),
-#   list_diag = PairwiseListMatrix([0,10,20,0,30,0], ["A", "B", "C"], true)
-#
-#   @test to_table(list, false) == table
-#   @test from_table(table, Int64, false) == list
-#
-#   @test to_table(list) == [ "A" "A" 0
-#                             "A" "B" 10
-#                             "A" "C" 20
-#                             "B" "B" 0
-#                             "B" "C" 30
-#                             "C" "C" 0]
-#   @test to_table(list) == to_table(list_diag)
-#   @test to_table(list, false) == to_table(list_diag, false)
-# end
-#
-# print("""
-#
-# ./ Int & Float64
-# ----------------
-# """)
-#
-# let  list = PairwiseListMatrix([.5, .4, .3])
-#
-#   result =  list ./ 4
-#   @test isa(result, PairwiseListMatrix{Float64,false})
-#   @test sum(result) == 0.6
-#
-#   result =  list ./ 4.
-#   @test isa(result, PairwiseListMatrix{Float64,false})
-#   @test sum(result) == 0.6
-# end
-#
-# let  list = PairwiseListMatrix([.5, .4, .3], true)
-#
-#   result =  list ./ 4
-#   @test isa(result, PairwiseListMatrix{Float64,true})
-#   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4
-#
-#   result =  list ./ 4.
-#   @test isa(result, PairwiseListMatrix{Float64,true})
-#   @test_approx_eq sum(result) (0.5 + 0.4*2.0 + 0.3)/4.0
-#
-# end
+@testset "IO" begin
+
+    @testset "to/from table" begin
+
+        table = [ "A" "B" 10
+                  "A" "C" 20
+                  "B" "C" 30 ]
+
+        list = setlabels!(PairwiseListMatrix([10,20,30]), ["A", "B", "C"])
+        list_diag = setlabels!(PairwiseListMatrix([0,10,20,0,30,0], true), ["A", "B", "C"])
+
+        @test to_table(list, diagonal=false) == table
+        @test from_table(table, false, 0) == list
+
+        @test to_table(list) == [ "A" "A" 0
+                                  "A" "B" 10
+                                  "A" "C" 20
+                                  "B" "B" 0
+                                  "B" "C" 30
+                                  "C" "C" 0]
+
+        @test to_table(list) == to_table(list_diag)
+        @test to_table(list, diagonal=false) == to_table(list_diag, diagonal=false)
+    end
+end
+
+
+
 #
 # print("""
 #

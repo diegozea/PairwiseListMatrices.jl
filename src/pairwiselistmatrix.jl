@@ -101,6 +101,19 @@ ij2k(i::Int, j::Int, nelements::Int, diagonal::Bool) = ij2k(i, j, nelements, Val
 # Empties
 # -------
 
+function _diagonal_value{T}(diagonal::Bool, ::Type{T})
+    if !diagonal
+        if method_exists(zero, (T,))
+            return zero(T)
+        else
+            throw(ErrorException(
+            "Please use the last argument to fill the diagonal. It should be of type $T."))
+        end
+    end
+    Array(T,1)[1]
+end
+
+
 """
 An empty `PairwiseListMatrix` can be created for a given `Type` and a number of elements
 `nelements`. The `diagonal` (default to `false`) can be declared as `true` to indicate that
@@ -111,7 +124,7 @@ The `diag` vector can be filled with the optional `diagonalvalue` argument (defa
 function (::Type{PairwiseListMatrix}){T}(::Type{T},
                                         nelements::Int,
                                         diagonal::Bool = false,
-                                        diagonalvalue::T = zero(T))
+                                        diagonalvalue::T = _diagonal_value(diagonal, T))
     if diagonal
         return PairwiseListMatrix{T, true, Vector{T}}(
             Array(T, lengthlist(nelements, Val{true})),
@@ -259,7 +272,7 @@ instead of being on the list. The `diag` vector can be filled with the optional
 """
 function (::Type{PairwiseListMatrix}){T}(list::AbstractVector{T},
                                         diagonal::Bool = false,
-                                        diagonalvalue::T = zero(T))
+                                        diagonalvalue::T = _diagonal_value(diagonal, T))
     VT = typeof(list)
     if diagonal
         nelements = _nelements_with_diagonal(length(list))
@@ -646,16 +659,17 @@ end
 # std
 # ---
 
-function Base.varm{T,D,VT}(list::Vector{PairwiseListMatrix{T,D,VT}},
-                           mean::PairwiseListMatrix{T,D,VT})
+function Base.varm{T,D,VT,M,VM}(list::Vector{PairwiseListMatrix{T,D,VT}},
+                                   mean::PairwiseListMatrix{M,D,VM})
     samples = length(list)
     if samples < 2
         throw(ErrorException("You need at least 2 samples."))
     end
-    out = zeros(list[1])
-    out_list = out.list
     mean_list = mean.list
     N = length(mean_list)
+    OutType = promote_type(T, M)
+    out = fill!(PairwiseListMatrix{OutType,D,Vector{OutType}}(mean.nelements),zero(OutType))
+    out_list = out.list
     @inbounds for sample in list
         sample_list = sample.list
         if length(sample_list) != N
@@ -769,8 +783,8 @@ function setlabels!{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{Stri
     setlabels!(nplm, labels)
 end
 
-function setlabels{T,D,TV,DN}(nplm, labels::Vector{String})
-    setlabels!(copy(nplm), labels)
+function setlabels(x, labels::Vector{String})
+    setlabels!(copy(x), labels)
 end
 
 # Tables
@@ -844,11 +858,13 @@ julia> from_table(data, Int, false)
 
 ```
 """
-function from_table(table::Matrix,
-                    diagonal::Bool;
+function from_table(table::AbstractMatrix,
+                    diagonal::Bool,
+                    diagonalvalue = _diagonal_value(diagonal, eltype(table));
                     labelcols::Vector{Int} = [1,2],
                     valuecol::Int = 3)
-    plm  = PairwiseListMatrix(table[:,valuecol], diagonal)
+    values = table[:,valuecol]
+    plm  = PairwiseListMatrix(values, diagonal, diagonalvalue)
     nplm = NamedArray(plm)
     if length(labelcols) == 2
         labels = String[ string(lab) for lab in unique(table[:,labelcols]) ]
