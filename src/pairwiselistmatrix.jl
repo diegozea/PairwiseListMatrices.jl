@@ -707,8 +707,8 @@ end
 # zscore
 # ======
 
-function zscore!{E <: AbstractFloat,D,VE}(list::Vector{PairwiseListMatrix{E,D,VE}},
-                                          mat::PairwiseListMatrix{E,D,VE})
+function zscore!{L,D,VL,E,VE}(list::Vector{PairwiseListMatrix{L,D,VL}},
+                              mat::PairwiseListMatrix{E,D,VE})
     list_mean = mean(list)
     if size(mat) != size(list_mean)
         throw(ErrorException("PairwiseListMatrices must have the same size"))
@@ -1023,8 +1023,8 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
         missing::Tuple{L,R} = (L(NaN), R(NaN))
         )
 
-    labels_left = getlabels(left),
-    labels_right = getlabels(right),
+    labels_left = getlabels(left)
+    labels_right = getlabels(right)
 
     if labels_left == labels_right
         return(left, right)
@@ -1033,8 +1033,8 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
     if kind == :inner
         out_labels = intersect(labels_left, labels_right)
         N = length(out_labels)
-        out_L = PairwiseListMatrix(L, N, out_labels, DL)
-        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        out_L = PairwiseListMatrix(L, N, DL)
+        out_R = PairwiseListMatrix(R, N, DR)
         for i in 1:N
             li = out_labels[i]
             for j in i:N
@@ -1047,7 +1047,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
     elseif kind == :left
         out_labels = labels_left
         N = length(out_labels)
-        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        out_R = PairwiseListMatrix(R, N, DR)
         for i in 1:N
             li = out_labels[i]
             flag_i_r = li in labels_right
@@ -1060,7 +1060,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
     elseif kind == :right
         out_labels = labels_right
         N = length(out_labels)
-        out_L = PairwiseListMatrix(L, N, out_labels, DL)
+        out_L = PairwiseListMatrix(L, N, DL)
         for i in 1:N
             li = out_labels[i]
             flag_i_l = li in labels_left
@@ -1073,8 +1073,8 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
     elseif kind == :outer
         out_labels = union(labels_left, labels_right)
         N = length(out_labels)
-        out_L = PairwiseListMatrix(L, N, out_labels, DL)
-        out_R = PairwiseListMatrix(R, N, out_labels, DR)
+        out_L = PairwiseListMatrix(L, N, DL)
+        out_R = PairwiseListMatrix(R, N, DR)
         for i in 1:N
             li = out_labels[i]
             flag_i_l = li in labels_left

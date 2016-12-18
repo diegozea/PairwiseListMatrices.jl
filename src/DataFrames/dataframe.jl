@@ -26,7 +26,7 @@ julia> to_dataframe(PLM, false, colname=:score)
 """
 function to_dataframe{T,D,TV}(plm::PairwiseListMatrix{T,D,TV},
                               diag::Bool=true;
-                              labels::Vector{String} = labels(plm),
+                              labels::Vector{String} = getlabels(plm),
                               colname::Symbol=:value)
     N = plm.nelements
     df = DataFrames.DataFrame([String, String, T],

@@ -275,6 +275,41 @@ end
         list_diag["B", "A"] = 2
         @test list_diag["A", "B"] == 2
     end
+
+    @testset "join" begin
+
+        left = setlabels!(PairwiseListMatrix(collect(1.:15.), true),
+            String["a","b","c","d","e"])
+        right = setlabels!(PairwiseListMatrix(collect(1.:10.), false),
+            String["a","e","i","o","u"])
+
+        a, b = join(left, right)
+        @test (a, b) == join(left, right, kind=:inner)
+        @test getlabels(a) == getlabels(b)
+        @test getlabels(a) == ["a", "e"]
+        @test size(a) == (2,2)
+        @test size(b) == (2,2)
+
+        a, b = join(left, right, kind=:left)
+        @test getlabels(a) == getlabels(b)
+        @test getlabels(a) == getlabels(left)
+        @test a == left
+        @test b != right
+
+        a, b = join(left, right, kind=:right)
+        @test getlabels(a) == getlabels(b)
+        @test getlabels(b) == getlabels(right)
+        @test a != left
+        @test b == right
+
+        a, b = join(left, right, kind=:outer)
+        @test getlabels(a) == getlabels(b)
+        @test getlabels(a) == ["a", "b", "c", "d", "e", "i", "o", "u"]
+        @test size(a) == (8,8)
+        @test size(b) == (8,8)
+        @test a != left
+        @test b != right
+    end
 end
 
 @testset "Vector{PairwiseListMatrix}" begin
@@ -305,6 +340,61 @@ end
     @test std(list_samples) ≈ sqrt(mean(abs2.(full_samples .- mean(full_samples,3)),3))
     # @test std(list_diag_samples) ≈ std(full_diag_samples,3)[:,:,1] # It uses n - 1
     @test std(list_diag_samples) ≈ sqrt(mean(abs2.(full_diag_samples .- mean(full_diag_samples,3)),3))
+
+    @testset "Z score" begin
+
+        list = PairwiseListMatrix{Float64, false, Vector{Float64}}[
+            PairwiseListMatrix([1., 1., 1.]),
+            PairwiseListMatrix([3., 3., 3.]) ]
+        mat = PairwiseListMatrix([2., 2., 2.])
+
+        @test std(list) == PairwiseListMatrix([1., 1., 1.])
+        @test mean(list) == mat
+        @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
+
+        @test_throws MethodError zscore(list, PairwiseListMatrix([2.,2.,2.], true))
+        @test_throws ErrorException zscore(list, PairwiseListMatrix([2.,2.,2.,2.,2.,2.]))
+
+        list = PairwiseListMatrix{Float64, true, Vector{Float64}}[
+            PairwiseListMatrix([1., 1., 1.], true),
+            PairwiseListMatrix([3., 3., 3.], true) ]
+        mat = PairwiseListMatrix([2., 2., 2.], true)
+
+        @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
+        @test mean(list) == mat
+        @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
+
+        @test_throws MethodError zscore(list,PairwiseListMatrix([2.], false))
+        @test_throws ErrorException zscore(list,PairwiseListMatrix([2.,2.,2.,2.,2.,2.],true))
+    end
+end
+
+@testset "Macros" begin
+
+    PLM = PairwiseListMatrix([1,2,3], false)
+
+    @iteratelist PLM Base.Test.@test list[k] == k
+
+    list_values = [1,2,3,4,5,6]
+    PLMtrue  = PairwiseListMatrix(list_values, true)
+    PLMfalse = PairwiseListMatrix(list_values, false)
+    full_t   = full(PLMtrue)
+    full_f   = full(PLMfalse)
+
+    @iteratelist PLMtrue  Base.Test.@test list[k] == :($list_values)[k]
+    @iteratelist PLMfalse Base.Test.@test list[k] == :($list_values)[k]
+
+    @iteratediag PLMtrue  Base.Test.@test false
+    @iteratediag PLMfalse Base.Test.@test diag[k] == 0
+
+    @iterateupper PLMtrue  true  list[k] = :($list_values)[k]
+    @iterateupper PLMfalse false list[k] = :($list_values)[k]
+
+    @iterateupper PLMtrue  true  list[k] = :($full_t)[i,j]
+    @iterateupper PLMtrue  false list[k] = :($full_t)[i,j]
+
+    @iterateupper PLMtrue  true  list[k] = :($full_f)[i,j]
+    @iterateupper PLMfalse false list[k] = :($full_f)[i,j]
 end
 
 @testset "IO" begin
@@ -331,174 +421,60 @@ end
         @test to_table(list) == to_table(list_diag)
         @test to_table(list, diagonal=false) == to_table(list_diag, diagonal=false)
     end
+
+    @testset "DataFrames" begin
+
+        values   = [1,2,3,4,5,6]
+        PLMtrue  = PairwiseListMatrix(values, true)
+        PLMfalse = PairwiseListMatrix(values, false)
+
+        df = to_dataframe(PLMtrue)
+        @test PLMtrue == from_dataframe(df, true)
+
+        df = to_dataframe(PLMtrue, false)
+        @test triu(PLMtrue,1) == triu(NamedArrays.array(from_dataframe(df, false)),1)
+
+        df = to_dataframe(PLMfalse)
+        @test PLMfalse == from_dataframe(df, true)
+
+        df = to_dataframe(PLMfalse, false)
+        @test PLMfalse == from_dataframe(df, false)
+    end
+
+    @testset "Write" begin
+
+        values   = [1,2,3,4,5,6]
+        PLMtrue  = PairwiseListMatrix(values, true)
+        PLMfalse = PairwiseListMatrix(values, false)
+        filename = joinpath(tempdir(), "pairwiselistmatrices_test.temp")
+
+        try
+          writecsv(filename, PLMtrue, diagonal=true)
+          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMtrue,diagonal=true))
+        finally
+          rm(filename)
+        end
+
+        try
+          writecsv(filename,PLMtrue,diagonal=false)
+          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMtrue,diagonal=false))
+        finally
+          rm(filename)
+        end
+
+        try
+          writecsv(filename,PLMfalse,diagonal=true)
+          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMfalse,diagonal=true))
+        finally
+          rm(filename)
+        end
+
+        try
+          writecsv(filename,PLMfalse,diagonal=false)
+          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMfalse,diagonal=false))
+        finally
+          rm(filename)
+        end
+
+    end
 end
-
-
-
-#
-# print("""
-#
-# Z score
-# -------
-# """)
-#
-# let list = PairwiseListMatrix{Int, false}[ PairwiseListMatrix([1, 1, 1]), PairwiseListMatrix([3, 3, 3]) ],
-#   mat = PairwiseListMatrix([2, 2, 2])
-#
-#   @test std(list) == PairwiseListMatrix([1., 1., 1.])
-#   @test mean(list) == mat
-#   @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
-#
-#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2], true))
-#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2]))
-# end
-#
-# let list = PairwiseListMatrix{Int, true}[ PairwiseListMatrix([1, 1, 1], true), PairwiseListMatrix([3, 3, 3], true) ],
-#   mat = PairwiseListMatrix([2, 2, 2], true)
-#
-#   @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
-#   @test mean(list) == mat
-#   @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
-#
-#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2]))
-#   @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2, 2, 2, 2, 2, 2], true))
-# end
-#
-# print("""
-#
-# macros
-# ------
-# """)
-#
-# let PLM = PairwiseListMatrix([1,2,3], false)
-#   @iteratelist PLM Base.Test.@test list[k] == k
-# end
-#
-# values   = [1,2,3,4,5,6]
-# PLMtrue  = PairwiseListMatrix(values, true)
-# PLMfalse = PairwiseListMatrix(values, false)
-# full_t   = full(PLMtrue)
-# full_f   = full(PLMfalse)
-#
-# @iteratelist PLMtrue  Base.Test.@test list[k] == Main.values[k]
-# @iteratelist PLMfalse Base.Test.@test list[k] == Main.values[k]
-#
-# @iteratediag PLMtrue  Base.Test.@test false
-# @iteratediag PLMfalse Base.Test.@test diag[k] == 0
-#
-# @iterateupper PLMtrue  true  list[k] = Main.values[k]
-# @iterateupper PLMfalse false list[k] = Main.values[k]
-#
-# @iterateupper PLMtrue  true  list[k] = Main.full_t[i,j]
-# @iterateupper PLMtrue  false list[k] = Main.full_t[i,j]
-#
-# @iterateupper PLMtrue  true  list[k] = Main.full_f[i,j]
-# @iterateupper PLMfalse false list[k] = Main.full_f[i,j]
-#
-# print("""
-#
-# write...
-# --------
-# """)
-#
-# let values   = [1,2,3,4,5,6],
-#     PLMtrue  = PairwiseListMatrix(values, true),
-#     PLMfalse = PairwiseListMatrix(values, false),
-#     filename = "test.temp"
-#
-#   try
-#     writecsv(filename, PLMtrue, true)
-#     @test all( readcsv(filename) .== to_table(PLMtrue, true) )
-#   finally
-#     rm(filename)
-#   end
-#
-#   try
-#     writecsv(filename, PLMtrue, false)
-#     @test all( readcsv(filename) .== to_table(PLMtrue, false) )
-#   finally
-#     rm(filename)
-#   end
-#
-#   try
-#     writecsv(filename, PLMfalse, true)
-#     @test all( readcsv(filename) .== to_table(PLMfalse, true) )
-#   finally
-#     rm(filename)
-#   end
-#
-#   try
-#     writecsv(filename, PLMfalse, false)
-#     @test all( readcsv(filename) .== to_table(PLMfalse, false) )
-#   finally
-#     rm(filename)
-#   end
-#
-# end
-#
-# print("""
-#
-# join
-# ----
-# """)
-#
-# let left = PairwiseListMatrix(collect(1.:15.), Char['a','b','c','d','e'], true),
-#     right = PairwiseListMatrix(collect(1.:10.), Char['a','e','i','o','u'], false)
-#
-#   a, b = join(left, right)
-#   @test (a, b) == join(left, right, kind=:inner)
-#   @test labels(a) == labels(b)
-#   @test labels(a) == ['a', 'e']
-#   @test size(a) == (2,2)
-#   @test size(b) == (2,2)
-#
-#   a, b = join(left, right, kind=:left)
-#   @test labels(a) == labels(b)
-#   @test labels(a) == labels(left)
-#   @test a == left
-#   @test b != right
-#
-#   a, b = join(left, right, kind=:right)
-#   @test labels(a) == labels(b)
-#   @test labels(b) == labels(right)
-#   @test a != left
-#   @test b == right
-#
-#   a, b = join(left, right, kind=:outer)
-#   @test labels(a) == labels(b)
-#   @test labels(a) == ['a', 'b', 'c', 'd', 'e', 'i', 'o', 'u']
-#   @test size(a) == (8,8)
-#   @test size(b) == (8,8)
-#   @test a != left
-#   @test b != right
-#
-# end
-#
-# # #### DataFrames #### #
-#
-# if dataframes_installed
-#   print("""
-#
-#   # DataFrames
-#   # ==========
-#   """)
-#
-#   let values   = [1,2,3,4,5,6],
-#     PLMtrue  = PairwiseListMatrix(values, true),
-#     PLMfalse = PairwiseListMatrix(values, false)
-#
-#     df = to_dataframe(PLMtrue)
-#     @test PLMtrue == from_dataframe(df, true)
-#
-#     df = to_dataframe(PLMtrue, false)
-#     @test triu(PLMtrue,1) == triu(from_dataframe(df, false),1)
-#
-#     df = to_dataframe(PLMfalse)
-#     @test PLMfalse == from_dataframe(df, true)
-#
-#     df = to_dataframe(PLMfalse, false)
-#     @test PLMfalse == from_dataframe(df, false)
-#
-#   end
-#
-# end
