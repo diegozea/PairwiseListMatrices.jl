@@ -27,6 +27,7 @@ end
 
 "Returns `true` if the list has diagonal values."
 @inline hasdiagonal{T,diagonal,VT}(::PairwiseListMatrix{T,diagonal,VT}) = diagonal
+@inline hasdiagonal{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = D
 
 "Retuns the `list` vector."
 @inline getlist(plm::PairwiseListMatrix) = plm.list
@@ -759,6 +760,9 @@ end
 
 zscore(list, mat) = zscore!(list, copy(mat))
 
+# NamedArrays
+# ===========
+
 # labels
 # ------
 
@@ -778,13 +782,25 @@ function setlabels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},D
     nplm
 end
 
-function setlabels!{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
+function setlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
+                              labels::Vector{String})
+    setlabels!(copy(x), labels)
+end
+
+function setlabels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
     nplm = NamedArray(plm)
     setlabels!(nplm, labels)
 end
 
-function setlabels(x, labels::Vector{String})
-    setlabels!(copy(x), labels)
+# Delegate to PairwiseListMatrix
+# ------------------------------
+
+for F in [:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag]
+    @eval begin
+        function $F{T,D,TV,DN}(m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
+            $F(NamedArrays.array(m))
+        end
+    end
 end
 
 # Tables
@@ -1043,7 +1059,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = right[li, lj]
             end
         end
-        return(setlabels!(out_L, out_labels), setlabels!(out_R, out_labels))
+        return(setlabels(out_L, out_labels), setlabels(out_R, out_labels))
     elseif kind == :left
         out_labels = labels_left
         N = length(out_labels)
@@ -1056,7 +1072,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
             end
         end
-        return(left, setlabels!(out_R, out_labels))
+        return(left, setlabels(out_R, out_labels))
     elseif kind == :right
         out_labels = labels_right
         N = length(out_labels)
@@ -1069,7 +1085,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_L[i,j] = (flag_i_l  && (lj in labels_left)) ? left[li, lj] : missing[1]
             end
         end
-        return(setlabels!(out_L, out_labels), right)
+        return(setlabels(out_L, out_labels), right)
     elseif kind == :outer
         out_labels = union(labels_left, labels_right)
         N = length(out_labels)
@@ -1085,7 +1101,7 @@ function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
                 out_R[i,j] = (flag_i_r && (lj in labels_right)) ? right[li, lj] : missing[2]
             end
         end
-        return(setlabels!(out_L , out_labels), setlabels!(out_R, out_labels))
+        return(setlabels(out_L , out_labels), setlabels(out_R, out_labels))
     else
         throw(ArgumentError("Unknown kind of join requested: use :inner, :left, :right or :outer"))
     end

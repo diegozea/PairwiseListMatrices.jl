@@ -239,8 +239,8 @@ end
     labels= ["a", "b", "c"]
     labels_diag = ["A", "B"]
 
-    list_diag = setlabels!(PairwiseListMatrix(list, true), labels_diag)
-    list = setlabels!(PairwiseListMatrix(list), labels)
+    list_diag = setlabels(PairwiseListMatrix(list, true), labels_diag)
+    list = setlabels(PairwiseListMatrix(list), labels)
 
     @testset "set and get labels" begin
 
@@ -278,9 +278,9 @@ end
 
     @testset "join" begin
 
-        left = setlabels!(PairwiseListMatrix(collect(1.:15.), true),
+        left = setlabels(PairwiseListMatrix(collect(1.:15.), true),
             String["a","b","c","d","e"])
-        right = setlabels!(PairwiseListMatrix(collect(1.:10.), false),
+        right = setlabels(PairwiseListMatrix(collect(1.:10.), false),
             String["a","e","i","o","u"])
 
         a, b = join(left, right)
@@ -405,8 +405,8 @@ end
                   "A" "C" 20
                   "B" "C" 30 ]
 
-        list = setlabels!(PairwiseListMatrix([10,20,30]), ["A", "B", "C"])
-        list_diag = setlabels!(PairwiseListMatrix([0,10,20,0,30,0], true), ["A", "B", "C"])
+        list = setlabels(PairwiseListMatrix([10,20,30]), ["A", "B", "C"])
+        list_diag = setlabels(PairwiseListMatrix([0,10,20,0,30,0], true), ["A", "B", "C"])
 
         @test to_table(list, diagonal=false) == table
         @test from_table(table, false, 0) == list
