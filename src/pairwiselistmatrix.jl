@@ -442,6 +442,37 @@ for F in (:abs, :-, :sqrt)
     end
 end
 
+for F in (:map, :broadcast)
+    @eval begin
+        function Base.$F{T,VT}(f, plm::PairwiseListMatrix{T,true,VT})
+            list = $F(f, plm.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, plm.diag)
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, plm.nelements)
+        end
+        function Base.$F{T,VT}(f, plm::PairwiseListMatrix{T,false,VT})
+            list = $F(f, plm.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(f, plm.diag))
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, plm.nelements)
+        end
+    end
+end
+
+for F in (:map!, :broadcast!)
+    @eval begin
+        function Base.$F{T,VT}(f, plm::PairwiseListMatrix{T,true,VT})
+            $F(f, plm.list)
+            plm
+        end
+        function Base.$F{T,VT}(f, plm::PairwiseListMatrix{T,false,VT})
+            $F(f, plm.list)
+            $F(f, plm.diag)
+            plm
+        end
+    end
+end
+
 Base.svd(m::PairwiseListMatrix) = svd(full(m))
 
 # Binary operations (faster than default methods)
@@ -795,10 +826,19 @@ end
 # Delegate to PairwiseListMatrix
 # ------------------------------
 
-for F in [:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag]
+for F in (:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag)
     @eval begin
         function $F{T,D,TV,DN}(m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
             $F(NamedArrays.array(m))
+        end
+    end
+end
+
+# Keep names
+for F in (:map, :map!, :broadcast, :broadcast!)
+    @eval begin
+        function Base.$F{T,D,TV,DN}(f, m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
+            NamedArray(($F)(f, NamedArrays.array(m)), m.dicts, m.dimnames)
         end
     end
 end
