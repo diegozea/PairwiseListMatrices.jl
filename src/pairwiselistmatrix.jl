@@ -815,7 +815,7 @@ end
 
 function setlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
                               labels::Vector{String})
-    setlabels!(copy(x), labels)
+    setlabels!(copy(nplm), labels)
 end
 
 function setlabels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV}, labels::Vector{String})
