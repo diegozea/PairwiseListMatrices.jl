@@ -522,14 +522,14 @@ for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
             list = $F(A, B.list)
             VOUT = typeof(list)
             diag = convert(VOUT, T[])
-            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(B.nelements))
         end
 
         function Base.$F{T,VT}(A::Number, B::PairwiseListMatrix{T, false, VT})
             list = $F(A, B.list)
             VOUT = typeof(list)
             diag = convert(VOUT, $F(A, B.diag))
-            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(B.nelements))
         end
 
         # Because previous definitions are ambiguous with:
