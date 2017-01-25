@@ -516,7 +516,21 @@ for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
 
-        Base.$F{T,D,VT}(B::Number, A::PairwiseListMatrix{T,D,VT}) = $F(A, B)
+        # Several functions are not commutative: i.e. ./
+
+        function Base.$F{T,VT}(A::Number, B::PairwiseListMatrix{T,true,VT})
+            list = $F(A, B.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, T[])
+            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
+        end
+
+        function Base.$F{T,VT}(A::Number, B::PairwiseListMatrix{T, false, VT})
+            list = $F(A, B.list)
+            VOUT = typeof(list)
+            diag = convert(VOUT, $F(A, B.diag))
+            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
+        end
 
         # Because previous definitions are ambiguous with:
         # +(A::AbstractArray{Bool,N<:Any}, x::Bool)
