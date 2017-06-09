@@ -90,11 +90,11 @@ julia> mat
 """
 macro iterateupper(plm, use_diag, exp)
     quote
-        N = $(esc(plm)).nelements
-        if hasdiagonal($(esc(plm)))
-            if $(esc(use_diag))
+        N = $plm.nelements
+        if hasdiagonal($plm)
+            if $use_diag
                 k = 0
-                list = $(esc(plm)).list
+                list = $plm.list
                 for i in 1:N
                     for j in i:N
                         k += 1
@@ -103,7 +103,7 @@ macro iterateupper(plm, use_diag, exp)
                 end
             else
                 k = 0
-                list = $(esc(plm)).list
+                list = $plm.list
                 for i in 1:N
                     for j in i:N
                         k += 1
@@ -114,10 +114,10 @@ macro iterateupper(plm, use_diag, exp)
                 end
             end
         else
-            if $(esc(use_diag))
+            if $use_diag
                 k = 0
-                diag = $(esc(plm)).diag
-                list = $(esc(plm)).list
+                diag = $plm.diag
+                list = $plm.list
                 for i in 1:N
                     for j in i:N
                         if i != j
@@ -132,7 +132,7 @@ macro iterateupper(plm, use_diag, exp)
                 end
             else
                 k = 0
-                list = $(esc(plm)).list
+                list = $plm.list
                 for i in 1:(N-1)
                     for j in (i+1):N
                         k += 1
@@ -141,5 +141,5 @@ macro iterateupper(plm, use_diag, exp)
                 end
             end
         end
-    end
+    end |> esc
 end
