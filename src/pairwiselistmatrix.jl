@@ -819,7 +819,7 @@ getlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = name
 
 function setlabels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
                                labels::Vector{String})
-    NE = NamedArrays.array(nplm).nelements
+    NE = nplm.array.nelements
     NL = length(labels)
     @assert NL == NE "The number of elements, $NE, must be equal to the number of labels, $NL"
     setnames!(nplm, labels, 1)
@@ -843,7 +843,7 @@ end
 for F in (:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag)
     @eval begin
         function $F{T,D,TV,DN}(m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
-            $F(NamedArrays.array(m))
+            $F(m.array)
         end
     end
 end
@@ -852,7 +852,7 @@ end
 for F in (:map, :map!, :broadcast, :broadcast!)
     @eval begin
         function Base.$F{T,D,TV,DN}(f, m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
-            NamedArray(($F)(f, NamedArrays.array(m)), m.dicts, m.dimnames)
+            NamedArray(($F)(f, m.array), m.dicts, m.dimnames)
         end
     end
 end
@@ -905,7 +905,7 @@ end
 function to_table{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                             diagonal::Bool = true,
                             labels::Vector{String} = getlabels(nplm))
-    to_table(NamedArrays.array(nplm), diagonal=diagonal, labels=labels)
+    to_table(nplm.array, diagonal=diagonal, labels=labels)
 end
 
 """
@@ -980,7 +980,7 @@ function Base.writedlm{T,D,TV,DN}(filename::String,
                                   diagonal::Bool = true,
                                   delim::Char = '\t',
                                   labels::Vector{String} = getlabels(nplm))
-    writedlm(filename, NamedArrays.array(nplm), diagonal=diagonal, delim=delim, labels=labels)
+    writedlm(filename, nplm.array, diagonal=diagonal, delim=delim, labels=labels)
 end
 
 """
@@ -1022,7 +1022,7 @@ function Base.writecsv{T,D,TV,DN}(filename::String,
                                   nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                                   diagonal::Bool = true,
                                   labels::Vector{String} = getlabels(nplm))
-    writedlm(filename, NamedArrays.array(nplm), diagonal=diagonal, delim=',', labels=labels)
+    writedlm(filename, nplm.array, diagonal=diagonal, delim=',', labels=labels)
 end
 
 # triu! & triu

@@ -246,8 +246,8 @@ end
 
         @test isa(list_diag, NamedArray)
         @test isa(list, NamedArray)
-        @test isa(NamedArrays.array(list_diag), PairwiseListMatrix)
-        @test isa(NamedArrays.array(list), PairwiseListMatrix)
+        @test isa(list_diag.array, PairwiseListMatrix)
+        @test isa(list.array, PairwiseListMatrix)
 
         @test_throws AssertionError setlabels!(list_diag, labels)
         @test_throws AssertionError setlabels!(list, labels_diag)
@@ -432,7 +432,7 @@ end
         @test PLMtrue == from_dataframe(df, true)
 
         df = to_dataframe(PLMtrue, false)
-        @test triu(PLMtrue,1) == triu(NamedArrays.array(from_dataframe(df, false)),1)
+        @test triu(PLMtrue,1) == triu(from_dataframe(df, false).array,1)
 
         df = to_dataframe(PLMfalse)
         @test PLMfalse == from_dataframe(df, true)
