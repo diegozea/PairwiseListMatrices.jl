@@ -17,6 +17,7 @@ if _is_installed("DataFrames")
 end
 
 using NamedArrays
+using RecipesBase
 
 export  @iterateupper,
         @iteratelist,
@@ -34,6 +35,7 @@ export  @iterateupper,
 
 include("macros.jl")
 include("pairwiselistmatrix.jl")
+include("plotrecipes.jl")
 
 if _is_installed("DataFrames")
     include(joinpath("DataFrames","dataframe.jl"))
