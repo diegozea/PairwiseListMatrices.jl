@@ -1,5 +1,19 @@
 ## PairwiseListMatrices.jl Release Notes
 
+### Changes from v0.4 to v0.5
+
+* It has better support for Julia 0.5, e.g. faster `map` and `broadcast`.  
+
+* The `label` field of `PairwiseListMatrix` is eliminated, `NamedArrays` are used instead
+for storing element names.  
+
+* `PairwiseListMatrix` now takes the type of the list vector as type parameter. This gives
+better support for different vector types e.g. `BitArray`.   
+
+* `RecipesBase` are used for `plot` the matrices `using Plots`.  
+
+* It solves some bugs.  
+
 ### Changes from v0.3 to v0.4
 
 PairwiseListMatrices v0.4 requires Julia v0.5.
