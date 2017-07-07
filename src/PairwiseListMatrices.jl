@@ -26,12 +26,14 @@ export  @iterateupper,
         PairwiseListMatrix,
         hasdiagonal,
         getlist, getdiag,
+        diagonal,
         lengthlist, ij2k,
         sum_nodiag, mean_nodiag,
         zscore!, zscore,
         getlabels,
         setlabels, setlabels!,
-        from_table, to_table
+        from_table, to_table,
+        join
 
 include("macros.jl")
 include("pairwiselistmatrix.jl")

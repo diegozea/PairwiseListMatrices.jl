@@ -1,6 +1,6 @@
 """
-`PairwiseListMatrix{T, diagonal}` is a (squared) symmetric matrix that stores a `list` of
-values of type `T` for the pairwise comparison/evaluation of `nelements`.
+`PairwiseListMatrix{T, diagonal, VT}` is a (squared) symmetric matrix that stores a `list`
+of type `VT` with values of type `T` for the pairwise comparison/evaluation of `nelements`.
 If `diagonal` is `true` the first element of the list is `1, 1` otherwise is `1, 2`.
 If `diagonal` is `false` the diagonal values are stored in a vector on the `diag` field.
 """
@@ -32,7 +32,7 @@ end
 "Retuns the `list` vector."
 @inline getlist(plm::PairwiseListMatrix) = plm.list
 
-"Retuns the `diag` vector (which contains the diagonal values if `diagonal` is `true`)."
+"Retuns the `diag` vector (which contains the diagonal values if `diagonal` is `false`)."
 @inline getdiag(plm::PairwiseListMatrix) = plm.diag
 
 # listlength
@@ -50,19 +50,17 @@ Returns the list length needed for a pairwise measures or comparisons of `neleme
 If `diagonal` is `true`, diagonal values are included in the list.
 
 ```
-julia> using PairwiseListMatrices
-
-julia> PLM = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
-4x4 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-0  1  2  3
-1  0  4  5
-2  4  0  6
-3  5  6  0
+julia> plm = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
+4×4 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 0  1  2  3
+ 1  0  4  5
+ 2  4  0  6
+ 3  5  6  0
 
 julia> lengthlist(4, false)
 6
 
-julia> lengthlist(PLM)
+julia> lengthlist(plm)
 6
 
 ```
@@ -83,16 +81,16 @@ of `nelements` by `nelements`. `diagonal` should be `true` or `Val{true}` if the
 values are on the `list`. You must not use it with `i>j`.
 
 ```
-julia> PLM = PairwiseListMatrix([10,20,30,40,50,60], true)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-10  20  30
-20  40  50
-30  50  60
+julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
 
 julia> ij2k(1, 2, 3, true)
 2
 
-julia> getlist(PLM)[2]
+julia> getlist(plm)[2]
 20
 
 ```
@@ -121,6 +119,11 @@ An empty `PairwiseListMatrix` can be created for a given `Type` and a number of 
 the list needs space for the diagonal elements. If `diagonal` is `false` the diagonal
 values are stored in a vector on the `diag` field instead of being on the list.
 The `diag` vector can be filled with the optional `diagonalvalue` argument (default to `0`).
+
+```julia
+PairwiseListMatrix(Int, 3)
+PairwiseListMatrix(Int, 3, true)
+```
 """
 function (::Type{PairwiseListMatrix}){T}(::Type{T},
                                         nelements::Int,
@@ -139,6 +142,11 @@ function (::Type{PairwiseListMatrix}){T}(::Type{T},
     end
 end
 
+"""
+```julia
+PairwiseListMatrix{Int,false,Vector{Int}}(3)
+```
+"""
 function (::Type{PairwiseListMatrix{T,diagonal,VT}}){T,diagonal,VT}(nelements::Int)
     if diagonal
         return PairwiseListMatrix{T,true,VT}(
@@ -251,8 +259,23 @@ end
 # ====
 
 """
-Returns a full dense matrix.
-This converts a `PairwiseListMatrix{T, D}` into a `Matrix{T}`
+Returns a full dense matrix. This converts a `PairwiseListMatrix{T, D, VT}` into a
+`Matrix{T}`.
+
+```
+julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+julia> full(plm)
+3×3 Array{Int64,2}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+```
 """
 Base.full{T,D,VT}(lm::PairwiseListMatrix{T, D, VT}) = convert(Array{T, 2}, lm)
 
@@ -418,9 +441,30 @@ Base.ctranspose!(lm::PairwiseListMatrix) = lm
 # Diagonal
 # ========
 
+"""
+Returns a vector of type `VT` from a `PairwiseListMatrix{T, false, VT}` that has
+the diagonal values.
+
+```
+julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+julia> diagonal(plm)
+3-element Array{Int64,1}:
+ 10
+ 40
+ 60
+
+```
+"""
 diagonal{T,VT}(lm::PairwiseListMatrix{T, false, VT}) = lm.diag
 
-diagonal{T,VT}(lm::PairwiseListMatrix{T, true, VT}) = T[ lm[i,i] for i in 1:lm.nelements ]
+function diagonal{T,VT}(lm::PairwiseListMatrix{T, true, VT})
+    convert(VT, T[ lm[i,i] for i in 1:lm.nelements ])
+end
 
 # Unary operations (faster than default methods)
 # ==============================================
@@ -811,12 +855,45 @@ zscore(list, mat) = zscore!(list, copy(mat))
 # labels
 # ------
 
+"""
+It gets the labels of a PairwiseListMatrix.
+
+```
+julia> plm  = PairwiseListMatrix(ones(3), false)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+ 0.0  1.0  1.0
+ 1.0  0.0  1.0
+ 1.0  1.0  0.0
+
+julia> getlabels(plm)
+3-element Array{String,1}:
+ "1"
+ "2"
+ "3"
+
+julia> nplm  = setlabels(plm, ["a","b","c"])
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  1.0
+b     │ 1.0  0.0  1.0
+c     │ 1.0  1.0  0.0
+
+julia> getlabels(nplm)
+3-element Array{String,1}:
+ "a"
+ "b"
+ "c"
+
+```
+"""
 function getlabels{T,D,TV}(plm::PairwiseListMatrix{T,D,TV})
     String[ string(i) for i in 1:(plm.nelements) ]
 end
 
 getlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) = names(nplm)[1]
 
+"It changes the labels of a Named PairwiseListMatrix"
 function setlabels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
                                labels::Vector{String})
     NE = nplm.array.nelements
@@ -827,6 +904,26 @@ function setlabels!{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},D
     nplm
 end
 
+"""
+Creates a Named PairwiseListMatrix.
+
+```
+julia> plm  = PairwiseListMatrix(ones(3), false)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+ 0.0  1.0  1.0
+ 1.0  0.0  1.0
+ 1.0  1.0  0.0
+
+julia> nplm  = setlabels(plm, ["a","b","c"])
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  1.0
+b     │ 1.0  0.0  1.0
+c     │ 1.0  1.0  0.0
+
+```
+"""
 function setlabels{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN},
                               labels::Vector{String})
     setlabels!(copy(nplm), labels)
@@ -866,26 +963,26 @@ Labels are stored in the columns 1 and 2, and the values in the column 3.
 Diagonal values are included by default.
 
 ```
-julia> list
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-0  1  2
-1  0  3
-2  3  0
+julia> plm = PairwiseListMatrix([10,20,30], false)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+  0  10  20
+ 10   0  30
+ 20  30   0
 
-julia> to_table(list)
-6x3 Array{Any,2}:
-"A"  "A"  0
-"A"  "B"  1
-"A"  "C"  2
-"B"  "B"  0
-"B"  "C"  3
-"C"  "C"  0
+julia> to_table(plm)
+6×3 Array{Any,2}:
+ "1"  "1"   0
+ "1"  "2"  10
+ "1"  "3"  20
+ "2"  "2"   0
+ "2"  "3"  30
+ "3"  "3"   0
 
-julia> to_table(list, false)
-3x3 Array{Any,2}:
-"A"  "B"  1
-"A"  "C"  2
-"B"  "C"  3
+julia> to_table(plm, diagonal=false)
+3×3 Array{Any,2}:
+ "1"  "2"  10
+ "1"  "3"  20
+ "2"  "3"  30
 
 ```
 """
@@ -913,19 +1010,27 @@ Creation of a `PairwiseListMatrix` from a `Matrix`.
 By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
 Values are taken from the column 3 by default.
 
+```julia
+data = readcsv("example.csv")
 ```
-julia> data = readcsv("example.csv")
-3x3 Array{Any,2}:
-"A"  "B"  10
-"A"  "C"  20
-"B"  "C"  30
 
-julia> from_table(data, Int, false)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:
-0  10  20
-10   0  30
-20  30   0
+```
+3×3 Array{Any,2}:
+ "A"  "B"  10
+ "A"  "C"  20
+ "B"  "C"  30
+```
 
+```julia
+from_table(data, false, nothing)
+```
+```
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}
+A ╲ B │       A        B        C
+──────┼──────────────────────────
+A     │ nothing       10       20
+B     │      10  nothing       30
+C     │      20       30  nothing
 ```
 """
 function from_table(table::AbstractMatrix,
@@ -947,23 +1052,26 @@ end
 # ========
 
 """
-This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-If the third positional argument is `true` (default) the diagonal is included in the output.
-The keyword argument `delim` (by default is `'\t’`) allows to modified the character used as delimiter.
+This function takes the filename as first argument and a `PairwiseListMatrix` as second
+argument. If the `diagonal` keyword argument is `true` (default), the diagonal is included
+in the output. The keyword argument `delim` (by default is `'\t'`) allows to modified the
+character used as delimiter.
 
-julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-1  2  3
-2  4  5
-3  5  6
+```
+julia> plm  = PairwiseListMatrix(trues(3), false)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
+ false   true   true
+  true  false   true
+  true   true  false
 
-julia> writedlm("example.txt", PLM, false, delim=' ')
+julia> writedlm("example.txt", plm, diagonal=false, delim=' ')
 
 shell> cat example.txt
-1 2 2
-1 3 3
-2 3 5
+1 2 true
+1 3 true
+2 3 true
 
+```
 """
 function Base.writedlm{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
@@ -984,32 +1092,35 @@ function Base.writedlm{T,D,TV,DN}(filename::String,
 end
 
 """
-This function takes the filename as first argument and a `PairwiseListMatrix` as second argument.
-If the third positional argument is `true` (default) the diagonal is included in the output.
+This function takes the filename as first argument and a `PairwiseListMatrix` as second
+argument. If the keyword argument `diagonal` is `true` (default) the diagonal is included
+in the output.
 
-julia> PLM  = PairwiseListMatrix(collect(1:6), true)
-3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:
-1  2  3
-2  4  5
-3  5  6
+```
+julia> plm  = PairwiseListMatrix(trues(3), false)
+3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
+ false   true   true
+  true  false   true
+  true   true  false
 
-julia> writecsv("example.csv", PLM)
-
-shell> cat example.csv
-1,1,1
-1,2,2
-1,3,3
-2,2,4
-2,3,5
-3,3,6
-
-julia> writecsv("example.csv", PLM, false)
+julia> writecsv("example.csv", plm)
 
 shell> cat example.csv
-1,2,2
-1,3,3
-2,3,5
+1,1,false
+1,2,true
+1,3,true
+2,2,false
+2,3,true
+3,3,false
 
+julia> writecsv("example.csv", plm, diagonal=false)
+
+shell> cat example.csv
+1,2,true
+1,3,true
+2,3,true
+
+```
 """
 function Base.writecsv{T,D,TV}(filename::String,
                                plm::PairwiseListMatrix{T,D,TV};
@@ -1039,50 +1150,65 @@ Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 # ====
 
 """
-This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels.
-There are 4 `kind` of joins:
+This function join two PairwiseListMatrices by their labels, returning two
+PairwiseListMatrices with same size and labels. There are 4 `kind`s of joins:
+
 - `:inner` : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices
 - `:outer` : Union. Include the labels of the two PairwiseListMatrices.
-- `:left` : Only use labels form the first argument.
-- `:right` : Only use labels form the second argument.
-`NaN`s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to `missing`.
+- `:left` : Only use labels from the first argument.
+- `:right` : Only use labels from the second argument.
+
+`NaN`s are filled in where needed to complete joins. The default value for missing values
+can be changed passing a tuple to `missing`.
 
 ```
-julia> l = PairwiseListMatrix([1.,2.,3.], ['a', 'b', 'c'], false) # a b c
-3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-0.0  1.0  2.0
-1.0  0.0  3.0
-2.0  3.0  0.0
+julia> l = setlabels(PairwiseListMatrix([1.,2.,3.], false), ["a","b","c"]) # a b c
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  2.0
+b     │ 1.0  0.0  3.0
+c     │ 2.0  3.0  0.0
 
-julia> r = PairwiseListMatrix([1.,2.,3.], ['b', 'c', 'd'], false) #   b c d
-3x3 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-0.0  1.0  2.0
-1.0  0.0  3.0
-2.0  3.0  0.0
+julia> r = setlabels(PairwiseListMatrix([1.,2.,3.], false), ["b","c","d"]) # b c d
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c    d
+──────┼──────────────
+b     │ 0.0  1.0  2.0
+c     │ 1.0  0.0  3.0
+d     │ 2.0  3.0  0.0
 
-julia> join(l, r, kind=:inner)                                    #   b c
+julia> join(l, r, kind=:inner) # b c
 (
-2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-0.0  3.0
-3.0  0.0,
+2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c
+──────┼─────────
+b     │ 0.0  3.0
+c     │ 3.0  0.0,
 
-2x2 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-0.0  1.0
-1.0  0.0)
+2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c
+──────┼─────────
+b     │ 0.0  1.0
+c     │ 1.0  0.0)
 
-julia> join(l, r, kind=:outer)                                    # a b c d
+julia> join(l, r, kind=:outer) # a b c d
 (
-4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-0.0    1.0    2.0  NaN
-1.0    0.0    3.0  NaN
-2.0    3.0    0.0  NaN
-NaN    NaN    NaN    NaN,
+4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c    d
+──────┼───────────────────
+a     │ 0.0  1.0  2.0  NaN
+b     │ 1.0  0.0  3.0  NaN
+c     │ 2.0  3.0  0.0  NaN
+d     │ NaN  NaN  NaN  NaN,
 
-4x4 PairwiseListMatrices.PairwiseListMatrix{Float64,false}:
-NaN  NaN    NaN    NaN
-NaN    0.0    1.0    2.0
-NaN    1.0    0.0    3.0
-NaN    2.0    3.0    0.0)
+4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c    d
+──────┼───────────────────
+a     │ NaN  NaN  NaN  NaN
+b     │ NaN  0.0  1.0  2.0
+c     │ NaN  1.0  0.0  3.0
+d     │ NaN  2.0  3.0  0.0)
 
 ```
 """
