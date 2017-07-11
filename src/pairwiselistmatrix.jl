@@ -104,6 +104,8 @@ function _diagonal_value{T}(diagonal::Bool, ::Type{T})
     if !diagonal
         if method_exists(zero, (T,))
             return zero(T)
+        elseif T == Any
+            return nothing
         else
             throw(ErrorException(
             "Please use the last argument to fill the diagonal. It should be of type $T."))
@@ -1005,26 +1007,77 @@ function to_table{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}
     to_table(nplm.array, diagonal=diagonal, labels=labels)
 end
 
+
 """
-Creation of a `PairwiseListMatrix` from a `Matrix`.
+It takes a `PairwiseListMatrix` and converts it to a `Dict` of `Symbol`s to arrays.
+The returned dictionary can be easily converted into a `DataFrame`.
+
+```
+julia> nplm = setlabels(PairwiseListMatrix([10,20,30], false), ["a","b","c"])
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}
+A ╲ B │  a   b   c
+──────┼───────────
+a     │  0  10  20
+b     │ 10   0  30
+c     │ 20  30   0
+
+julia> dict = to_dict(nplm, diagonal=false)
+Dict{Symbol,Any} with 3 entries:
+  :i      => String["a","a","b"]
+  :values => [10,20,30]
+  :j      => String["b","c","c"]
+
+julia> using DataFrames
+
+julia> DataFrame(dict)
+3×3 DataFrames.DataFrame
+│ Row │ i   │ j   │ values │
+├─────┼─────┼─────┼────────┤
+│ 1   │ "a" │ "b" │ 10     │
+│ 2   │ "a" │ "c" │ 20     │
+│ 3   │ "b" │ "c" │ 30     │
+
+```
+"""
+function to_dict{T,D,TV}(plm::PairwiseListMatrix{T,D,TV};
+                         diagonal::Bool=true,
+                         labels::Vector{String} = getlabels(plm))
+    N = plm.nelements
+    L = diagonal ? div(N*(N+1),2) : div(N*(N-1),2)
+    I = Array(String, L)
+    J = Array(String, L)
+    K = Array(T, L)
+    t = 0
+    @iterateupper plm diagonal begin
+        t += 1
+        I[t] = labels[i]
+        J[t] = labels[j]
+        K[t] = list[k]
+    end
+    Dict(:i => I, :j => J, :values => K)
+end
+
+function to_dict{T,D,TV,DN}(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
+                            diagonal::Bool = true,
+                            labels::Vector{String} = getlabels(nplm))
+    to_dict(nplm.array, diagonal=diagonal, labels=labels)
+end
+
+"""
+Creation of a `PairwiseListMatrix` from a `Matrix`, `DataFrame` or similar structure.
 By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
 Values are taken from the column 3 by default.
 
 ```julia
-data = readcsv("example.csv")
-```
+julia> filename = joinpath(Pkg.dir("PairwiseListMatrices"),"test","example.csv");
 
-```
+julia> dat = readcsv(filename)
 3×3 Array{Any,2}:
  "A"  "B"  10
  "A"  "C"  20
  "B"  "C"  30
-```
 
-```julia
-from_table(data, false, nothing)
-```
-```
+julia> from_table(dat, false)
 3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}
 A ╲ B │       A        B        C
 ──────┼──────────────────────────
@@ -1032,18 +1085,46 @@ A     │ nothing       10       20
 B     │      10  nothing       30
 C     │      20       30  nothing
 ```
+
+This is also useful to create a `PairwiseListMatrix` from a `DataFrame`:
+
+```julia
+julia> using DataFrames
+
+julia> filename = joinpath(Pkg.dir("PairwiseListMatrices"),"test","example.csv");
+
+julia> df = readtable(filename, header=false)
+3×3 DataFrames.DataFrame
+│ Row │ x1  │ x2  │ x3 │
+├─────┼─────┼─────┼────┤
+│ 1   │ "A" │ "B" │ 10 │
+│ 2   │ "A" │ "C" │ 20 │
+│ 3   │ "B" │ "C" │ 30 │
+
+julia> from_table(df, false)
+3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,DataArrays.DataArray{Int64,1}}
+A ╲ B │  A   B   C
+──────┼───────────
+A     │  0  10  20
+B     │ 10   0  30
+C     │ 20  30   0
+```
 """
-function from_table(table::AbstractMatrix,
-                    diagonal::Bool,
-                    diagonalvalue = _diagonal_value(diagonal, eltype(table));
+function from_table(table,
+                    diagonal::Bool;
                     labelcols::Vector{Int} = [1,2],
-                    valuecol::Int = 3)
+                    valuecol::Int = 3,
+                    diagonalvalue = :default)
+    @assert size(table,2) >= 3
+    if diagonalvalue == :default
+        diagonalvalue = _diagonal_value(diagonal, eltype(table[:,valuecol]))
+    end
     values = table[:,valuecol]
     plm  = PairwiseListMatrix(values, diagonal, diagonalvalue)
     nplm = NamedArray(plm)
     if length(labelcols) == 2
-        labels = String[ string(lab) for lab in unique(table[:,labelcols]) ]
-        setlabels!(nplm, labels)
+        unique_labels = unique(vcat(table[:,labelcols[1]],table[:,labelcols[2]]))
+        setlabels!(nplm, String[ string(lab) for lab in unique_labels ])
     end
     nplm
 end
@@ -1212,7 +1293,7 @@ d     │ NaN  2.0  3.0  0.0)
 
 ```
 """
-function join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
+function Base.join{L <: AbstractFloat, R <: AbstractFloat,DL,DR,VL,VR,NL,NR}(
         left::NamedArray{L,2,PairwiseListMatrix{L,DL,VL},NL},
         right::NamedArray{R,2,PairwiseListMatrix{L,DR,VR},NR};
         kind::Symbol = :inner,

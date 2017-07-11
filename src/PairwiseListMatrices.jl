@@ -2,20 +2,6 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module PairwiseListMatrices
 
-"Function from MLPlots.jl, written by Tom Breloff."
-function _is_installed(name::String)
-    try
-        Pkg.installed(name) === nothing ? false: true
-    catch
-        false
-    end
-end
-
-if _is_installed("DataFrames")
-    using DataFrames
-    import DataFrames: join, zscore, zscore!
-end
-
 using NamedArrays
 using RecipesBase
 
@@ -33,14 +19,20 @@ export  @iterateupper,
         getlabels,
         setlabels, setlabels!,
         from_table, to_table,
-        join
+        to_dict,
+        join,
+        to_dataframe, from_dataframe
 
 include("macros.jl")
 include("pairwiselistmatrix.jl")
 include("plotrecipes.jl")
 
-if _is_installed("DataFrames")
-    include(joinpath("DataFrames","dataframe.jl"))
+function to_dataframe(args...)
+        throw(ErrorException("Deprecated function, use DataFrame(to_dict(args...)) instead."))
+end
+
+function from_dataframe(args...)
+        throw(ErrorException("Deprecated function, use from_table(args...) instead."))
 end
 
 end

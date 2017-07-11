@@ -1,6 +1,6 @@
 ## PairwiseListMatrices.jl Release Notes
 
-### Changes from v0.4 to v0.5
+### Changes from v0.4 to v0.5.1
 
 * It has better support for Julia 0.5, e.g. faster `map` and `broadcast`.  
 
@@ -11,6 +11,9 @@ for storing element names.
 better support for different vector types e.g. `BitArray`.   
 
 * `RecipesBase` are used for `plot` the matrices `using Plots`.  
+
+* `from_` and `to_dataframe` are deprecated in favor of a more general `from_table` and
+`DataFrame(to_dict(...))` respectively.  
 
 * It solves some bugs.  
 

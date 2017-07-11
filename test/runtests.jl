@@ -1,6 +1,6 @@
 using PairwiseListMatrices
-using NamedArrays
 using DataFrames
+using NamedArrays
 using Base.Test
 
 @testset "PairwiseListMatrices" begin
@@ -350,10 +350,10 @@ end
 
         @test std(list) == PairwiseListMatrix([1., 1., 1.])
         @test mean(list) == mat
-        @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
+        @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.])
 
-        @test_throws MethodError zscore(list, PairwiseListMatrix([2.,2.,2.], true))
-        @test_throws ErrorException zscore(list, PairwiseListMatrix([2.,2.,2.,2.,2.,2.]))
+        @test_throws MethodError PairwiseListMatrices.zscore(list, PairwiseListMatrix([2.,2.,2.], true))
+        @test_throws ErrorException PairwiseListMatrices.zscore(list, PairwiseListMatrix([2.,2.,2.,2.,2.,2.]))
 
         list = PairwiseListMatrix{Float64, true, Vector{Float64}}[
             PairwiseListMatrix([1., 1., 1.], true),
@@ -362,10 +362,10 @@ end
 
         @test std(list) == PairwiseListMatrix([1., 1., 1.], true)
         @test mean(list) == mat
-        @test zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
+        @test PairwiseListMatrices.zscore(list, mat) == PairwiseListMatrix([0., 0., 0.], true)
 
-        @test_throws MethodError zscore(list,PairwiseListMatrix([2.], false))
-        @test_throws ErrorException zscore(list,PairwiseListMatrix([2.,2.,2.,2.,2.,2.],true))
+        @test_throws MethodError PairwiseListMatrices.zscore(list,PairwiseListMatrix([2.], false))
+        @test_throws ErrorException PairwiseListMatrices.zscore(list,PairwiseListMatrix([2.,2.,2.,2.,2.,2.],true))
     end
 end
 
@@ -409,7 +409,7 @@ end
         list_diag = setlabels(PairwiseListMatrix([0,10,20,0,30,0], true), ["A", "B", "C"])
 
         @test to_table(list, diagonal=false) == table
-        @test from_table(table, false, 0) == list
+        @test from_table(table, false, diagonalvalue=0) == list
 
         @test to_table(list) == [ "A" "A" 0
                                   "A" "B" 10
@@ -428,17 +428,17 @@ end
         PLMtrue  = PairwiseListMatrix(values, true)
         PLMfalse = PairwiseListMatrix(values, false)
 
-        df = to_dataframe(PLMtrue)
-        @test PLMtrue == from_dataframe(df, true)
+        df = DataFrame(to_dict(PLMtrue))
+        @test PLMtrue == from_table(df, true)
 
-        df = to_dataframe(PLMtrue, false)
-        @test triu(PLMtrue,1) == triu(from_dataframe(df, false).array,1)
+        df = DataFrame(to_dict(PLMtrue, diagonal=false))
+        @test triu(PLMtrue,1) == triu(from_table(df, false).array,1)
 
-        df = to_dataframe(PLMfalse)
-        @test PLMfalse == from_dataframe(df, true)
+        df = DataFrame(to_dict(PLMfalse))
+        @test PLMfalse == from_table(df, true)
 
-        df = to_dataframe(PLMfalse, false)
-        @test PLMfalse == from_dataframe(df, false)
+        df = DataFrame(to_dict(PLMfalse, diagonal=false))
+        @test PLMfalse == from_table(df, false)
     end
 
     @testset "Write" begin
