@@ -265,11 +265,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api.html#PairwiseListMatrices.to_dict",
+    "page": "API",
+    "title": "PairwiseListMatrices.to_dict",
+    "category": "Function",
+    "text": "It takes a PairwiseListMatrix and converts it to a Dict of Symbols to arrays. The returned dictionary can be easily converted into a DataFrame.\n\njulia> nplm = setlabels(PairwiseListMatrix([10,20,30], false), [\"a\",\"b\",\"c\"])\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}\nA ╲ B │  a   b   c\n──────┼───────────\na     │  0  10  20\nb     │ 10   0  30\nc     │ 20  30   0\n\njulia> dict = to_dict(nplm, diagonal=false)\nDict{Symbol,Any} with 3 entries:\n  :i      => String[\"a\",\"a\",\"b\"]\n  :values => [10,20,30]\n  :j      => String[\"b\",\"c\",\"c\"]\n\njulia> using DataFrames\n\njulia> DataFrame(dict)\n3×3 DataFrames.DataFrame\n│ Row │ i   │ j   │ values │\n├─────┼─────┼─────┼────────┤\n│ 1   │ \"a\" │ \"b\" │ 10     │\n│ 2   │ \"a\" │ \"c\" │ 20     │\n│ 3   │ \"b\" │ \"c\" │ 30     │\n\n\n\n\n"
+},
+
+{
     "location": "api.html#PairwiseListMatrices.from_table",
     "page": "API",
     "title": "PairwiseListMatrices.from_table",
     "category": "Function",
-    "text": "Creation of a PairwiseListMatrix from a Matrix. By default the columns with the labels for i (slow) and j (fast) are 1 and 2. Values are taken from the column 3 by default.\n\ndata = readcsv(\"example.csv\")\n\n3×3 Array{Any,2}:\n \"A\"  \"B\"  10\n \"A\"  \"C\"  20\n \"B\"  \"C\"  30\n\nfrom_table(data, false, nothing)\n\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}\nA ╲ B │       A        B        C\n──────┼──────────────────────────\nA     │ nothing       10       20\nB     │      10  nothing       30\nC     │      20       30  nothing\n\n\n\n"
+    "text": "Creation of a PairwiseListMatrix from a Matrix, DataFrame or similar structure. By default the columns with the labels for i (slow) and j (fast) are 1 and 2. Values are taken from the column 3 by default.\n\njulia> filename = joinpath(Pkg.dir(\"PairwiseListMatrices\"),\"test\",\"example.csv\");\n\njulia> dat = readcsv(filename)\n3×3 Array{Any,2}:\n \"A\"  \"B\"  10\n \"A\"  \"C\"  20\n \"B\"  \"C\"  30\n\njulia> from_table(dat, false)\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}\nA ╲ B │       A        B        C\n──────┼──────────────────────────\nA     │ nothing       10       20\nB     │      10  nothing       30\nC     │      20       30  nothing\n\nThis is also useful to create a PairwiseListMatrix from a DataFrame:\n\njulia> using DataFrames\n\njulia> filename = joinpath(Pkg.dir(\"PairwiseListMatrices\"),\"test\",\"example.csv\");\n\njulia> df = readtable(filename, header=false)\n3×3 DataFrames.DataFrame\n│ Row │ x1  │ x2  │ x3 │\n├─────┼─────┼─────┼────┤\n│ 1   │ \"A\" │ \"B\" │ 10 │\n│ 2   │ \"A\" │ \"C\" │ 20 │\n│ 3   │ \"B\" │ \"C\" │ 30 │\n\njulia> from_table(df, false)\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,DataArrays.DataArray{Int64,1}}\nA ╲ B │  A   B   C\n──────┼───────────\nA     │  0  10  20\nB     │ 10   0  30\nC     │ 20  30   0\n\n\n\n"
 },
 
 {
@@ -293,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "IO",
     "category": "section",
-    "text": "to_table\nfrom_table\nwritedlm\nwritecsv"
+    "text": "to_table\nto_dict\nfrom_table\nwritedlm\nwritecsv"
 },
 
 ]}
