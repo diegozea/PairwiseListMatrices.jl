@@ -1,6 +1,6 @@
 ## PairwiseListMatrices.jl Release Notes
 
-### Changes from v0.4 to v0.5.1
+### Changes from v0.4 to v0.5
 
 * It has better support for Julia 0.5, e.g. faster `map` and `broadcast`.  
 
