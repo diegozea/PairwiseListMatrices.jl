@@ -15,5 +15,4 @@ after_success:
   - julia -e 'cd(Pkg.dir("PairwiseListMatrices")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(Codecov.process_folder())'
   - julia -e 'Pkg.add("Documenter")'
   - julia -e 'Pkg.add("Plots"); Pkg.add("GR")' # Plots
-  - julia -e 'Pkg.update()'
   - julia -e 'cd(Pkg.dir("PairwiseListMatrices")); include(joinpath("docs", "make.jl"))'
