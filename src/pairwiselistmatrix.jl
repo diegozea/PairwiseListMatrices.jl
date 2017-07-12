@@ -939,7 +939,8 @@ end
 # Delegate to PairwiseListMatrix
 # ------------------------------
 
-for F in (:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag)
+for F in (:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag,
+          :diagonal)
     @eval begin
         function $F{T,D,TV,DN}(m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN})
             $F(m.array)

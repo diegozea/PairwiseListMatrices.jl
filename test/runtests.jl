@@ -6,202 +6,234 @@ using Base.Test
 @testset "PairwiseListMatrices" begin
 
     list = [1,-2,3]
-    list_diag_triu =  [ 1 -2
+    mat_diag_triu =  [ 1 -2
                         0 3 ]
-    list_diag_tril =  [ 1 0
+    mat_diag_tril =  [ 1 0
                        -2 3 ]
-    list_triu = [ 0 1 -2
+    mat_triu = [ 0 1 -2
                   0 0 3
                   0 0 0 ]
-    list_tril = [ 0 0 0
+    mat_tril = [ 0 0 0
                   1 0 0
                  -2 3 0 ]
-    list_diag_sym = [ 1 -2
+    mat_diag_sym = [ 1 -2
                      -2 3 ]
-    list_sym = [ 0 1 -2
+    mat_sym = [ 0 1 -2
                  1 0 3
                 -2 3 0 ]
 
-    pld_triu = UpperTriangular(PairwiseListMatrix(list, true))
-    pld_tril = LowerTriangular(PairwiseListMatrix(list, true))
-    pl_triu  = UpperTriangular(PairwiseListMatrix(list))
-    pl_tril  = LowerTriangular(PairwiseListMatrix(list))
-    pld_sym  = PairwiseListMatrix(list, true)
-    pl_sym   = PairwiseListMatrix(list)
+    plmd_triu = UpperTriangular(PairwiseListMatrix(list, true))
+    plmd_tril = LowerTriangular(PairwiseListMatrix(list, true))
+    plm_triu  = UpperTriangular(PairwiseListMatrix(list))
+    plm_tril  = LowerTriangular(PairwiseListMatrix(list))
+    plmd_sym  = PairwiseListMatrix(list, true)
+    plm_sym   = PairwiseListMatrix(list)
 
     @testset "Creation from list" begin
 
-        @test pld_triu == list_diag_triu
-        @test pld_tril == list_diag_tril
-        @test pl_triu  == list_triu
-        @test pl_tril  == list_tril
-        @test pld_sym  == list_diag_sym
-        @test pl_sym   == list_sym
+        @test plmd_triu == mat_diag_triu
+        @test plmd_tril == mat_diag_tril
+        @test plm_triu  == mat_triu
+        @test plm_tril  == mat_tril
+        @test plmd_sym  == mat_diag_sym
+        @test plm_sym   == mat_sym
     end
 
     @testset "Getters" begin
 
-        @test getlist(pld_sym) == pld_sym.list
-        @test getlist(pl_sym)  ==  pl_sym.list
+        @test getlist(plmd_sym) == plmd_sym.list
+        @test getlist(plm_sym)  ==  plm_sym.list
 
-        @test getdiag(pld_sym) == pld_sym.diag
-        @test getdiag(pl_sym)  ==  pl_sym.diag
+        @test getdiag(plmd_sym) == plmd_sym.diag
+        @test getdiag(plm_sym)  ==  plm_sym.diag
     end
 
     @testset "Length" begin
 
-        @test lengthlist(2, true)  == lengthlist(pld_sym)
-        @test lengthlist(3, false) == lengthlist(pl_sym)
+        @test lengthlist(2, true)  == lengthlist(plmd_sym)
+        @test lengthlist(3, false) == lengthlist(plm_sym)
+
+        @test length(plmd_sym) == 4
+        @test length(plm_sym) == 9
+    end
+
+    @testset "Linear indexing" begin
+
+        for i in 1:length(plm_sym)
+            @test plm_sym[i] == mat_sym[i]
+            plm_sym[i] = 100
+            @test plm_sym[i] == 100
+            plm_sym[i] = mat_sym[i]
+        end
+        for i in 1:length(plmd_sym)
+            @test plmd_sym[i] == mat_diag_sym[i]
+            plmd_sym[i] = 100
+            @test plmd_sym[i] == 100
+            plmd_sym[i] = mat_diag_sym[i]
+        end
+
     end
 
     @testset "Convert" begin
 
-        @test list_diag_sym ==
-                convert(PairwiseListMatrix{Int, true, Vector{Int}},  list_diag_sym)
-        @test list_diag_sym ==
-                convert(PairwiseListMatrix{Int, false, Vector{Int}}, list_diag_sym)
+        @test mat_diag_sym ==
+                convert(PairwiseListMatrix{Int, true, Vector{Int}},  mat_diag_sym)
+        @test mat_diag_sym ==
+                convert(PairwiseListMatrix{Int, false, Vector{Int}}, mat_diag_sym)
 
-        @test convert(Matrix{Float64}, list_sym) ==
-                convert(PairwiseListMatrix{Float64, true, Vector{Float64}},  list_sym)
-        @test convert(Matrix{Float64}, list_sym) ==
-                convert(PairwiseListMatrix{Float64, false, Vector{Float64}}, list_sym)
+        @test convert(Matrix{Float64}, mat_sym) ==
+                convert(PairwiseListMatrix{Float64, true, Vector{Float64}},  mat_sym)
+        @test convert(Matrix{Float64}, mat_sym) ==
+                convert(PairwiseListMatrix{Float64, false, Vector{Float64}}, mat_sym)
 
-        @test convert(Matrix{Int}, pl_sym)  == list_sym
-        @test convert(Matrix{Int}, pld_sym) == list_diag_sym
+        @test convert(Matrix{Int}, plm_sym)  == mat_sym
+        @test convert(Matrix{Int}, plmd_sym) == mat_diag_sym
 
-        @test convert(PairwiseListMatrix{Int, false, Vector{Int}}, pld_sym) == pld_sym
-        @test convert(PairwiseListMatrix{Int, true, Vector{Int}}, pl_sym)   == pl_sym
+        @test convert(PairwiseListMatrix{Int, false, Vector{Int}}, plmd_sym) == plmd_sym
+        @test convert(PairwiseListMatrix{Int, true, Vector{Int}}, plm_sym)   == plm_sym
     end
 
     @testset "Unary operations" begin
 
         for f in [ -, abs, x -> sqrt(abs(x))]
-            @test f(pld_triu) == f(list_diag_triu)
-            @test f(pld_tril) == f(list_diag_tril)
-            @test f(pl_triu ) == f(list_triu)
-            @test f(pl_tril ) == f(list_tril)
-            @test f(pld_sym ) == f(list_diag_sym)
-            @test f(pl_sym  ) == f(list_sym)
+            @test f(plmd_triu) == f(mat_diag_triu)
+            @test f(plmd_tril) == f(mat_diag_tril)
+            @test f(plm_triu ) == f(mat_triu)
+            @test f(plm_tril ) == f(mat_tril)
+            @test f(plmd_sym ) == f(mat_diag_sym)
+            @test f(plm_sym  ) == f(mat_sym)
         end
     end
 
     @testset "Binary operations" begin
 
         for f in [ -, +, .-, .+, .* ]
-            @test f(pld_triu, pld_triu) == f(list_diag_triu, list_diag_triu)
-            @test f(pld_tril, pld_tril) == f(list_diag_tril, list_diag_tril)
-            @test f(pl_triu , pl_triu ) == f(list_triu,      list_triu     )
-            @test f(pl_tril , pl_tril ) == f(list_tril,      list_tril     )
-            @test f(pld_sym , pld_sym ) == f(list_diag_sym,  list_diag_sym )
-            @test f(pl_sym  , pl_sym  ) == f(list_sym,       list_sym      )
+            @test f(plmd_triu, plmd_triu) == f(mat_diag_triu, mat_diag_triu)
+            @test f(plmd_tril, plmd_tril) == f(mat_diag_tril, mat_diag_tril)
+            @test f(plm_triu , plm_triu ) == f(mat_triu,      mat_triu     )
+            @test f(plm_tril , plm_tril ) == f(mat_tril,      mat_tril     )
+            @test f(plmd_sym , plmd_sym ) == f(mat_diag_sym,  mat_diag_sym )
+            @test f(plm_sym  , plm_sym  ) == f(mat_sym,       mat_sym      )
         end
 
-        @test pld_sym ./ pld_sym == list_diag_sym ./ list_diag_sym
+        @test plmd_sym ./ plmd_sym == mat_diag_sym ./ mat_diag_sym
 
         # https://github.com/JuliaLang/julia/issues/19615
         for f in [ .*, ./, / ]
-            @test f(pld_triu, 2) == f(list_diag_triu, 2)
-            @test f(pld_tril, 2) == f(list_diag_tril, 2)
-            @test f(pl_triu , 2) == f(list_triu,      2)
-            @test f(pl_tril , 2) == f(list_tril,      2)
+            @test f(plmd_triu, 2) == f(mat_diag_triu, 2)
+            @test f(plmd_tril, 2) == f(mat_diag_tril, 2)
+            @test f(plm_triu , 2) == f(mat_triu,      2)
+            @test f(plm_tril , 2) == f(mat_tril,      2)
         end
 
         for f in [ -, +, .-, .+, .*, ./, / ]
-            @test f(pld_sym , 2) == f(list_diag_sym,  2)
-            @test f(pl_sym  , 2) == f(list_sym,       2)
+            @test f(plmd_sym , 2) == f(mat_diag_sym,  2)
+            @test f(plm_sym  , 2) == f(mat_sym,       2)
         end
 
         @testset "./ with Float64 & Int" begin
 
-            for value in  (4, 4.0)
-                list = PairwiseListMatrix([.5, .4, .3])
-                result =  list ./ value
-                @test isa(result, PairwiseListMatrix{Float64,false,Vector{Float64}})
-                @test sum(result) ≈ 0.6
+            plm_t = PairwiseListMatrix([.5, .4, .3], true)
+            plm_f = PairwiseListMatrix([1., 1., 1.], false)
+            fill!(plm_f, 1.0)
+            mat_t = full(plm_t)
+            mat_f = full(plm_f)
 
-                list = PairwiseListMatrix([.5, .4, .3], true)
-                result =  list ./ value
+            for value in  (4, 4.0)
+                result =  plm_t ./ value
                 @test isa(result, PairwiseListMatrix{Float64,true,Vector{Float64}})
-                @test sum(result) ≈ (0.5 + 0.4*2.0 + 0.3)/4
+                @test result == (mat_t ./ value)
+
+                result =  value ./ plm_t
+                @test isa(result, PairwiseListMatrix{Float64,true,Vector{Float64}})
+                @test result == (value ./ mat_t)
+
+                result =  plm_f ./ value
+                @test isa(result, PairwiseListMatrix{Float64,false,Vector{Float64}})
+                @test result == (mat_f ./ value)
+
+                result =  value ./ plm_f
+                @test isa(result, PairwiseListMatrix{Float64,false,Vector{Float64}})
+                @test result == (value ./ mat_f)
             end
         end
     end
 
     @testset "Transpose" begin
 
-        @test transpose(pld_triu) == pld_tril == list_diag_triu.'
-        @test transpose(pld_tril) == pld_triu == list_diag_tril.'
-        @test transpose(pl_triu) == pl_tril == list_triu.'
-        @test transpose(pl_tril) == pl_triu == list_tril.'
+        @test transpose(plmd_triu) == plmd_tril == mat_diag_triu.'
+        @test transpose(plmd_tril) == plmd_triu == mat_diag_tril.'
+        @test transpose(plm_triu) == plm_tril == mat_triu.'
+        @test transpose(plm_tril) == plm_triu == mat_tril.'
 
-        @test ctranspose(pld_triu) == pld_tril == list_diag_triu'
-        @test ctranspose(pld_tril) == pld_triu == list_diag_tril'
-        @test ctranspose(pl_triu) == pl_tril == list_triu'
-        @test ctranspose(pl_tril) == pl_triu == list_tril'
+        @test ctranspose(plmd_triu) == plmd_tril == mat_diag_triu'
+        @test ctranspose(plmd_tril) == plmd_triu == mat_diag_tril'
+        @test ctranspose(plm_triu) == plm_tril == mat_triu'
+        @test ctranspose(plm_tril) == plm_triu == mat_tril'
 
-        @test transpose(pld_sym) == pld_sym == list_diag_sym.'
-        @test transpose(pl_sym) == pl_sym == list_sym.'
+        @test transpose(plmd_sym) == plmd_sym == mat_diag_sym.'
+        @test transpose(plm_sym) == plm_sym == mat_sym.'
 
-        @test ctranspose(pld_sym) == pld_sym == list_diag_sym'
-        @test ctranspose(pl_sym) == pl_sym == list_sym'
+        @test ctranspose(plmd_sym) == plmd_sym == mat_diag_sym'
+        @test ctranspose(plm_sym) == plm_sym == mat_sym'
 
-        @test transpose!(pl_sym) == pl_sym
-        @test ctranspose!(pl_sym) == pl_sym
+        @test transpose!(plm_sym) == plm_sym
+        @test ctranspose!(plm_sym) == plm_sym
     end
 
     @testset "Linear algebra" begin
 
-        @test pld_triu * pld_triu == list_diag_triu * list_diag_triu
-        @test pld_tril * pld_tril == list_diag_tril * list_diag_tril
-        @test pl_triu  * pl_triu  == list_triu      * list_triu
-        @test pl_tril  * pl_tril  == list_tril      * list_tril
-        @test pld_sym  * pld_sym  == list_diag_sym  * list_diag_sym
-        @test pl_sym   * pl_sym   == list_sym       * list_sym
-        @test Symmetric(pl_sym) * Symmetric(pl_sym) == Symmetric(list_sym) * Symmetric(list_sym)
+        @test plmd_triu * plmd_triu == mat_diag_triu * mat_diag_triu
+        @test plmd_tril * plmd_tril == mat_diag_tril * mat_diag_tril
+        @test plm_triu  * plm_triu  == mat_triu      * mat_triu
+        @test plm_tril  * plm_tril  == mat_tril      * mat_tril
+        @test plmd_sym  * plmd_sym  == mat_diag_sym  * mat_diag_sym
+        @test plm_sym   * plm_sym   == mat_sym       * mat_sym
+        @test Symmetric(plm_sym) * Symmetric(plm_sym) == Symmetric(mat_sym) * Symmetric(mat_sym)
 
-        @test pld_triu / pld_triu == list_diag_triu / list_diag_triu
-        @test pld_tril / pld_tril == list_diag_tril / list_diag_tril
-        @test pld_sym  / pld_sym  == list_diag_sym  / list_diag_sym
-        @test pl_sym   / pl_sym   == list_sym       / list_sym
+        @test plmd_triu / plmd_triu == mat_diag_triu / mat_diag_triu
+        @test plmd_tril / plmd_tril == mat_diag_tril / mat_diag_tril
+        @test plmd_sym  / plmd_sym  == mat_diag_sym  / mat_diag_sym
+        @test plm_sym   / plm_sym   == mat_sym       / mat_sym
 
-        @test svd(pld_triu) == svd(list_diag_triu)
-        @test svd(pld_tril) == svd(list_diag_tril)
-        @test svd(pl_triu ) == svd(list_triu)
-        @test svd(pl_tril ) == svd(list_tril)
-        @test svd(pld_sym ) == svd(list_diag_sym)
-        @test svd(pl_sym  ) == svd(list_sym)
+        @test svd(plmd_triu) == svd(mat_diag_triu)
+        @test svd(plmd_tril) == svd(mat_diag_tril)
+        @test svd(plm_triu ) == svd(mat_triu)
+        @test svd(plm_tril ) == svd(mat_tril)
+        @test svd(plmd_sym ) == svd(mat_diag_sym)
+        @test svd(plm_sym  ) == svd(mat_sym)
     end
 
     @testset "Stats" begin
 
         for f in [ mean, std ]
-            @test f(pld_triu) == f(list_diag_triu)
-            @test f(pld_tril) == f(list_diag_tril)
-            @test f(pl_triu ) == f(list_triu)
-            @test f(pl_tril ) == f(list_tril)
-            @test f(pld_sym ) == f(list_diag_sym)
-            @test f(pl_sym  ) == f(list_sym)
+            @test f(plmd_triu) == f(mat_diag_triu)
+            @test f(plmd_tril) == f(mat_diag_tril)
+            @test f(plm_triu ) == f(mat_triu)
+            @test f(plm_tril ) == f(mat_tril)
+            @test f(plmd_sym ) == f(mat_diag_sym)
+            @test f(plm_sym  ) == f(mat_sym)
 
-            @test f(pld_sym,1) == f(list_diag_sym, 1)
-            @test f(pl_sym ,1) == f(list_sym, 1)
-            @test f(pld_sym,2) == f(list_diag_sym, 2)
-            @test f(pl_sym ,2) == f(list_sym, 2)
+            @test f(plmd_sym,1) == f(mat_diag_sym, 1)
+            @test f(plm_sym ,1) == f(mat_sym, 1)
+            @test f(plmd_sym,2) == f(mat_diag_sym, 2)
+            @test f(plm_sym ,2) == f(mat_sym, 2)
         end
 
-        @test cor(pld_sym ) == cor(list_diag_sym)
-        @test cor(pl_sym  ) == cor(list_sym)
+        @test cor(plmd_sym ) == cor(mat_diag_sym)
+        @test cor(plm_sym  ) == cor(mat_sym)
     end
 
     @testset "triu" begin
 
-        @test triu(pld_sym ) == triu(list_diag_sym)
-        @test triu(pl_sym  ) == triu(list_sym)
+        @test triu(plmd_sym ) == triu(mat_diag_sym)
+        @test triu(plm_sym  ) == triu(mat_sym)
 
-        @test triu(pld_sym,1) == triu(list_diag_sym, 1)
-        @test triu(pl_sym, 1) == triu(list_sym, 1)
+        @test triu(plmd_sym,1) == triu(mat_diag_sym, 1)
+        @test triu(plm_sym, 1) == triu(mat_sym, 1)
 
-        @test_throws ErrorException triu!(pl_sym)
-        @test_throws ErrorException triu!(pl_sym, 1)
+        @test_throws ErrorException triu!(plm_sym)
+        @test_throws ErrorException triu!(plm_sym, 1)
     end
 
     # + and - definitions are ambiguous with:
@@ -239,41 +271,43 @@ end
     labels= ["a", "b", "c"]
     labels_diag = ["A", "B"]
 
-    list_diag = setlabels(PairwiseListMatrix(list, true), labels_diag)
-    list = setlabels(PairwiseListMatrix(list), labels)
+    plm_diag = PairwiseListMatrix(list, true)
+    plm = PairwiseListMatrix(list)
+    nplm_diag = setlabels(plm_diag, labels_diag)
+    nplm = setlabels(plm, labels)
 
     @testset "set and get labels" begin
 
-        @test isa(list_diag, NamedArray)
-        @test isa(list, NamedArray)
-        @test isa(list_diag.array, PairwiseListMatrix)
-        @test isa(list.array, PairwiseListMatrix)
+        @test isa(nplm_diag, NamedArray)
+        @test isa(nplm, NamedArray)
+        @test isa(nplm_diag.array, PairwiseListMatrix)
+        @test isa(nplm.array, PairwiseListMatrix)
 
-        @test_throws AssertionError setlabels!(list_diag, labels)
-        @test_throws AssertionError setlabels!(list, labels_diag)
+        @test_throws AssertionError setlabels!(nplm_diag, labels)
+        @test_throws AssertionError setlabels!(nplm, labels_diag)
 
-        @test getlabels(list_diag) == labels_diag
-        @test getlabels(list) == labels
+        @test getlabels(nplm_diag) == labels_diag
+        @test getlabels(nplm) == labels
 
-        setlabels!(list, ["A","B","C"])
-        @test getlabels(list) == ["A","B","C"]
-        setlabels!(list, ["a","b","c"])
+        setlabels!(nplm, ["A","B","C"])
+        @test getlabels(nplm) == ["A","B","C"]
+        setlabels!(nplm, ["a","b","c"])
     end
 
     @testset "get/setindex" begin
 
         for i in 1:2
             for j in 2:3
-                @test list[labels[i], labels[j]] == list[labels[j], labels[i]]
+                @test nplm[labels[i], labels[j]] == nplm[labels[j], labels[i]]
             end
         end
 
-        @test list_diag["A", "B"] == list_diag["B", "A"]
+        @test nplm_diag["A", "B"] == nplm_diag["B", "A"]
 
-        list_diag["A", "B"] = 20
-        @test list_diag["B", "A"] == 20
-        list_diag["B", "A"] = 2
-        @test list_diag["A", "B"] == 2
+        nplm_diag["A", "B"] = 20
+        @test nplm_diag["B", "A"] == 20
+        nplm_diag["B", "A"] = 2
+        @test nplm_diag["A", "B"] == 2
     end
 
     @testset "join" begin
@@ -309,6 +343,62 @@ end
         @test size(b) == (8,8)
         @test a != left
         @test b != right
+    end
+
+    @testset "Named and not named arrays" begin
+
+        @testset "Symmetric" begin
+
+            @test issymmetric(plm)
+            @test issymmetric(nplm)
+            @test issymmetric(plm_diag)
+            @test issymmetric(nplm_diag)
+        end
+
+        @testset "Diagonal" begin
+
+            @test hasdiagonal(plm_diag)
+            @test hasdiagonal(nplm_diag)
+            @test !hasdiagonal(plm)
+            @test !hasdiagonal(nplm)
+
+            @test diagonal(plm_diag) == [1,3]
+            @test diagonal(nplm_diag) == [1,3]
+            @test diagonal(plm) == [0,0,0]
+            @test diagonal(nplm) == [0,0,0]
+        end
+
+        @testset "eltype" begin
+
+            @test eltype(plm) == Int
+            @test eltype(nplm) == Int
+            @test eltype(plm_diag) == Int
+            @test eltype(nplm_diag) == Int
+        end
+
+        @testset "delegated functions" begin
+
+            for F in (getlist, getdiag, full, lengthlist, sum_nodiag, mean_nodiag, diagonal)
+                    @test F(nplm) == F(plm)
+                    @test F(nplm_diag) == F(plm_diag)
+            end
+        end
+
+        @testset "map and broadcast" begin
+
+            mat = full(nplm)
+            mat_diag = full(nplm_diag)
+
+            @test map(sqrt,plm) == map(sqrt,mat)
+            @test map(sqrt,nplm) == map(sqrt,mat)
+            @test map(sqrt,plm_diag) == map(sqrt,mat_diag)
+            @test map(sqrt,nplm_diag) == map(sqrt,mat_diag)
+
+            @test broadcast(sqrt,plm) == broadcast(sqrt,mat)
+            @test broadcast(sqrt,nplm) == broadcast(sqrt,mat)
+            @test broadcast(sqrt,plm_diag) == broadcast(sqrt,mat_diag)
+            @test broadcast(sqrt,nplm_diag) == broadcast(sqrt,mat_diag)
+        end
     end
 end
 
