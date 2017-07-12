@@ -73,13 +73,12 @@ saving almost 50% of the memory (the percent depends on `N`):
 
 ```@example
 using Plots
-plotlyjs()
+gr()
 plot(      2:550,
            N -> 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),
            xlab = "N",
            ylab = "% of saved memory",
            legend = nothing        )
-
 png("curve.png") # hide
 nothing # hide
 ```  
@@ -146,7 +145,7 @@ plm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)
 nplm = setlabels(plm, ["A","B","C","D"])
 
 using Plots
-plotlyjs()
+gr()
 plot(nplm)
 png("heatmap.png") # hide
 nothing # hide
