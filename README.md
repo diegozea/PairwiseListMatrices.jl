@@ -20,7 +20,7 @@ This package allows you to use a pairwise list as a matrix:
 ![PLM](https://raw.githubusercontent.com/diegozea/PairwiseListMatrices.jl/master/docs/src/PLM_README.png)
 
 ```julia
-type PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
+mutable struct PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
     list::VT
     diag::VT
     nelements::Int
