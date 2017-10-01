@@ -94,7 +94,7 @@ empty. But if the `diagonal` value is `false` the diagonal values are stored in
 the `diag` vector.  
 
 ```julia
-type PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
+mutable struct PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
     list::VT
     diag::VT
     nelements::Int
