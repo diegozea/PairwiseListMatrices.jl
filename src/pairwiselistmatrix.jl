@@ -9,9 +9,9 @@ mutable struct PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
     diag::VT
     nelements::Int
 
-    function PairwiseListMatrix(list::AbstractVector{T},
-                                diag::AbstractVector{T},
-                                N::Int)
+    function PairwiseListMatrix{T,diagonal,VT}(list::AbstractVector{T},
+                                               diag::AbstractVector{T},
+                                               N::Int) where {T,diagonal,VT}
         @assert eltype(VT) === T "Field vectors must have the same element type than the PairwiseListMatrix"
         if !diagonal
             n_diag = length(diag)
@@ -111,7 +111,7 @@ function _diagonal_value(diagonal::Bool, ::Type{T}) where T
             "Please use the last argument to fill the diagonal. It should be of type $T."))
         end
     end
-    Array(T,1)[1]
+    Array{T}(1)[1]
 end
 
 
@@ -133,13 +133,13 @@ function PairwiseListMatrix(::Type{T},
                            diagonalvalue::T = _diagonal_value(diagonal, T)) where T
     if diagonal
         return PairwiseListMatrix{T, true, Vector{T}}(
-            Array(T, lengthlist(nelements, Val{true})),
+            Array{T}(lengthlist(nelements, Val{true})),
             T[],
             nelements)
     else
         return PairwiseListMatrix{T, false, Vector{T}}(
-            Array(T, lengthlist(nelements, Val{false})),
-            fill!(Array(T, nelements), diagonalvalue),
+            Array{T}(lengthlist(nelements, Val{false})),
+            fill!(Array{T}(nelements), diagonalvalue),
             nelements)
     end
 end
@@ -152,13 +152,13 @@ PairwiseListMatrix{Int,false,Vector{Int}}(3)
 function PairwiseListMatrix{T,diagonal,VT}(nelements::Int) where {T,diagonal,VT}
     if diagonal
         return PairwiseListMatrix{T,true,VT}(
-            convert(VT, Array(T, lengthlist(nelements, Val{true}))),
+            convert(VT, Array{T}(lengthlist(nelements, Val{true}))),
             convert(VT, T[]),
             nelements)
     else
         return PairwiseListMatrix{T, false, VT}(
-            Array(T, lengthlist(nelements, Val{false})),
-            convert(VT, Array(T, nelements)),
+            Array{T}(lengthlist(nelements, Val{false})),
+            convert(VT, Array{T}(nelements)),
             nelements)
     end
 end
@@ -176,7 +176,7 @@ end
 function Base.convert(::Type{PairwiseListMatrix{T,true,VT}},
                      mat::PairwiseListMatrix{F,false,VF}) where {T,F,VT,VF}
     N = copy(mat.nelements)
-    list = convert(VT, Array(T, lengthlist(N, Val{true})))
+    list = convert(VT, Array{T}(lengthlist(N, Val{true})))
     k = 0
     @inbounds for i in 1:N
         for j in i:N
@@ -189,9 +189,9 @@ end
 function Base.convert(::Type{PairwiseListMatrix{T, false, VT}},
                      mat::PairwiseListMatrix{F, true, VF}) where {T,F,VT,VF}
     N = copy(mat.nelements)
-    diag = convert(VT, Array(T, N))
+    diag = convert(VT, Array{T}(N))
     matlist = mat.list
-    list = convert(VT, Array(T, length(matlist) - N))
+    list = convert(VT, Array{T}(length(matlist) - N))
     l = 0
     d = 0
     m = 0
@@ -228,7 +228,7 @@ end
 # This is faster than list comprehension (2.4 x)
 function Base.convert(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true, VT}) where {T,F,VT}
     N = lm.nelements
-    complete = Array(F, N, N)
+    complete = Array{F}(N, N)
     list = lm.list
     k = 0
     @inbounds for col in 1:N
@@ -241,7 +241,7 @@ end
 
 function Base.convert(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false, VT}) where {T,F,VT}
     N = lm.nelements
-    complete = Array(F, N, N)
+    complete = Array{F}(N, N)
     list = lm.list
     diag = lm.diag
     k = 0
@@ -306,7 +306,7 @@ function PairwiseListMatrix(list::AbstractVector{T},
     else
         nelements = _nelements(length(list))
         return PairwiseListMatrix{T, false, VT}(list,
-            fill!(convert(VT, Array(T, nelements)), diagonalvalue),
+            fill!(convert(VT, Array{T}(nelements)), diagonalvalue),
             nelements)
     end
 end
@@ -471,7 +471,7 @@ end
 # Unary operations (faster than default methods)
 # ==============================================
 
-for F in (:abs, :-, :sqrt)
+for F in (:abs, :-)
     @eval begin
         function Base.$F(lm::PairwiseListMatrix{T,true,VT}) where {T,VT}
             list = $F(lm.list)
@@ -496,6 +496,7 @@ for F in (:map, :broadcast)
             diag = convert(VOUT, plm.diag)
             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, plm.nelements)
         end
+
         function Base.$F(f, plm::PairwiseListMatrix{T,false,VT}) where {T,VT}
             list = $F(f, plm.list)
             VOUT = typeof(list)
@@ -511,6 +512,7 @@ for F in (:map!, :broadcast!)
             $F(f, plm.list)
             plm
         end
+
         function Base.$F(f, plm::PairwiseListMatrix{T,false,VT}) where {T,VT}
             $F(f, plm.list)
             $F(f, plm.diag)
@@ -524,62 +526,57 @@ Base.svd(m::PairwiseListMatrix) = svd(full(m))
 # Binary operations (faster than default methods)
 # ===============================================
 
-for F in ( :-,  :.-, :+, :.+, :.*, :./ )
+for F in (:broadcast,  :broadcast!)
     @eval begin
-        function Base.$F(A::PairwiseListMatrix{T,true,VT},
+        function Base.$F(f,
+                         A::PairwiseListMatrix{T,true,VT},
                          B::PairwiseListMatrix{S,true,VS}) where {T,S,VT,VS}
             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-            list = $F(A.list, B.list)
+            list = $F(f, A.list, B.list)
             VOUT = typeof(list)
             diag = convert(VOUT, T[])
             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
         end
 
-        function Base.$F(A::PairwiseListMatrix{T,false,VT},
+        function Base.$F(f,
+                         A::PairwiseListMatrix{T,false,VT},
                          B::PairwiseListMatrix{S,false,VS}) where {T,S,VT,VS}
             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-            list = $F(A.list, B.list)
+            list = $F(f, A.list, B.list)
             VOUT = typeof(list)
-            diag = convert(VOUT, $F(A.diag, B.diag))
+            diag = convert(VOUT, $F(f, A.diag, B.diag))
             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
-    end
-end
 
-for F in ( :-,  :.-, :+, :.+, :.*, :*, :/, :./ )
-    @eval begin
-        function Base.$F(A::PairwiseListMatrix{T,true,VT}, B::Number) where {T,VT}
-            list = $F(A.list, B)
+        function Base.$F(f, A::PairwiseListMatrix{T,true,VT}, B::Number) where {T,VT}
+            list = $F(f, A.list, B)
             VOUT = typeof(list)
             diag = convert(VOUT, T[])
             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
         end
 
-        function Base.$F(A::PairwiseListMatrix{T, false, VT}, B::Number) where {T,VT}
-            list = $F(A.list, B)
+        function Base.$F(f, A::PairwiseListMatrix{T, false, VT}, B::Number) where {T,VT}
+            list = $F(f, A.list, B)
             VOUT = typeof(list)
-            diag = convert(VOUT, $F(A.diag, B))
+            diag = convert(VOUT, $F(f, A.diag, B))
             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
         end
 
         # Several functions are not commutative: i.e. ./
 
-        function Base.$F(A::Number, B::PairwiseListMatrix{T,true,VT}) where {T,VT}
-            list = $F(A, B.list)
+        function Base.$F(f, A::Number, B::PairwiseListMatrix{T,true,VT}) where {T,VT}
+            list = $F(f, A, B.list)
             VOUT = typeof(list)
             diag = convert(VOUT, T[])
             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(B.nelements))
         end
 
-        function Base.$F(A::Number, B::PairwiseListMatrix{T, false, VT}) where {T,VT}
-            list = $F(A, B.list)
+        function Base.$F(f, A::Number, B::PairwiseListMatrix{T, false, VT}) where {T,VT}
+            list = $F(f, A, B.list)
             VOUT = typeof(list)
-            diag = convert(VOUT, $F(A, B.diag))
+            diag = convert(VOUT, $F(f, A, B.diag))
             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(B.nelements))
         end
-
-        # Because previous definitions are ambiguous with:
-        # +(A::AbstractArray{Bool,N<:Any}, x::Bool)
     end
 end
 
@@ -752,7 +749,7 @@ end
 # ---
 
 function Base.varm(list::Vector{PairwiseListMatrix{T,D,VT}},
-                      mean::PairwiseListMatrix{M,D,VM}) where {T,D,VT,M,VM}
+                   mean::PairwiseListMatrix{M,D,VM}) where {T,D,VT,M,VM}
     samples = length(list)
     if samples < 2
         throw(ErrorException("You need at least 2 samples."))
@@ -793,12 +790,16 @@ function Base.var(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where 
 end
 
 function Base.std(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
-    sqrt(var(list, mean=mean))
+    sqrt.(var(list, mean=mean))
 end
 
 # zscore
 # ======
 
+"""
+This function takes a vector of `PairwiseListMatrix` objects and a `PairwiseListMatrix` and
+fill the matrix with the zscore value using the median and std of the vector.
+"""
 function zscore!(list::Vector{PairwiseListMatrix{L,D,VL}},
                  mat::PairwiseListMatrix{E,D,VE}) where {L,D,VL,E,VE}
     list_mean = mean(list)
@@ -849,6 +850,7 @@ function zscore!(list::Vector{PairwiseListMatrix{L,D,VL}},
     mat
 end
 
+"It's like `zscore!` but without modifying the `PairwiseListMatrix`"
 zscore(list, mat) = zscore!(list, copy(mat))
 
 # NamedArrays
@@ -860,7 +862,7 @@ zscore(list, mat) = zscore!(list, copy(mat))
 """
 It gets the labels of a PairwiseListMatrix.
 
-```
+```julia
 julia> plm  = PairwiseListMatrix(ones(3), false)
 3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
  0.0  1.0  1.0
@@ -909,7 +911,7 @@ end
 """
 Creates a Named PairwiseListMatrix.
 
-```
+```julia
 julia> plm  = PairwiseListMatrix(ones(3), false)
 3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
  0.0  1.0  1.0
@@ -965,7 +967,7 @@ Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
 Labels are stored in the columns 1 and 2, and the values in the column 3.
 Diagonal values are included by default.
 
-```
+```julia
 julia> plm = PairwiseListMatrix([10,20,30], false)
 3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
   0  10  20
@@ -991,13 +993,13 @@ julia> to_table(plm, diagonal=false)
 """
 function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = getlabels(plm))
     N = plm.nelements
-    table = Array(Any, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
+    table = Array{Any}(diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
     @iterateupper plm diagonal begin
-        t += 1
-        table[t, 1] = labels[i]
-        table[t, 2] = labels[j]
-        table[t, 3] = list[k]
+        :($t) += 1
+        :($table)[:($t), 1] = :($labels)[i]
+        :($table)[:($t), 2] = :($labels)[j]
+        :($table)[:($t), 3] = list[k]
     end
     table
 end
@@ -1013,7 +1015,7 @@ end
 It takes a `PairwiseListMatrix` and converts it to a `Dict` of `Symbol`s to arrays.
 The returned dictionary can be easily converted into a `DataFrame`.
 
-```
+```julia
 julia> nplm = setlabels(PairwiseListMatrix([10,20,30], false), ["a","b","c"])
 3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}
 A ╲ B │  a   b   c
@@ -1045,15 +1047,15 @@ function to_dict(plm::PairwiseListMatrix{T,D,TV};
                  labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     N = plm.nelements
     L = diagonal ? div(N*(N+1),2) : div(N*(N-1),2)
-    I = Array(String, L)
-    J = Array(String, L)
-    K = Array(T, L)
+    I = Array{String}(L)
+    J = Array{String}(L)
+    K = Array{T}(L)
     t = 0
     @iterateupper plm diagonal begin
-        t += 1
-        I[t] = labels[i]
-        J[t] = labels[j]
-        K[t] = list[k]
+        :($t) += 1
+        :($I)[:($t)] = :($labels)[i]
+        :($J)[:($t)] = :($labels)[j]
+        :($K)[:($t)] = list[k]
     end
     Dict(:i => I, :j => J, :values => K)
 end
@@ -1139,7 +1141,7 @@ argument. If the `diagonal` keyword argument is `true` (default), the diagonal i
 in the output. The keyword argument `delim` (by default is `'\t'`) allows to modified the
 character used as delimiter.
 
-```
+```julia
 julia> plm  = PairwiseListMatrix(trues(3), false)
 3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
  false   true   true
@@ -1161,7 +1163,7 @@ function Base.writedlm(filename::String,
                        delim::Char = '\t',
                        labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     open(filename, "w") do fh
-        @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
+        @iterateupper plm diagonal println(:($fh), :($labels)[i], :($delim), :($labels)[j], :($delim), list[k])
     end
 end
 
@@ -1178,7 +1180,7 @@ This function takes the filename as first argument and a `PairwiseListMatrix` as
 argument. If the keyword argument `diagonal` is `true` (default) the diagonal is included
 in the output.
 
-```
+```julia
 julia> plm  = PairwiseListMatrix(trues(3), false)
 3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
  false   true   true
@@ -1243,7 +1245,7 @@ PairwiseListMatrices with same size and labels. There are 4 `kind`s of joins:
 `NaN`s are filled in where needed to complete joins. The default value for missing values
 can be changed passing a tuple to `missing`.
 
-```
+```julia
 julia> l = setlabels(PairwiseListMatrix([1.,2.,3.], false), ["a","b","c"]) # a b c
 3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c

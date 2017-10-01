@@ -96,39 +96,39 @@ using Base.Test
     @testset "Unary operations" begin
 
         for f in [ -, abs, x -> sqrt(abs(x))]
-            @test f(plmd_triu) == f(mat_diag_triu)
-            @test f(plmd_tril) == f(mat_diag_tril)
-            @test f(plm_triu ) == f(mat_triu)
-            @test f(plm_tril ) == f(mat_tril)
-            @test f(plmd_sym ) == f(mat_diag_sym)
-            @test f(plm_sym  ) == f(mat_sym)
+            @test broadcast(f, plmd_triu) == broadcast(f, mat_diag_triu)
+            @test broadcast(f, plmd_tril) == broadcast(f, mat_diag_tril)
+            @test broadcast(f, plm_triu ) == broadcast(f, mat_triu)
+            @test broadcast(f, plm_tril ) == broadcast(f, mat_tril)
+            @test broadcast(f, plmd_sym ) == broadcast(f, mat_diag_sym)
+            @test broadcast(f, plm_sym  ) == broadcast(f, mat_sym)
         end
     end
 
     @testset "Binary operations" begin
 
-        for f in [ -, +, .-, .+, .* ]
-            @test f(plmd_triu, plmd_triu) == f(mat_diag_triu, mat_diag_triu)
-            @test f(plmd_tril, plmd_tril) == f(mat_diag_tril, mat_diag_tril)
-            @test f(plm_triu , plm_triu ) == f(mat_triu,      mat_triu     )
-            @test f(plm_tril , plm_tril ) == f(mat_tril,      mat_tril     )
-            @test f(plmd_sym , plmd_sym ) == f(mat_diag_sym,  mat_diag_sym )
-            @test f(plm_sym  , plm_sym  ) == f(mat_sym,       mat_sym      )
+        for f in [ -, +, * ]
+            @test broadcast(f, plmd_triu, plmd_triu) == broadcast(f, mat_diag_triu, mat_diag_triu)
+            @test broadcast(f, plmd_tril, plmd_tril) == broadcast(f, mat_diag_tril, mat_diag_tril)
+            @test broadcast(f, plm_triu , plm_triu ) == broadcast(f, mat_triu,      mat_triu     )
+            @test broadcast(f, plm_tril , plm_tril ) == broadcast(f, mat_tril,      mat_tril     )
+            @test broadcast(f, plmd_sym , plmd_sym ) == broadcast(f, mat_diag_sym,  mat_diag_sym )
+            @test broadcast(f, plm_sym  , plm_sym  ) == broadcast(f, mat_sym,       mat_sym      )
         end
 
         @test plmd_sym ./ plmd_sym == mat_diag_sym ./ mat_diag_sym
 
         # https://github.com/JuliaLang/julia/issues/19615
-        for f in [ .*, ./, / ]
-            @test f(plmd_triu, 2) == f(mat_diag_triu, 2)
-            @test f(plmd_tril, 2) == f(mat_diag_tril, 2)
-            @test f(plm_triu , 2) == f(mat_triu,      2)
-            @test f(plm_tril , 2) == f(mat_tril,      2)
+        for f in [ *, / ]
+            @test broadcast(f, plmd_triu, 2) == broadcast(f, mat_diag_triu, 2)
+            @test broadcast(f, plmd_tril, 2) == broadcast(f, mat_diag_tril, 2)
+            @test broadcast(f, plm_triu , 2) == broadcast(f, mat_triu,      2)
+            @test broadcast(f, plm_tril , 2) == broadcast(f, mat_tril,      2)
         end
 
-        for f in [ -, +, .-, .+, .*, ./, / ]
-            @test f(plmd_sym , 2) == f(mat_diag_sym,  2)
-            @test f(plm_sym  , 2) == f(mat_sym,       2)
+        for f in [ -, +, *, / ]
+            @test broadcast(f, plmd_sym , 2) == broadcast(f, mat_diag_sym,  2)
+            @test broadcast(f, plm_sym  , 2) == broadcast(f, mat_sym,       2)
         end
 
         @testset "./ with Float64 & Int" begin
@@ -427,9 +427,9 @@ end
     full_samples = reshape(hcat(full_samples...), (4,4,100))
     full_diag_samples = reshape(hcat(full_diag_samples...), (4,4,100))
     # @test std(list_samples) ≈ std(full_samples,3)[:,:,1] # It uses n - 1
-    @test std(list_samples) ≈ sqrt(mean(abs2.(full_samples .- mean(full_samples,3)),3))
+    @test std(list_samples) ≈ sqrt.(mean(abs2.(full_samples .- mean(full_samples,3)),3))
     # @test std(list_diag_samples) ≈ std(full_diag_samples,3)[:,:,1] # It uses n - 1
-    @test std(list_diag_samples) ≈ sqrt(mean(abs2.(full_diag_samples .- mean(full_diag_samples,3)),3))
+    @test std(list_diag_samples) ≈ sqrt.(mean(abs2.(full_diag_samples .- mean(full_diag_samples,3)),3))
 
     @testset "Z score" begin
 

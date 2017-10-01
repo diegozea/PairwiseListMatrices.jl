@@ -28,11 +28,11 @@ include("pairwiselistmatrix.jl")
 include("plotrecipes.jl")
 
 function to_dataframe(args...)
-        throw(ErrorException("Deprecated function, use DataFrame(to_dict(args...)) instead."))
+    throw(ErrorException("Deprecated function, use DataFrame(to_dict(args...)) instead."))
 end
 
 function from_dataframe(args...)
-        throw(ErrorException("Deprecated function, use from_table(args...) instead."))
+    throw(ErrorException("Deprecated function, use from_table(args...) instead."))
 end
 
 end
