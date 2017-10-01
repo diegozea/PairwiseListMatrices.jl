@@ -45,7 +45,7 @@ var documenterSearchIndex = {"docs": [
     "page": "PairwiseListMatrices",
     "title": "Implementation",
     "category": "section",
-    "text": "If you are performing pairwise measures over N elements, storing all the N*N values of a Matrix{T} represents sizeof(T)*(N*N) bytes of memory. However, the lower and upper triangular parts of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:  (Image: )The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need sizeof(T)*(N) bytes for storing the diagonal values on a vector and sizeof(T)*(N*(N-1))/2 bytes for storing the lower or upper triangular part of the matrix. The type PairwiseListMatrix{T, diagonal, VT} represents the symmetric matrix using only sizeof(T)*(N*(N+1))/2 bytes instead of sizeof(T)*(N*N) bytes, saving almost 50% of the memory (the percent depends on N):  using Plots\ngr()\nplot(      2:550,\n           N -> 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),\n           xlab = \"N\",\n           ylab = \"% of saved memory\",\n           legend = nothing        )\npng(\"curve.png\") # hide\nnothing # hide(Image: )As you can see in the schematic diagram, the difference between PairwiseListMatrix{T, true, VT} and PairwiseListMatrix{T, false, VT} is where the diagonal values are stored. All PairwiseListMatrix{T, diagonal, VT} have a list field for storing the values. If diagonal is true, the diagonal values are included in the list (i.e. yellow value) and the diag vector is empty. But if the diagonal value is false the diagonal values are stored in the diag vector.  type PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}\n    list::VT\n    diag::VT\n    nelements::Int\n    ...\nendThe number of elements in the pairwise measure/comparisons or the number of nodes in the undirected graph is stored in nelements and used in indexing operations. This allows you to index the object like any other matrix.  The PairwiseListMatrix can be wrapped in a NamedArray (from the package NamedArrays) to allow the access of elements using labels. The function setlabel can be used to create this object easily. For example, using the matrix of the figure and storing the diagonal values in the list:using PairwiseListMatrices\nplm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)\nnplm = setlabels(plm, [\"A\",\"B\",\"C\",\"D\"])\nnplm[\"B\",\"C\"]You can also create the matrix with the list without the diagonal values and fill the diagonal values after that:  using PairwiseListMatrices\nplm = PairwiseListMatrix([1,0,1,1,1,0], false)\nnplm = setlabels(plm, [\"A\",\"B\",\"C\",\"D\"])\nnplm[\"A\",\"A\"] = 1\nnplm"
+    "text": "If you are performing pairwise measures over N elements, storing all the N*N values of a Matrix{T} represents sizeof(T)*(N*N) bytes of memory. However, the lower and upper triangular parts of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:  (Image: )The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need sizeof(T)*(N) bytes for storing the diagonal values on a vector and sizeof(T)*(N*(N-1))/2 bytes for storing the lower or upper triangular part of the matrix. The type PairwiseListMatrix{T, diagonal, VT} represents the symmetric matrix using only sizeof(T)*(N*(N+1))/2 bytes instead of sizeof(T)*(N*N) bytes, saving almost 50% of the memory (the percent depends on N):  using Plots\ngr()\nplot(      2:550,\n           N -> 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),\n           xlab = \"N\",\n           ylab = \"% of saved memory\",\n           legend = nothing        )\npng(\"curve.png\") # hide\nnothing # hide(Image: )As you can see in the schematic diagram, the difference between PairwiseListMatrix{T, true, VT} and PairwiseListMatrix{T, false, VT} is where the diagonal values are stored. All PairwiseListMatrix{T, diagonal, VT} have a list field for storing the values. If diagonal is true, the diagonal values are included in the list (i.e. yellow value) and the diag vector is empty. But if the diagonal value is false the diagonal values are stored in the diag vector.  mutable struct PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}\n    list::VT\n    diag::VT\n    nelements::Int\n    ...\nendThe number of elements in the pairwise measure/comparisons or the number of nodes in the undirected graph is stored in nelements and used in indexing operations. This allows you to index the object like any other matrix.  The PairwiseListMatrix can be wrapped in a NamedArray (from the package NamedArrays) to allow the access of elements using labels. The function setlabel can be used to create this object easily. For example, using the matrix of the figure and storing the diagonal values in the list:using PairwiseListMatrices\nplm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)\nnplm = setlabels(plm, [\"A\",\"B\",\"C\",\"D\"])\nnplm[\"B\",\"C\"]You can also create the matrix with the list without the diagonal values and fill the diagonal values after that:  using PairwiseListMatrices\nplm = PairwiseListMatrix([1,0,1,1,1,0], false)\nnplm = setlabels(plm, [\"A\",\"B\",\"C\",\"D\"])\nnplm[\"A\",\"A\"] = 1\nnplm"
 },
 
 {
@@ -173,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "PairwiseListMatrices.@iteratelist",
     "category": "Macro",
-    "text": "The macro @iteratelist writes a for loop over the list but avoiding getfield calls inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body list will be the list field of the PairwiseListMatrix and k the index over that list. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratelist PLM println(list[k])\n1\n2\n3\n\n\n\n\n"
+    "text": "The macro @iteratelist writes a for loop over the list but avoiding getfield calls inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body list will be the list field of the PairwiseListMatrix and k the index over that list. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratelist PLM println(list[k])\n1\n2\n3\n\n\n\n\n"
 },
 
 {
@@ -181,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "PairwiseListMatrices.@iteratediag",
     "category": "Macro",
-    "text": "The macro @iteratediag writes a for loop over the diag field of a PairwiseListMatrix{T,false} but avoiding calls to getfield inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body diag will be the diag field of the PairwiseListMatrix and k the index over that vector. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratediag PLM diag[k] += 10k\n\njulia> PLM\n3x3 PairwiseListMatrices.PairwiseListMatrix{Int64,false}:\n 10   1   2\n  1  20   3\n  2   3  30\n\n\n\n\n"
+    "text": "The macro @iteratediag writes a for loop over the diag field of a PairwiseListMatrix{T,false,VT} but avoiding calls to getfield inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body diag will be the diag field of the PairwiseListMatrix and k the index over that vector. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratediag PLM diag[k] += 10k\n\njulia> PLM\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 10   1   2\n  1  20   3\n  2   3  30\n\n\n\n\n"
 },
 
 {
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "PairwiseListMatrices.@iterateupper",
     "category": "Macro",
-    "text": "The macro @iterateupper iterates over the upper triangular part of the PairwiseListMatrix that is given as first argument. The second argument should be true if the diagonal need to be included in the iteration or false otherwise. The last argument is the body of the loop, where list is the list and diag fields of the PairwiseListMatrix and k is the index over that list. You can also use the respective i and j indexes for that position k in the upper triangular part of the matrix. Other variables should be interpolated in a quote. You must not modify the values of i, j or k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], true)\n2x2 PairwiseListMatrices.PairwiseListMatrix{Int64,true}:\n 1  2\n 2  3\n\njulia> mat = zeros(Int, 2, 2)\n2x2 Array{Int64,2}:\n 0  0\n 0  0\n\njulia> @iterateupper PLM true :($mat)[i,j] = list[k]\n\njulia> mat\n2x2 Array{Int64,2}:\n 1  2\n 0  3\n\n\n\n\n"
+    "text": "The macro @iterateupper iterates over the upper triangular part of the PairwiseListMatrix that is given as first argument. The second argument should be true if the diagonal need to be included in the iteration or false otherwise. The last argument is the body of the loop, where list is the list and diag fields of the PairwiseListMatrix and k is the index over that list. You can also use the respective i and j indexes for that position k in the upper triangular part of the matrix. Other variables should be interpolated in a quote. You must not modify the values of i, j or k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], true)\n2×2 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:\n 1  2\n 2  3\n\njulia> mat = zeros(Int, 2, 2)\n2×2 Array{Int64,2}:\n 0  0\n 0  0\n\njulia> @iterateupper PLM true :($mat)[i,j] = list[k]\n\njulia> mat\n2×2 Array{Int64,2}:\n 1  2\n 0  3\n\n\n\n\n"
 },
 
 {
@@ -246,6 +246,38 @@ var documenterSearchIndex = {"docs": [
     "title": "Join",
     "category": "section",
     "text": "join"
+},
+
+{
+    "location": "api.html#PairwiseListMatrices.sum_nodiag",
+    "page": "API",
+    "title": "PairwiseListMatrices.sum_nodiag",
+    "category": "Function",
+    "text": "Sum the values outside the diagonal\n\n\n\n"
+},
+
+{
+    "location": "api.html#PairwiseListMatrices.mean_nodiag",
+    "page": "API",
+    "title": "PairwiseListMatrices.mean_nodiag",
+    "category": "Function",
+    "text": "Mean of the values outside the diagonal\n\n\n\n"
+},
+
+{
+    "location": "api.html#PairwiseListMatrices.zscore",
+    "page": "API",
+    "title": "PairwiseListMatrices.zscore",
+    "category": "Function",
+    "text": "It's like zscore! but without modifying the PairwiseListMatrix\n\n\n\n"
+},
+
+{
+    "location": "api.html#PairwiseListMatrices.zscore!",
+    "page": "API",
+    "title": "PairwiseListMatrices.zscore!",
+    "category": "Function",
+    "text": "This function takes a vector of PairwiseListMatrix objects and a PairwiseListMatrix and fill the matrix with the zscore value using the median and std of the vector.\n\n\n\n"
 },
 
 {
