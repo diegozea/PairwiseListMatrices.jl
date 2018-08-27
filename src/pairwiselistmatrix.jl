@@ -102,7 +102,7 @@ ij2k(i::Int, j::Int, nelements::Int, diagonal::Bool) = ij2k(i, j, nelements, Val
 
 function _diagonal_value(diagonal::Bool, ::Type{T}) where T
     if !diagonal
-        if method_exists(zero, (T,))
+        if hasmethod(zero, (T,))
             return zero(T)
         elseif T == Any
             return nothing
@@ -111,7 +111,7 @@ function _diagonal_value(diagonal::Bool, ::Type{T}) where T
             "Please use the last argument to fill the diagonal. It should be of type $T."))
         end
     end
-    Array{T}(1)[1]
+    Array{T}(undef, 1)[1]
 end
 
 
@@ -1074,7 +1074,7 @@ Values are taken from the column 3 by default.
 ```julia
 julia> filename = joinpath(Pkg.dir("PairwiseListMatrices"),"test","example.csv");
 
-julia> dat = readcsv(filename)
+julia> dat = readdlm(filename)
 3×3 Array{Any,2}:
  "A"  "B"  10
  "A"  "C"  20
@@ -1187,7 +1187,7 @@ julia> plm  = PairwiseListMatrix(trues(3), false)
   true  false   true
   true   true  false
 
-julia> writecsv("example.csv", plm)
+julia> writedlm("example.csv", plm)
 
 shell> cat example.csv
 1,1,false
@@ -1197,7 +1197,7 @@ shell> cat example.csv
 2,3,true
 3,3,false
 
-julia> writecsv("example.csv", plm, diagonal=false)
+julia> writedlm("example.csv", plm, diagonal=false)
 
 shell> cat example.csv
 1,2,true
