@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "PairwiseListMatrices",
     "title": "Installation",
     "category": "section",
-    "text": "This package is registered on Julia's METADATA.jl and it can be installed through the Julia's REPL:  Pkg.add(\"PairwiseListMatrices\")If the package is installed on your system, you can load it with:  using PairwiseListMatrices"
+    "text": "This package is registered on Julia\'s METADATA.jl and it can be installed through the Julia\'s REPL:  Pkg.add(\"PairwiseListMatrices\")If the package is installed on your system, you can load it with:  using PairwiseListMatrices"
 },
 
 {
@@ -84,7 +84,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.PairwiseListMatrix",
     "page": "API",
     "title": "PairwiseListMatrices.PairwiseListMatrix",
-    "category": "Type",
+    "category": "type",
     "text": "PairwiseListMatrix{T, diagonal, VT} is a (squared) symmetric matrix that stores a list of type VT with values of type T for the pairwise comparison/evaluation of nelements. If diagonal is true the first element of the list is 1, 1 otherwise is 1, 2. If diagonal is false the diagonal values are stored in a vector on the diag field.\n\n\n\n"
 },
 
@@ -100,7 +100,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.hasdiagonal",
     "page": "API",
     "title": "PairwiseListMatrices.hasdiagonal",
-    "category": "Function",
+    "category": "function",
     "text": "Returns true if the list has diagonal values.\n\n\n\n"
 },
 
@@ -108,7 +108,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.getlist",
     "page": "API",
     "title": "PairwiseListMatrices.getlist",
-    "category": "Function",
+    "category": "function",
     "text": "Retuns the list vector.\n\n\n\n"
 },
 
@@ -116,7 +116,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.getdiag",
     "page": "API",
     "title": "PairwiseListMatrices.getdiag",
-    "category": "Function",
+    "category": "function",
     "text": "Retuns the diag vector (which contains the diagonal values if diagonal is false).\n\n\n\n"
 },
 
@@ -132,7 +132,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.lengthlist",
     "page": "API",
     "title": "PairwiseListMatrices.lengthlist",
-    "category": "Function",
+    "category": "function",
     "text": "Returns the length of the list field\n\n\n\nReturns the list length needed for a pairwise measures or comparisons of nelements. If diagonal is true, diagonal values are included in the list.\n\njulia> plm = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)\n4×4 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 0  1  2  3\n 1  0  4  5\n 2  4  0  6\n 3  5  6  0\n\njulia> lengthlist(4, false)\n6\n\njulia> lengthlist(plm)\n6\n\n\n\n\n"
 },
 
@@ -140,7 +140,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.ij2k",
     "page": "API",
     "title": "PairwiseListMatrices.ij2k",
-    "category": "Function",
+    "category": "function",
     "text": "Returns the k index of the list from the indixes i and j with i<j from a matrix of nelements by nelements. diagonal should be true or Val{true} if the diagonal values are on the list. You must not use it with i>j.\n\njulia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:\n 10  20  30\n 20  40  50\n 30  50  60\n\njulia> ij2k(1, 2, 3, true)\n2\n\njulia> getlist(plm)[2]\n20\n\n\n\n\n"
 },
 
@@ -148,7 +148,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#Base.full",
     "page": "API",
     "title": "Base.full",
-    "category": "Function",
+    "category": "function",
     "text": "Returns a full dense matrix. This converts a PairwiseListMatrix{T, D, VT} into a Matrix{T}.\n\njulia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:\n 10  20  30\n 20  40  50\n 30  50  60\n\njulia> full(plm)\n3×3 Array{Int64,2}:\n 10  20  30\n 20  40  50\n 30  50  60\n\n\n\n\n"
 },
 
@@ -156,7 +156,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.diagonal",
     "page": "API",
     "title": "PairwiseListMatrices.diagonal",
-    "category": "Function",
+    "category": "function",
     "text": "Returns a vector of type VT from a PairwiseListMatrix{T, false, VT} that has the diagonal values.\n\njulia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:\n 10  20  30\n 20  40  50\n 30  50  60\n\njulia> diagonal(plm)\n3-element Array{Int64,1}:\n 10\n 40\n 60\n\n\n\n\n"
 },
 
@@ -172,7 +172,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.@iteratelist",
     "page": "API",
     "title": "PairwiseListMatrices.@iteratelist",
-    "category": "Macro",
+    "category": "macro",
     "text": "The macro @iteratelist writes a for loop over the list but avoiding getfield calls inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body list will be the list field of the PairwiseListMatrix and k the index over that list. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratelist PLM println(list[k])\n1\n2\n3\n\n\n\n\n"
 },
 
@@ -180,7 +180,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.@iteratediag",
     "page": "API",
     "title": "PairwiseListMatrices.@iteratediag",
-    "category": "Macro",
+    "category": "macro",
     "text": "The macro @iteratediag writes a for loop over the diag field of a PairwiseListMatrix{T,false,VT} but avoiding calls to getfield inside the loop. The first argument of the macro is the PairwiseListMatrix that is going to be iterated and the second is the body of the loop. In the body diag will be the diag field of the PairwiseListMatrix and k the index over that vector. Other variables should be interpolated in a quote. You must not modify the value of k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 0  1  2\n 1  0  3\n 2  3  0\n\njulia> @iteratediag PLM diag[k] += 10k\n\njulia> PLM\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n 10   1   2\n  1  20   3\n  2   3  30\n\n\n\n\n"
 },
 
@@ -188,7 +188,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.@iterateupper",
     "page": "API",
     "title": "PairwiseListMatrices.@iterateupper",
-    "category": "Macro",
+    "category": "macro",
     "text": "The macro @iterateupper iterates over the upper triangular part of the PairwiseListMatrix that is given as first argument. The second argument should be true if the diagonal need to be included in the iteration or false otherwise. The last argument is the body of the loop, where list is the list and diag fields of the PairwiseListMatrix and k is the index over that list. You can also use the respective i and j indexes for that position k in the upper triangular part of the matrix. Other variables should be interpolated in a quote. You must not modify the values of i, j or k.\n\njulia> PLM = PairwiseListMatrix([1,2,3], true)\n2×2 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:\n 1  2\n 2  3\n\njulia> mat = zeros(Int, 2, 2)\n2×2 Array{Int64,2}:\n 0  0\n 0  0\n\njulia> @iterateupper PLM true :($mat)[i,j] = list[k]\n\njulia> mat\n2×2 Array{Int64,2}:\n 1  2\n 0  3\n\n\n\n\n"
 },
 
@@ -204,7 +204,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.getlabels",
     "page": "API",
     "title": "PairwiseListMatrices.getlabels",
-    "category": "Function",
+    "category": "function",
     "text": "It gets the labels of a PairwiseListMatrix.\n\njulia> plm  = PairwiseListMatrix(ones(3), false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:\n 0.0  1.0  1.0\n 1.0  0.0  1.0\n 1.0  1.0  0.0\n\njulia> getlabels(plm)\n3-element Array{String,1}:\n \"1\"\n \"2\"\n \"3\"\n\njulia> nplm  = setlabels(plm, [\"a\",\"b\",\"c\"])\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   a    b    c\n──────┼──────────────\na     │ 0.0  1.0  1.0\nb     │ 1.0  0.0  1.0\nc     │ 1.0  1.0  0.0\n\njulia> getlabels(nplm)\n3-element Array{String,1}:\n \"a\"\n \"b\"\n \"c\"\n\n\n\n\n"
 },
 
@@ -212,7 +212,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.setlabels",
     "page": "API",
     "title": "PairwiseListMatrices.setlabels",
-    "category": "Function",
+    "category": "function",
     "text": "Creates a Named PairwiseListMatrix.\n\njulia> plm  = PairwiseListMatrix(ones(3), false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:\n 0.0  1.0  1.0\n 1.0  0.0  1.0\n 1.0  1.0  0.0\n\njulia> nplm  = setlabels(plm, [\"a\",\"b\",\"c\"])\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   a    b    c\n──────┼──────────────\na     │ 0.0  1.0  1.0\nb     │ 1.0  0.0  1.0\nc     │ 1.0  1.0  0.0\n\n\n\n\n"
 },
 
@@ -220,7 +220,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.setlabels!",
     "page": "API",
     "title": "PairwiseListMatrices.setlabels!",
-    "category": "Function",
+    "category": "function",
     "text": "It changes the labels of a Named PairwiseListMatrix\n\n\n\n"
 },
 
@@ -236,7 +236,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#Base.join",
     "page": "API",
     "title": "Base.join",
-    "category": "Function",
+    "category": "function",
     "text": "This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels. There are 4 kinds of joins:\n\n:inner : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices\n:outer : Union. Include the labels of the two PairwiseListMatrices.\n:left : Only use labels from the first argument.\n:right : Only use labels from the second argument.\n\nNaNs are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to missing.\n\njulia> l = setlabels(PairwiseListMatrix([1.,2.,3.], false), [\"a\",\"b\",\"c\"]) # a b c\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   a    b    c\n──────┼──────────────\na     │ 0.0  1.0  2.0\nb     │ 1.0  0.0  3.0\nc     │ 2.0  3.0  0.0\n\njulia> r = setlabels(PairwiseListMatrix([1.,2.,3.], false), [\"b\",\"c\",\"d\"]) # b c d\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   b    c    d\n──────┼──────────────\nb     │ 0.0  1.0  2.0\nc     │ 1.0  0.0  3.0\nd     │ 2.0  3.0  0.0\n\njulia> join(l, r, kind=:inner) # b c\n(\n2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   b    c\n──────┼─────────\nb     │ 0.0  3.0\nc     │ 3.0  0.0,\n\n2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   b    c\n──────┼─────────\nb     │ 0.0  1.0\nc     │ 1.0  0.0)\n\njulia> join(l, r, kind=:outer) # a b c d\n(\n4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   a    b    c    d\n──────┼───────────────────\na     │ 0.0  1.0  2.0  NaN\nb     │ 1.0  0.0  3.0  NaN\nc     │ 2.0  3.0  0.0  NaN\nd     │ NaN  NaN  NaN  NaN,\n\n4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}\nA ╲ B │   a    b    c    d\n──────┼───────────────────\na     │ NaN  NaN  NaN  NaN\nb     │ NaN  0.0  1.0  2.0\nc     │ NaN  1.0  0.0  3.0\nd     │ NaN  2.0  3.0  0.0)\n\n\n\n\n"
 },
 
@@ -252,7 +252,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.sum_nodiag",
     "page": "API",
     "title": "PairwiseListMatrices.sum_nodiag",
-    "category": "Function",
+    "category": "function",
     "text": "Sum the values outside the diagonal\n\n\n\n"
 },
 
@@ -260,7 +260,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.mean_nodiag",
     "page": "API",
     "title": "PairwiseListMatrices.mean_nodiag",
-    "category": "Function",
+    "category": "function",
     "text": "Mean of the values outside the diagonal\n\n\n\n"
 },
 
@@ -268,15 +268,15 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.zscore",
     "page": "API",
     "title": "PairwiseListMatrices.zscore",
-    "category": "Function",
-    "text": "It's like zscore! but without modifying the PairwiseListMatrix\n\n\n\n"
+    "category": "function",
+    "text": "It\'s like zscore! but without modifying the PairwiseListMatrix\n\n\n\n"
 },
 
 {
     "location": "api.html#PairwiseListMatrices.zscore!",
     "page": "API",
     "title": "PairwiseListMatrices.zscore!",
-    "category": "Function",
+    "category": "function",
     "text": "This function takes a vector of PairwiseListMatrix objects and a PairwiseListMatrix and fill the matrix with the zscore value using the median and std of the vector.\n\n\n\n"
 },
 
@@ -292,7 +292,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.to_table",
     "page": "API",
     "title": "PairwiseListMatrices.to_table",
-    "category": "Function",
+    "category": "function",
     "text": "Creates a Matrix{Any} is useful for writedlm and/or writecsv. Labels are stored in the columns 1 and 2, and the values in the column 3. Diagonal values are included by default.\n\njulia> plm = PairwiseListMatrix([10,20,30], false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:\n  0  10  20\n 10   0  30\n 20  30   0\n\njulia> to_table(plm)\n6×3 Array{Any,2}:\n \"1\"  \"1\"   0\n \"1\"  \"2\"  10\n \"1\"  \"3\"  20\n \"2\"  \"2\"   0\n \"2\"  \"3\"  30\n \"3\"  \"3\"   0\n\njulia> to_table(plm, diagonal=false)\n3×3 Array{Any,2}:\n \"1\"  \"2\"  10\n \"1\"  \"3\"  20\n \"2\"  \"3\"  30\n\n\n\n\n"
 },
 
@@ -300,7 +300,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.to_dict",
     "page": "API",
     "title": "PairwiseListMatrices.to_dict",
-    "category": "Function",
+    "category": "function",
     "text": "It takes a PairwiseListMatrix and converts it to a Dict of Symbols to arrays. The returned dictionary can be easily converted into a DataFrame.\n\njulia> nplm = setlabels(PairwiseListMatrix([10,20,30], false), [\"a\",\"b\",\"c\"])\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}\nA ╲ B │  a   b   c\n──────┼───────────\na     │  0  10  20\nb     │ 10   0  30\nc     │ 20  30   0\n\njulia> dict = to_dict(nplm, diagonal=false)\nDict{Symbol,Any} with 3 entries:\n  :i      => String[\"a\",\"a\",\"b\"]\n  :values => [10,20,30]\n  :j      => String[\"b\",\"c\",\"c\"]\n\njulia> using DataFrames\n\njulia> DataFrame(dict)\n3×3 DataFrames.DataFrame\n│ Row │ i   │ j   │ values │\n├─────┼─────┼─────┼────────┤\n│ 1   │ \"a\" │ \"b\" │ 10     │\n│ 2   │ \"a\" │ \"c\" │ 20     │\n│ 3   │ \"b\" │ \"c\" │ 30     │\n\n\n\n\n"
 },
 
@@ -308,7 +308,7 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#PairwiseListMatrices.from_table",
     "page": "API",
     "title": "PairwiseListMatrices.from_table",
-    "category": "Function",
+    "category": "function",
     "text": "Creation of a PairwiseListMatrix from a Matrix, DataFrame or similar structure. By default the columns with the labels for i (slow) and j (fast) are 1 and 2. Values are taken from the column 3 by default.\n\njulia> filename = joinpath(Pkg.dir(\"PairwiseListMatrices\"),\"test\",\"example.csv\");\n\njulia> dat = readcsv(filename)\n3×3 Array{Any,2}:\n \"A\"  \"B\"  10\n \"A\"  \"C\"  20\n \"B\"  \"C\"  30\n\njulia> from_table(dat, false)\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}\nA ╲ B │       A        B        C\n──────┼──────────────────────────\nA     │ nothing       10       20\nB     │      10  nothing       30\nC     │      20       30  nothing\n\nThis is also useful to create a PairwiseListMatrix from a DataFrame:\n\njulia> using DataFrames\n\njulia> filename = joinpath(Pkg.dir(\"PairwiseListMatrices\"),\"test\",\"example.csv\");\n\njulia> df = readtable(filename, header=false)\n3×3 DataFrames.DataFrame\n│ Row │ x1  │ x2  │ x3 │\n├─────┼─────┼─────┼────┤\n│ 1   │ \"A\" │ \"B\" │ 10 │\n│ 2   │ \"A\" │ \"C\" │ 20 │\n│ 3   │ \"B\" │ \"C\" │ 30 │\n\njulia> from_table(df, false)\n3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,DataArrays.DataArray{Int64,1}}\nA ╲ B │  A   B   C\n──────┼───────────\nA     │  0  10  20\nB     │ 10   0  30\nC     │ 20  30   0\n\n\n\n"
 },
 
@@ -316,15 +316,15 @@ var documenterSearchIndex = {"docs": [
     "location": "api.html#Base.DataFmt.writedlm",
     "page": "API",
     "title": "Base.DataFmt.writedlm",
-    "category": "Function",
-    "text": "This function takes the filename as first argument and a PairwiseListMatrix as second argument. If the diagonal keyword argument is true (default), the diagonal is included in the output. The keyword argument delim (by default is '	') allows to modified the character used as delimiter.\n\njulia> plm  = PairwiseListMatrix(trues(3), false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:\n false   true   true\n  true  false   true\n  true   true  false\n\njulia> writedlm(\"example.txt\", plm, diagonal=false, delim=' ')\n\nshell> cat example.txt\n1 2 true\n1 3 true\n2 3 true\n\n\n\n\n"
+    "category": "function",
+    "text": "This function takes the filename as first argument and a PairwiseListMatrix as second argument. If the diagonal keyword argument is true (default), the diagonal is included in the output. The keyword argument delim (by default is \'	\') allows to modified the character used as delimiter.\n\njulia> plm  = PairwiseListMatrix(trues(3), false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:\n false   true   true\n  true  false   true\n  true   true  false\n\njulia> writedlm(\"example.txt\", plm, diagonal=false, delim=\' \')\n\nshell> cat example.txt\n1 2 true\n1 3 true\n2 3 true\n\n\n\n\n"
 },
 
 {
     "location": "api.html#Base.DataFmt.writecsv",
     "page": "API",
     "title": "Base.DataFmt.writecsv",
-    "category": "Function",
+    "category": "function",
     "text": "This function takes the filename as first argument and a PairwiseListMatrix as second argument. If the keyword argument diagonal is true (default) the diagonal is included in the output.\n\njulia> plm  = PairwiseListMatrix(trues(3), false)\n3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:\n false   true   true\n  true  false   true\n  true   true  false\n\njulia> writecsv(\"example.csv\", plm)\n\nshell> cat example.csv\n1,1,false\n1,2,true\n1,3,true\n2,2,false\n2,3,true\n3,3,false\n\njulia> writecsv(\"example.csv\", plm, diagonal=false)\n\nshell> cat example.csv\n1,2,true\n1,3,true\n2,3,true\n\n\n\n\n"
 },
 
