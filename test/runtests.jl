@@ -1,7 +1,7 @@
 using PairwiseListMatrices
 using DataFrames
 using NamedArrays
-using Base.Test
+using Test
 
 @testset "PairwiseListMatrices" begin
 
@@ -166,19 +166,19 @@ using Base.Test
         @test transpose(plm_triu) == plm_tril == mat_triu.'
         @test transpose(plm_tril) == plm_triu == mat_tril.'
 
-        @test ctranspose(plmd_triu) == plmd_tril == mat_diag_triu'
-        @test ctranspose(plmd_tril) == plmd_triu == mat_diag_tril'
-        @test ctranspose(plm_triu) == plm_tril == mat_triu'
-        @test ctranspose(plm_tril) == plm_triu == mat_tril'
+        @test adjoint(plmd_triu) == plmd_tril == mat_diag_triu'
+        @test adjoint(plmd_tril) == plmd_triu == mat_diag_tril'
+        @test adjoint(plm_triu) == plm_tril == mat_triu'
+        @test adjoint(plm_tril) == plm_triu == mat_tril'
 
         @test transpose(plmd_sym) == plmd_sym == mat_diag_sym.'
         @test transpose(plm_sym) == plm_sym == mat_sym.'
 
-        @test ctranspose(plmd_sym) == plmd_sym == mat_diag_sym'
-        @test ctranspose(plm_sym) == plm_sym == mat_sym'
+        @test adjoint(plmd_sym) == plmd_sym == mat_diag_sym'
+        @test adjoint(plm_sym) == plm_sym == mat_sym'
 
         @test transpose!(plm_sym) == plm_sym
-        @test ctranspose!(plm_sym) == plm_sym
+        @test adjoint!(plm_sym) == plm_sym
     end
 
     @testset "Linear algebra" begin
@@ -539,29 +539,29 @@ end
         filename = joinpath(tempdir(), "pairwiselistmatrices_test.temp")
 
         try
-          writecsv(filename, PLMtrue, diagonal=true)
-          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMtrue,diagonal=true))
+          writedlm(filename, PLMtrue, diagonal=true)
+          @test map(string,readdlm(filename,Int)) == map(string,to_table(PLMtrue,diagonal=true))
         finally
           rm(filename)
         end
 
         try
-          writecsv(filename,PLMtrue,diagonal=false)
-          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMtrue,diagonal=false))
+          writedlm(filename,PLMtrue,diagonal=false)
+          @test map(string,readdlm(filename,Int)) == map(string,to_table(PLMtrue,diagonal=false))
         finally
           rm(filename)
         end
 
         try
-          writecsv(filename,PLMfalse,diagonal=true)
-          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMfalse,diagonal=true))
+          writedlm(filename,PLMfalse,diagonal=true)
+          @test map(string,readdlm(filename,Int)) == map(string,to_table(PLMfalse,diagonal=true))
         finally
           rm(filename)
         end
 
         try
-          writecsv(filename,PLMfalse,diagonal=false)
-          @test map(string,readcsv(filename,Int)) == map(string,to_table(PLMfalse,diagonal=false))
+          writedlm(filename,PLMfalse,diagonal=false)
+          @test map(string,readdlm(filename,Int)) == map(string,to_table(PLMfalse,diagonal=false))
         finally
           rm(filename)
         end
