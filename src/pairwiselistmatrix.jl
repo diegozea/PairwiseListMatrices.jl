@@ -133,13 +133,13 @@ function PairwiseListMatrix(::Type{T},
                            diagonalvalue::T = _diagonal_value(diagonal, T)) where T
     if diagonal
         return PairwiseListMatrix{T, true, Vector{T}}(
-            Array{T}(lengthlist(nelements, Val{true})),
+            Array{T}(undef, lengthlist(nelements, Val{true})),
             T[],
             nelements)
     else
         return PairwiseListMatrix{T, false, Vector{T}}(
-            Array{T}(lengthlist(nelements, Val{false})),
-            fill!(Array{T}(nelements), diagonalvalue),
+            Array{T}(undef, lengthlist(nelements, Val{false})),
+            fill!(Array{T}(undef, nelements), diagonalvalue),
             nelements)
     end
 end
@@ -152,13 +152,13 @@ PairwiseListMatrix{Int,false,Vector{Int}}(3)
 function PairwiseListMatrix{T,diagonal,VT}(nelements::Int) where {T,diagonal,VT}
     if diagonal
         return PairwiseListMatrix{T,true,VT}(
-            convert(VT, Array{T}(lengthlist(nelements, Val{true}))),
+            convert(VT, Array{T}(undef, lengthlist(nelements, Val{true}))),
             convert(VT, T[]),
             nelements)
     else
         return PairwiseListMatrix{T, false, VT}(
-            Array{T}(lengthlist(nelements, Val{false})),
-            convert(VT, Array{T}(nelements)),
+            Array{T}(undef, lengthlist(nelements, Val{false})),
+            convert(VT, Array{T}(undef, nelements)),
             nelements)
     end
 end
@@ -176,7 +176,7 @@ end
 function Base.convert(::Type{PairwiseListMatrix{T,true,VT}},
                      mat::PairwiseListMatrix{F,false,VF}) where {T,F,VT,VF}
     N = copy(mat.nelements)
-    list = convert(VT, Array{T}(lengthlist(N, Val{true})))
+    list = convert(VT, Array{T}(undef, lengthlist(N, Val{true})))
     k = 0
     @inbounds for i in 1:N
         for j in i:N
@@ -189,9 +189,9 @@ end
 function Base.convert(::Type{PairwiseListMatrix{T, false, VT}},
                      mat::PairwiseListMatrix{F, true, VF}) where {T,F,VT,VF}
     N = copy(mat.nelements)
-    diag = convert(VT, Array{T}(N))
+    diag = convert(VT, Array{T}(undef, N))
     matlist = mat.list
-    list = convert(VT, Array{T}(length(matlist) - N))
+    list = convert(VT, Array{T}(undef, length(matlist) - N))
     l = 0
     d = 0
     m = 0
@@ -228,7 +228,7 @@ end
 # This is faster than list comprehension (2.4 x)
 function Base.convert(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, true, VT}) where {T,F,VT}
     N = lm.nelements
-    complete = Array{F}(N, N)
+    complete = Array{F}(undef, N, N)
     list = lm.list
     k = 0
     @inbounds for col in 1:N
@@ -241,7 +241,7 @@ end
 
 function Base.convert(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false, VT}) where {T,F,VT}
     N = lm.nelements
-    complete = Array{F}(N, N)
+    complete = Array{F}(undef, N, N)
     list = lm.list
     diag = lm.diag
     k = 0
@@ -306,7 +306,7 @@ function PairwiseListMatrix(list::AbstractVector{T},
     else
         nelements = _nelements(length(list))
         return PairwiseListMatrix{T, false, VT}(list,
-            fill!(convert(VT, Array{T}(nelements)), diagonalvalue),
+            fill!(convert(VT, Array{T}(undef, nelements)), diagonalvalue),
             nelements)
     end
 end
@@ -434,8 +434,8 @@ end
 # Transpose
 # =========
 
-Base.transpose(lm::PairwiseListMatrix) = lm
-Base.transpose!(lm::PairwiseListMatrix) = lm
+LinearAlgebra.transpose(lm::PairwiseListMatrix) = lm
+LinearAlgebra.transpose!(lm::PairwiseListMatrix) = lm
 
 Base.ctranspose(lm::PairwiseListMatrix) = lm
 Base.ctranspose!(lm::PairwiseListMatrix) = lm
@@ -521,7 +521,7 @@ for F in (:map!, :broadcast!)
     end
 end
 
-Base.svd(m::PairwiseListMatrix) = svd(full(m))
+LinearAlgebra.svd(m::PairwiseListMatrix) = svd(full(m))
 
 # Binary operations (faster than default methods)
 # ===============================================
@@ -583,9 +583,6 @@ end
 # Faster mean and sum
 # ===================
 
-Base.sum(m::PairwiseListMatrix{T, false}) where {T} = T(2)*sum(m.list) + sum(m.diag)
-Base.sum(m::PairwiseListMatrix{T, true}) where {T} =  T(2)*sum(m.list) - sum(diagonal(m))
-
 function _sum_kernel!(sum_i, list, N)
     k = 0
     l = 0
@@ -618,38 +615,49 @@ function _sum_kernel!(sum_i, diag, list, N)
     sum_i
 end
 
-function _test_and_setsum(::Type{T}, region, N) where T
-    if region == 1
+function _test_and_setsum(::Type{T}, dims, N) where T
+    if dims == 1
         sum_i = zeros(T, 1, N)
-    elseif region == 2
+    elseif dims == 2
         sum_i = zeros(T, N, 1)
     else
-        throw(ErrorException("region should be 1 or 2"))
+        throw(ErrorException("dims should be 1 or 2"))
     end
     sum_i
 end
 
-function Base.sum(lm::PairwiseListMatrix{T,true,VT}, region::Int) where {T,VT}
+_sum(m::PairwiseListMatrix{T, false}) where {T} = T(2)*sum(m.list) + sum(m.diag)
+_sum(m::PairwiseListMatrix{T, true}) where {T} = T(2)*sum(m.list) - sum(diagonal(m))
+
+function Base.sum(lm::PairwiseListMatrix{T,true,VT}; dims::Union{Int,Colon}=:) where {T,VT}
+    if isa(dims, Colon)
+        return _sum(lm)
+    end
     N = lm.nelements
-    sum_i = _test_and_setsum(T, region, N)
+    sum_i = _test_and_setsum(T, dims, N)
     _sum_kernel!(sum_i, lm.list, N)
 end
 
-function Base.sum(lm::PairwiseListMatrix{T,false,VT}, region::Int) where {T, VT}
+function Base.sum(lm::PairwiseListMatrix{T,false,VT};
+                  dims::Union{Int,Colon}=:) where {T, VT}
+    if isa(dims, Colon)
+        return _sum(lm)
+    end
     N = lm.nelements
-    sum_i = _test_and_setsum(T, region, N)
+    sum_i = _test_and_setsum(T, dims, N)
     _sum_kernel!(sum_i, lm.diag, lm.list, N)
 end
 
-Base.mean(m::PairwiseListMatrix) = sum(m)/length(m)
-Base.mean(m::PairwiseListMatrix, region::Int) = sum(m, region) ./ m.nelements
+function Statistics.mean(m::PairwiseListMatrix; dims::Union{Int,Colon}=:)
+    if isa(dims, Colon)
+        sum(m)/length(m)
+    else
+        sum(m, dims=dims) ./ m.nelements
+    end
+end
 
 # Sum/Mean without diagonal: sum/mean_nodiag
 # ------------------------------------------
-
-"Sum the values outside the diagonal"
-sum_nodiag(m::PairwiseListMatrix{T,false,VT}) where {T,VT} = T(2) * sum(m.list)
-sum_nodiag(m::PairwiseListMatrix{T,true,VT}) where {T,VT} = T(2) * sum(m.list) - sum(diagonal(m))
 
 function _sum_nodiag_kernel!(sum_i, lm::PairwiseListMatrix{T,true,VT}, N) where {T,VT}
     list = lm.list
@@ -682,15 +690,29 @@ function _sum_nodiag_kernel!(sum_i, lm::PairwiseListMatrix{T,false,VT}, N) where
     sum_i
 end
 
-function sum_nodiag(lm::PairwiseListMatrix{T,diagonal,VT}, region::Int) where {T,diagonal,VT}
+"Sum the values outside the diagonal"
+_sum_nodiag(m::PairwiseListMatrix{T,false,VT}) where {T,VT} = T(2) * sum(m.list)
+function _sum_nodiag(m::PairwiseListMatrix{T,true,VT}) where {T,VT}
+    T(2) * sum(m.list) - sum(diagonal(m))
+end
+
+function sum_nodiag(lm::PairwiseListMatrix{T,diagonal,VT};
+                    dims::Union{Int,Colon}=:) where {T,diagonal,VT}
+    if isa(dims, Colon)
+        return _sum_nodiag(lm)
+    end
     N = lm.nelements
-    sum_i = _test_and_setsum(T, region, N)
+    sum_i = _test_and_setsum(T, dims, N)
     _sum_nodiag_kernel!(sum_i, lm, N)
 end
 
 "Mean of the values outside the diagonal"
-mean_nodiag(m::PairwiseListMatrix) = sum_nodiag(m) / (length(m) - m.nelements)
-mean_nodiag(m::PairwiseListMatrix, region::Int) = sum_nodiag(m, region) ./ (m.nelements-1)
+function mean_nodiag(m::PairwiseListMatrix; dims::Union{Int,Colon}=:)
+    if isa(dims, Colon)
+        return sum_nodiag(m) / (length(m) - m.nelements)
+    end
+    sum_nodiag(m, dims=dims) ./ (m.nelements-1)
+end
 
 # Operations on Vector{PairwiseListMatrix}
 # ========================================
@@ -741,14 +763,14 @@ end
 # mean
 # ----
 
-function Base.mean(list::Vector{PairwiseListMatrix{T,diagonal,VT}}) where {T,diagonal,VT}
+function Statistics.mean(list::Vector{PairwiseListMatrix{T,diagonal,VT}}) where {T,diagonal,VT}
     sum(list) ./ length(list)
 end
 
 # std
 # ---
 
-function Base.varm(list::Vector{PairwiseListMatrix{T,D,VT}},
+function Statistics.varm(list::Vector{PairwiseListMatrix{T,D,VT}},
                    mean::PairwiseListMatrix{M,D,VM}) where {T,D,VT,M,VM}
     samples = length(list)
     if samples < 2
@@ -781,7 +803,7 @@ function Base.varm(list::Vector{PairwiseListMatrix{T,D,VT}},
     out ./ samples
 end
 
-function Base.var(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
+function Statistics.var(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
     if mean === nothing
         varm(list, Base.mean(list))
     else
@@ -789,7 +811,7 @@ function Base.var(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where 
     end
 end
 
-function Base.std(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
+function Statistics.std(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
     sqrt.(var(list, mean=mean))
 end
 
@@ -993,7 +1015,7 @@ julia> to_table(plm, diagonal=false)
 """
 function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = getlabels(plm))
     N = plm.nelements
-    table = Array{Any}(diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
+    table = Array{Any}(undef, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
     @iterateupper plm diagonal begin
         :($t) += 1
@@ -1047,9 +1069,9 @@ function to_dict(plm::PairwiseListMatrix{T,D,TV};
                  labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     N = plm.nelements
     L = diagonal ? div(N*(N+1),2) : div(N*(N-1),2)
-    I = Array{String}(L)
-    J = Array{String}(L)
-    K = Array{T}(L)
+    I = Array{String}(undef, L)
+    J = Array{String}(undef, L)
+    K = Array{T}(undef, L)
     t = 0
     @iterateupper plm diagonal begin
         :($t) += 1
@@ -1157,7 +1179,7 @@ shell> cat example.txt
 
 ```
 """
-function Base.writedlm(filename::String,
+function DelimitedFiles.writedlm(filename::String,
                        plm::PairwiseListMatrix{T,D,TV};
                        diagonal::Bool = true,
                        delim::Char = '\t',
@@ -1167,7 +1189,7 @@ function Base.writedlm(filename::String,
     end
 end
 
-function Base.writedlm(filename::String,
+function DelimitedFiles.writedlm(filename::String,
                        nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                        diagonal::Bool = true,
                        delim::Char = '\t',
@@ -1206,14 +1228,14 @@ shell> cat example.csv
 
 ```
 """
-function Base.writecsv(filename::String,
+function DelimitedFiles.writecsv(filename::String,
                        plm::PairwiseListMatrix{T,D,TV};
                        diagonal::Bool = true,
                        labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     writedlm(filename, plm, diagonal=diagonal, delim=',', labels=labels)
 end
 
-function Base.writecsv(filename::String,
+function DelimitedFiles.writecsv(filename::String,
                        nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
                        diagonal::Bool = true,
                        labels::Vector{String} = getlabels(nplm)) where {T,D,TV,DN}
@@ -1223,12 +1245,12 @@ end
 # triu! & triu
 # ============
 
-function Base.triu!(mat::PairwiseListMatrix)
+function LinearAlgebra.triu!(mat::PairwiseListMatrix)
     throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
 end
-Base.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
-Base.triu(mat::PairwiseListMatrix) = triu(full(mat))
-Base.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
+LinearAlgebra.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
+LinearAlgebra.triu(mat::PairwiseListMatrix) = triu(full(mat))
+LinearAlgebra.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
 
 # join
 # ====

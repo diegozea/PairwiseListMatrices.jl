@@ -1,5 +1,14 @@
+__precompile__()
+
+
 module PairwiseListMatrices
 
+# standard libraries
+using DelimitedFiles
+using LinearAlgebra
+using Statistics
+
+# external packages
 using NamedArrays
 using RecipesBase
 

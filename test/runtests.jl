@@ -1,7 +1,11 @@
 using PairwiseListMatrices
 using DataFrames
 using NamedArrays
+
 using Test
+using DelimitedFiles
+using LinearAlgebra
+using Statistics
 
 @testset "PairwiseListMatrices" begin
 
@@ -214,10 +218,10 @@ using Test
             @test f(plmd_sym ) == f(mat_diag_sym)
             @test f(plm_sym  ) == f(mat_sym)
 
-            @test f(plmd_sym,1) == f(mat_diag_sym, 1)
-            @test f(plm_sym ,1) == f(mat_sym, 1)
-            @test f(plmd_sym,2) == f(mat_diag_sym, 2)
-            @test f(plm_sym ,2) == f(mat_sym, 2)
+            @test f(plmd_sym, dims=1) == f(mat_diag_sym, dims=1)
+            @test f(plm_sym , dims=1) == f(mat_sym, dims=1)
+            @test f(plmd_sym, dims=2) == f(mat_diag_sym, dims=2)
+            @test f(plm_sym , dims=2) == f(mat_sym, dims=2)
         end
 
         @test cor(plmd_sym ) == cor(mat_diag_sym)
@@ -258,8 +262,8 @@ using Test
         diag_true  = PairwiseListMatrix([0,10,20,0,30,0], true)
 
         for list in [diag_false, diag_true]
-            @test vec( mean_nodiag(list, 1) ) == [15., 20., 25.]
-            @test vec( mean_nodiag(list, 2) ) == [15., 20., 25.]
+            @test vec( mean_nodiag(list, dims=1) ) == [15., 20., 25.]
+            @test vec( mean_nodiag(list, dims=2) ) == [15., 20., 25.]
             @test mean_nodiag(list) == 20.
         end
     end
@@ -427,9 +431,9 @@ end
     full_samples = reshape(hcat(full_samples...), (4,4,100))
     full_diag_samples = reshape(hcat(full_diag_samples...), (4,4,100))
     # @test std(list_samples) ≈ std(full_samples,3)[:,:,1] # It uses n - 1
-    @test std(list_samples) ≈ sqrt.(mean(abs2.(full_samples .- mean(full_samples,3)),3))
+    @test std(list_samples) ≈ sqrt.(mean(abs2.(full_samples .- mean(full_samples, dims=3)), dims=3))
     # @test std(list_diag_samples) ≈ std(full_diag_samples,3)[:,:,1] # It uses n - 1
-    @test std(list_diag_samples) ≈ sqrt.(mean(abs2.(full_diag_samples .- mean(full_diag_samples,3)),3))
+    @test std(list_diag_samples) ≈ sqrt.(mean(abs2.(full_diag_samples .- mean(full_diag_samples, dims=3)), dims=3))
 
     @testset "Z score" begin
 
