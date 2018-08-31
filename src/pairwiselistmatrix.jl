@@ -257,31 +257,7 @@ function Base.convert(::Type{Array{F,2}}, lm::PairwiseListMatrix{T, false, VT}) 
     complete
 end
 
-# full
-# ====
-
-"""
-Returns a full dense matrix. This converts a `PairwiseListMatrix{T, D, VT}` into a
-`Matrix{T}`.
-
-```
-julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
- 10  20  30
- 20  40  50
- 30  50  60
-
-julia> full(plm)
-3×3 Array{Int64,2}:
- 10  20  30
- 20  40  50
- 30  50  60
-
-```
-"""
-Base.full(lm::PairwiseListMatrix{T, D, VT}) where {T,D,VT} = convert(Array{T, 2}, lm)
-
-Base.full(m::Symmetric{T, PairwiseListMatrix{T,D,VT}}) where {T,D,VT} = full(m.data)
+# Matrix(m::Symmetric{T, PairwiseListMatrix{T,D,VT}}) where {T,D,VT} = Matrix(m.data)
 
 # From a list
 # -----------
@@ -330,14 +306,13 @@ for F in [:similar, :copy, :zeros, :ones]
     end
 end
 
-function Base.similar(m::PairwiseListMatrix{T, diagonal, VT}, ::Type{S}) where {T, diagonal, VT, S}
+function Base.similar(m::PairwiseListMatrix{T, diagonal, VT},
+                      ::Type{S}) where {T, diagonal, VT, S}
     list = similar(m.list, S)
     VOUT = typeof(list)
     diag = convert(VOUT, similar(m.diag, S))
     PairwiseListMatrix{S, diagonal, VOUT}(list, diag, copy(m.nelements))
 end
-
-# TODO:  p = zeros(PairwiseListMatrix{Float64,false}, 3)
 
 # Indexing (getindex)
 # ===================
@@ -359,8 +334,6 @@ function Base.getindex(lm::PairwiseListMatrix{T, false, VT}, i::Int, j::Int) whe
         return(lm.diag[i])
     end
 end
-
-# Base.linearindexing(m::PairwiseListMatrix) = Base.LinearFast()
 
 function Base.getindex(lm::PairwiseListMatrix{T, true, VT}, i::Int) where {T, VT}
     n = lm.nelements
@@ -434,11 +407,18 @@ end
 # Transpose
 # =========
 
-LinearAlgebra.transpose(lm::PairwiseListMatrix) = lm
+LinearAlgebra.transpose(lm::PairwiseListMatrix)  = lm
 LinearAlgebra.transpose!(lm::PairwiseListMatrix) = lm
 
-Base.ctranspose(lm::PairwiseListMatrix) = lm
-Base.ctranspose!(lm::PairwiseListMatrix) = lm
+LinearAlgebra.adjoint(lm::PairwiseListMatrix)  = lm
+LinearAlgebra.adjoint!(lm::PairwiseListMatrix) = lm
+
+# lu
+# ==
+
+function LinearAlgebra.lu!(lm::PairwiseListMatrix, args...; kargs...)
+    LinearAlgebra.lu!(Matrix(lm), args...; kargs...)
+end
 
 # Diagonal
 # ========
@@ -468,6 +448,55 @@ function diagonal(lm::PairwiseListMatrix{T, true, VT}) where {T,VT}
     convert(VT, T[ lm[i,i] for i in 1:lm.nelements ])
 end
 
+# Customizing broadcasting
+# ========================
+
+function Base.BroadcastStyle(::Type{PairwiseListMatrix{T, D, VT}}) where {T, D, VT}
+    Broadcast.DefaultArrayStyle{2}()
+end
+
+function broadcasted(::Broadcast.DefaultArrayStyle{2},
+                     fun::F,
+                     plm::PairwiseListMatrix{T, D, VT}) where {F <: Function, T, D, VT}
+    println("broadcasted")
+    list = fun.(plm.list)
+    VOUT = typeof(list)
+    if D
+        diag = convert(VOUT, plm.diag)
+    else
+        diag = convert(VOUT, fun.(plm.diag))
+    end
+    PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, plm.nelements)
+end
+
+function broadcasted(::Broadcast.DefaultArrayStyle{2},
+                     fun::F,
+                     plm::PairwiseListMatrix{T, D, VT}, n) where {F <: Function, T, D, VT}
+    println("broadcasted")
+    list = fun.(plm.list, n)
+    VOUT = typeof(list)
+    if D
+        diag = convert(VOUT, plm.diag)
+    else
+        diag = convert(VOUT, fun.(plm.diag))
+    end
+    PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, plm.nelements)
+end
+
+
+# function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PairwiseListMatrix{T, D, VT}}},
+#                       ::Type{E}) where {T, D, VT, E}
+#     A = _find_plm(bc)
+#     similar(A, E)
+# end
+#
+# "`A = _find_plm(As)` returns the first PairwiseListMatrix among the arguments."
+# _find_plm(bc::Base.Broadcast.Broadcasted) = _find_plm(bc.args)
+# _find_plm(args::Tuple) = _find_plm(_find_plm(args[1]), Base.tail(args))
+# _find_plm(x) = x
+# _find_plm(a::PairwiseListMatrix, rest) = a
+# _find_plm(::Any, rest) = _find_plm(rest)
+
 # Unary operations (faster than default methods)
 # ==============================================
 
@@ -488,7 +517,7 @@ for F in (:abs, :-)
     end
 end
 
-for F in (:map, :broadcast)
+for F in (:map, ) # , :broadcast)
     @eval begin
         function Base.$F(f, plm::PairwiseListMatrix{T,true,VT}) where {T,VT}
             list = $F(f, plm.list)
@@ -506,7 +535,7 @@ for F in (:map, :broadcast)
     end
 end
 
-for F in (:map!, :broadcast!)
+for F in (:map!, ) # , :broadcast!)
     @eval begin
         function Base.$F(f, plm::PairwiseListMatrix{T,true,VT}) where {T,VT}
             $F(f, plm.list)
@@ -521,64 +550,72 @@ for F in (:map!, :broadcast!)
     end
 end
 
-LinearAlgebra.svd(m::PairwiseListMatrix) = svd(full(m))
+LinearAlgebra.svd(m::PairwiseListMatrix; kargs...) = LinearAlgebra.svd(Matrix(m), kargs...)
+
+function LinearAlgebra.svd(m::UpperTriangular{T,PairwiseListMatrix{T,D,VT}}) where {T,D,VT}
+    svd(Matrix(m))
+end
+
+function LinearAlgebra.svd(m::LowerTriangular{T,PairwiseListMatrix{T,D,VT}}) where {T,D,VT}
+    svd(Matrix(m))
+end
 
 # Binary operations (faster than default methods)
 # ===============================================
 
-for F in (:broadcast,  :broadcast!)
-    @eval begin
-        function Base.$F(f,
-                         A::PairwiseListMatrix{T,true,VT},
-                         B::PairwiseListMatrix{S,true,VS}) where {T,S,VT,VS}
-            @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-            list = $F(f, A.list, B.list)
-            VOUT = typeof(list)
-            diag = convert(VOUT, T[])
-            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
-        end
-
-        function Base.$F(f,
-                         A::PairwiseListMatrix{T,false,VT},
-                         B::PairwiseListMatrix{S,false,VS}) where {T,S,VT,VS}
-            @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-            list = $F(f, A.list, B.list)
-            VOUT = typeof(list)
-            diag = convert(VOUT, $F(f, A.diag, B.diag))
-            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
-        end
-
-        function Base.$F(f, A::PairwiseListMatrix{T,true,VT}, B::Number) where {T,VT}
-            list = $F(f, A.list, B)
-            VOUT = typeof(list)
-            diag = convert(VOUT, T[])
-            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
-        end
-
-        function Base.$F(f, A::PairwiseListMatrix{T, false, VT}, B::Number) where {T,VT}
-            list = $F(f, A.list, B)
-            VOUT = typeof(list)
-            diag = convert(VOUT, $F(f, A.diag, B))
-            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
-        end
-
-        # Several functions are not commutative: i.e. ./
-
-        function Base.$F(f, A::Number, B::PairwiseListMatrix{T,true,VT}) where {T,VT}
-            list = $F(f, A, B.list)
-            VOUT = typeof(list)
-            diag = convert(VOUT, T[])
-            PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(B.nelements))
-        end
-
-        function Base.$F(f, A::Number, B::PairwiseListMatrix{T, false, VT}) where {T,VT}
-            list = $F(f, A, B.list)
-            VOUT = typeof(list)
-            diag = convert(VOUT, $F(f, A, B.diag))
-            PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(B.nelements))
-        end
-    end
-end
+# for F in (:broadcast,  :broadcast!)
+#     @eval begin
+#         function Base.$F(f,
+#                          A::PairwiseListMatrix{T,true,VT},
+#                          B::PairwiseListMatrix{S,true,VS}) where {T,S,VT,VS}
+#             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
+#             list = $F(f, A.list, B.list)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, T[])
+#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
+#         end
+#
+#         function Base.$F(f,
+#                          A::PairwiseListMatrix{T,false,VT},
+#                          B::PairwiseListMatrix{S,false,VS}) where {T,S,VT,VS}
+#             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
+#             list = $F(f, A.list, B.list)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, $F(f, A.diag, B.diag))
+#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
+#         end
+#
+#         function Base.$F(f, A::PairwiseListMatrix{T,true,VT}, B::Number) where {T,VT}
+#             list = $F(f, A.list, B)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, T[])
+#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
+#         end
+#
+#         function Base.$F(f, A::PairwiseListMatrix{T, false, VT}, B::Number) where {T,VT}
+#             list = $F(f, A.list, B)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, $F(f, A.diag, B))
+#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
+#         end
+#
+#         # Several functions are not commutative: i.e. ./
+#
+#         function Base.$F(f, A::Number, B::PairwiseListMatrix{T,true,VT}) where {T,VT}
+#             list = $F(f, A, B.list)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, T[])
+#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(B.nelements))
+#         end
+#
+#         function Base.$F(f, A::Number, B::PairwiseListMatrix{T, false, VT}) where {T,VT}
+#             list = $F(f, A, B.list)
+#             VOUT = typeof(list)
+#             diag = convert(VOUT, $F(f, A, B.diag))
+#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(B.nelements))
+#         end
+#     end
+# end
 
 # Faster mean and sum
 # ===================
@@ -963,7 +1000,7 @@ end
 # Delegate to PairwiseListMatrix
 # ------------------------------
 
-for F in (:getlist, :getdiag, Symbol("Base.full"), :lengthlist, :sum_nodiag, :mean_nodiag,
+for F in (:getlist, :getdiag, :lengthlist, :sum_nodiag, :mean_nodiag,
           :diagonal)
     @eval begin
         function $F(m::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) where {T,D,TV,DN}
@@ -1249,8 +1286,8 @@ function LinearAlgebra.triu!(mat::PairwiseListMatrix)
     throw(ErrorException("PairwiseListMatrix must be Symmetric, use triu instead of triu!"))
 end
 LinearAlgebra.triu!(mat::PairwiseListMatrix, k::Int) = triu!(mat)
-LinearAlgebra.triu(mat::PairwiseListMatrix) = triu(full(mat))
-LinearAlgebra.triu(mat::PairwiseListMatrix, k::Int) = triu(full(mat), k::Int)
+LinearAlgebra.triu(mat::PairwiseListMatrix) = triu(Matrix(mat))
+LinearAlgebra.triu(mat::PairwiseListMatrix, k::Int) = triu(Matrix(mat), k::Int)
 
 # join
 # ====

@@ -43,6 +43,16 @@ using Statistics
         @test plm_sym   == mat_sym
     end
 
+    @testset "Matrix" begin
+
+        @test Matrix(plmd_triu) == mat_diag_triu
+        @test Matrix(plmd_tril) == mat_diag_tril
+        @test Matrix(plm_triu ) == mat_triu
+        @test Matrix(plm_tril ) == mat_tril
+        @test Matrix(plmd_sym ) == mat_diag_sym
+        @test Matrix(plm_sym  ) == mat_sym
+    end
+
     @testset "Getters" begin
 
         @test getlist(plmd_sym) == plmd_sym.list
@@ -140,8 +150,8 @@ using Statistics
             plm_t = PairwiseListMatrix([.5, .4, .3], true)
             plm_f = PairwiseListMatrix([1., 1., 1.], false)
             fill!(plm_f, 1.0)
-            mat_t = full(plm_t)
-            mat_f = full(plm_f)
+            mat_t = Matrix(plm_t)
+            mat_f = Matrix(plm_f)
 
             for value in  (4, 4.0)
                 result =  plm_t ./ value
@@ -161,25 +171,30 @@ using Statistics
                 @test result == (value ./ mat_f)
             end
         end
+
+        # plm = PairwiseListMatrix(rand(500500), true)
+        # @btime broadcast(Base.:/::typeof(/), $plm, 10.0);
+        # @btime broadcast(Base.:/::typeof(/), $plm.list, 10.0);
+
     end
 
     @testset "Transpose" begin
 
-        @test transpose(plmd_triu) == plmd_tril == mat_diag_triu.'
-        @test transpose(plmd_tril) == plmd_triu == mat_diag_tril.'
-        @test transpose(plm_triu) == plm_tril == mat_triu.'
-        @test transpose(plm_tril) == plm_triu == mat_tril.'
+        @test transpose(plmd_triu) == plmd_tril == transpose(mat_diag_triu)
+        @test transpose(plmd_tril) == plmd_triu == transpose(mat_diag_tril)
+        @test transpose(plm_triu) == plm_tril == transpose(mat_triu)
+        @test transpose(plm_tril) == plm_triu == transpose(mat_tril)
 
-        @test adjoint(plmd_triu) == plmd_tril == mat_diag_triu'
-        @test adjoint(plmd_tril) == plmd_triu == mat_diag_tril'
-        @test adjoint(plm_triu) == plm_tril == mat_triu'
-        @test adjoint(plm_tril) == plm_triu == mat_tril'
+        @test adjoint(plmd_triu) == plmd_tril == adjoint(mat_diag_triu)
+        @test adjoint(plmd_tril) == plmd_triu == adjoint(mat_diag_tril)
+        @test adjoint(plm_triu) == plm_tril == adjoint(mat_triu)
+        @test adjoint(plm_tril) == plm_triu == adjoint(mat_tril)
 
-        @test transpose(plmd_sym) == plmd_sym == mat_diag_sym.'
-        @test transpose(plm_sym) == plm_sym == mat_sym.'
+        @test transpose(plmd_sym) == plmd_sym == transpose(mat_diag_sym)
+        @test transpose(plm_sym) == plm_sym == transpose(mat_sym)
 
-        @test adjoint(plmd_sym) == plmd_sym == mat_diag_sym'
-        @test adjoint(plm_sym) == plm_sym == mat_sym'
+        @test adjoint(plmd_sym) == plmd_sym == adjoint(mat_diag_sym)
+        @test adjoint(plm_sym) == plm_sym == adjoint(mat_sym)
 
         @test transpose!(plm_sym) == plm_sym
         @test adjoint!(plm_sym) == plm_sym
@@ -200,12 +215,14 @@ using Statistics
         @test plmd_sym  / plmd_sym  == mat_diag_sym  / mat_diag_sym
         @test plm_sym   / plm_sym   == mat_sym       / mat_sym
 
-        @test svd(plmd_triu) == svd(mat_diag_triu)
-        @test svd(plmd_tril) == svd(mat_diag_tril)
-        @test svd(plm_triu ) == svd(mat_triu)
-        @test svd(plm_tril ) == svd(mat_tril)
-        @test svd(plmd_sym ) == svd(mat_diag_sym)
-        @test svd(plm_sym  ) == svd(mat_sym)
+        for p in [:U, :S, :Vt]
+            @test getproperty(svd(plmd_triu), p) ≈ getproperty(svd(mat_diag_triu), p)
+            @test getproperty(svd(plmd_tril), p) ≈ getproperty(svd(mat_diag_tril), p)
+            @test getproperty(svd(plm_triu ), p) ≈ getproperty(svd(mat_triu), p)
+            @test getproperty(svd(plm_tril ), p) ≈ getproperty(svd(mat_tril), p)
+            @test getproperty(svd(plmd_sym ), p) ≈ getproperty(svd(mat_diag_sym), p)
+            @test getproperty(svd(plm_sym  ), p) ≈ getproperty(svd(mat_sym), p)
+        end
     end
 
     @testset "Stats" begin
@@ -224,8 +241,8 @@ using Statistics
             @test f(plm_sym , dims=2) == f(mat_sym, dims=2)
         end
 
-        @test cor(plmd_sym ) == cor(mat_diag_sym)
-        @test cor(plm_sym  ) == cor(mat_sym)
+        @test cor(plmd_sym) ≈ cor(mat_diag_sym)
+        @test cor(plm_sym ) ≈ cor(mat_sym)
     end
 
     @testset "triu" begin
@@ -382,7 +399,7 @@ end
 
         @testset "delegated functions" begin
 
-            for F in (getlist, getdiag, full, lengthlist, sum_nodiag, mean_nodiag, diagonal)
+            for F in (getlist, getdiag, Matrix, lengthlist, sum_nodiag, mean_nodiag, diagonal)
                     @test F(nplm) == F(plm)
                     @test F(nplm_diag) == F(plm_diag)
             end
@@ -390,8 +407,8 @@ end
 
         @testset "map and broadcast" begin
 
-            mat = full(nplm)
-            mat_diag = full(nplm_diag)
+            mat = Matrix(nplm)
+            mat_diag = Matrix(nplm_diag)
 
             @test map(sqrt,plm) == map(sqrt,mat)
             @test map(sqrt,nplm) == map(sqrt,mat)
@@ -402,6 +419,9 @@ end
             @test broadcast(sqrt,nplm) == broadcast(sqrt,mat)
             @test broadcast(sqrt,plm_diag) == broadcast(sqrt,mat_diag)
             @test broadcast(sqrt,nplm_diag) == broadcast(sqrt,mat_diag)
+
+            # used in cor(...)
+            @test plmd_sym .- mean(plmd_sym, dims=2) == mat_diag_sym .- mean(mat_diag_sym, dims=2)
         end
     end
 end
@@ -410,8 +430,8 @@ end
 
     list_samples = [ PairwiseListMatrix(rand(10), true) for i in 1:100 ]
     list_diag_samples = [ PairwiseListMatrix(rand(6), false) for i in 1:100 ]
-    full_samples = Matrix{Float64}[ full(mat) for mat in list_samples ]
-    full_diag_samples = Matrix{Float64}[ full(mat) for mat in list_diag_samples ]
+    full_samples = Matrix{Float64}[ Matrix(mat) for mat in list_samples ]
+    full_diag_samples = Matrix{Float64}[ Matrix(mat) for mat in list_diag_samples ]
 
     for f in [sum, mean]
         @test f(list_samples) == f(full_samples)
@@ -472,8 +492,8 @@ end
     list_values = [1,2,3,4,5,6]
     PLMtrue  = PairwiseListMatrix(list_values, true)
     PLMfalse = PairwiseListMatrix(list_values, false)
-    full_t   = full(PLMtrue)
-    full_f   = full(PLMfalse)
+    full_t   = Matrix(PLMtrue)
+    full_f   = Matrix(PLMfalse)
 
     @iteratelist PLMtrue  Base.Test.@test list[k] == :($list_values)[k]
     @iteratelist PLMfalse Base.Test.@test list[k] == :($list_values)[k]

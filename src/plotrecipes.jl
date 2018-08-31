@@ -2,12 +2,12 @@
 
 function _getxyz(plm::PairwiseListMatrix{T,D,TV}) where {T,D,TV}
     names = getlabels(plm)
-    names, names, full(plm)
+    names, names, Matrix(plm)
 end
 
 function _getxyz(nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN}) where {T,D,TV,DN}
     names = getlabels(nplm)
-    names, names, full(nplm.array)
+    names, names, Matrix(nplm.array)
 end
 
 # ---------------------------------- MATRIX ---------------------------------- #

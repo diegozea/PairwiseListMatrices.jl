@@ -19,7 +19,6 @@ getdiag
 ```@docs
 lengthlist
 ij2k
-full
 diagonal
 ```
 
