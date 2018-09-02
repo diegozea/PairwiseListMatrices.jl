@@ -455,34 +455,62 @@ function Base.BroadcastStyle(::Type{PairwiseListMatrix{T, D, VT}}) where {T, D, 
     Broadcast.DefaultArrayStyle{2}()
 end
 
-function broadcasted(::Broadcast.DefaultArrayStyle{2},
-                     fun::F,
-                     plm::PairwiseListMatrix{T, D, VT}) where {F <: Function, T, D, VT}
-    println("broadcasted")
+function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
+                                    fun::F,
+                                    plm::PairwiseListMatrix{T,D,V}) where {F<:Function,T,D,V}
     list = fun.(plm.list)
-    VOUT = typeof(list)
+    E = eltype(list)
     if D
-        diag = convert(VOUT, plm.diag)
+        diag = Array{E, 1}()
     else
-        diag = convert(VOUT, fun.(plm.diag))
+        _diag = fun.(plm.diag)
+        if eltype(_diag) !== E
+            diag = copyt!(similar(_diag, E), _diag)
+        else
+            diag = _diag
+        end
     end
-    PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, plm.nelements)
+    PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
 end
 
-function broadcasted(::Broadcast.DefaultArrayStyle{2},
-                     fun::F,
-                     plm::PairwiseListMatrix{T, D, VT}, n) where {F <: Function, T, D, VT}
-    println("broadcasted")
-    list = fun.(plm.list, n)
-    VOUT = typeof(list)
+
+function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
+                                    fun::F,
+                                    plm::PairwiseListMatrix{T,D,V},
+                                    n::Number) where {F<:Function,T,D,V}
+    list = broadcast(fun, plm.list, n)
+    E = eltype(list)
     if D
-        diag = convert(VOUT, plm.diag)
+        diag = Array{E, 1}()
     else
-        diag = convert(VOUT, fun.(plm.diag))
+        _diag = broadcast(fun, plm.diag, n)
+        if eltype(_diag) !== E
+            diag = copyt!(similar(_diag, E), _diag)
+        else
+            diag = _diag
+        end
     end
-    PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, plm.nelements)
+    PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
 end
 
+function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
+                                    fun::F,
+                                    n::Number,
+                                    plm::PairwiseListMatrix{T,D,V}) where {F<:Function,T,D,V}
+    list = broadcast(fun, n, plm.list)
+    E = eltype(list)
+    if D
+        diag = Array{E, 1}()
+    else
+        _diag = broadcast(fun, n, plm.diag)
+        if eltype(_diag) !== E
+            diag = copyt!(similar(_diag, E), _diag)
+        else
+            diag = _diag
+        end
+    end
+    PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
+end
 
 # function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PairwiseListMatrix{T, D, VT}}},
 #                       ::Type{E}) where {T, D, VT, E}
@@ -842,7 +870,7 @@ end
 
 function Statistics.var(list::Vector{PairwiseListMatrix{T,D,VT}}; mean=nothing) where {T,D,VT}
     if mean === nothing
-        varm(list, Base.mean(list))
+        varm(list, Statistics.mean(list))
     else
         varm(list, mean)
     end
