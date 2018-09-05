@@ -175,7 +175,23 @@ using Statistics
         # plm = PairwiseListMatrix(rand(500500), true)
         # @btime broadcast(Base.:/::typeof(/), $plm, 10.0);
         # @btime broadcast(Base.:/::typeof(/), $plm.list, 10.0);
+        # @btime 0.5 .* $plm ./ 10.0;
+        # @btime 0.5 .* $plm.list ./ 10.0;
 
+    end
+
+    @testset "Inplace Broadcast" begin
+
+        for (p,m) in [(plmd_sym, mat_diag_sym), (plm_sym, mat_sym)]
+            cp = deepcopy(p)
+            cm = deepcopy(m)
+            cp .+= 1.0
+            cm .+= 1.0
+            @test cp == cm
+            cp .+= cp
+            cm .+= cm
+            @test cp == cm
+        end
     end
 
     @testset "Transpose" begin

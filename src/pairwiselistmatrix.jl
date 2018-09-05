@@ -70,7 +70,8 @@ lengthlist(nelements::Int, diagonal::Bool) = lengthlist(nelements, Val{diagonal}
 # Indexes: ij2k
 # =============
 
-function ij2k(i::Int, j::Int, nelements::Int, ::Type{Val{diagonal}}) where diagonal
+@inline @fastmath function ij2k(i::Int, j::Int, nelements::Int,
+                                ::Type{Val{diagonal}}) where diagonal
     div(diagonal ?  (nelements*(nelements+1))-((nelements-i)*(nelements-i+1)) :
     (nelements*(nelements-1))-((nelements-i)*(nelements-i-1)), 2) - nelements + j
 end
@@ -95,7 +96,9 @@ julia> getlist(plm)[2]
 
 ```
 """
-ij2k(i::Int, j::Int, nelements::Int, diagonal::Bool) = ij2k(i, j, nelements, Val{diagonal})
+@inline function ij2k(i::Int, j::Int, nelements::Int, diagonal::Bool)
+    ij2k(i, j, nelements, Val{diagonal})
+end
 
 # Empties
 # -------
@@ -465,7 +468,7 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     else
         _diag = fun.(plm.diag)
         if eltype(_diag) !== E
-            diag = copyt!(similar(_diag, E), _diag)
+            diag = copyto!(similar(_diag, E), _diag)
         else
             diag = _diag
         end
@@ -473,7 +476,7 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
 end
 
-
+# Slow for multiple operations (it doesn't fuse them), e.g.: 0.5 .* $plm ./ 10.0
 function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
                                     fun::F,
                                     plm::PairwiseListMatrix{T,D,V},
@@ -485,7 +488,7 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     else
         _diag = broadcast(fun, plm.diag, n)
         if eltype(_diag) !== E
-            diag = copyt!(similar(_diag, E), _diag)
+            diag = copyto!(similar(_diag, E), _diag)
         else
             diag = _diag
         end
@@ -504,7 +507,7 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     else
         _diag = broadcast(fun, n, plm.diag)
         if eltype(_diag) !== E
-            diag = copyt!(similar(_diag, E), _diag)
+            diag = copyto!(similar(_diag, E), _diag)
         else
             diag = _diag
         end
@@ -512,8 +515,12 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
 end
 
-# function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{PairwiseListMatrix{T, D, VT}}},
-#                       ::Type{E}) where {T, D, VT, E}
+# struct PLMStyle <: Broadcast.BroadcastStyle end
+#
+# Base.BroadcastStyle(::Type{PairwiseListMatrix{T, D, VT}}) where {T, D, VT} = PLMStyle()
+#
+# function Base.similar(bc::Broadcast.Broadcasted{PLMStyle},
+#                       ::Type{E}) where E
 #     A = _find_plm(bc)
 #     similar(A, E)
 # end
@@ -524,6 +531,21 @@ end
 # _find_plm(x) = x
 # _find_plm(a::PairwiseListMatrix, rest) = a
 # _find_plm(::Any, rest) = _find_plm(rest)
+#
+# Base.BroadcastStyle(::PLMStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = PLMStyle()
+# Base.BroadcastStyle(::Base.Broadcast.DefaultArrayStyle{0}, ::PLMStyle) = PLMStyle()
+#
+# Base.BroadcastStyle(::PLMStyle, ::T) where T <: Base.Broadcast.BroadcastStyle = T()
+# Base.BroadcastStyle(::T, ::PLMStyle) where T <: Base.Broadcast.BroadcastStyle = T()
+#
+
+@inline function Base.copyto!(dest::PairwiseListMatrix{T, D, VT},
+                              bc::Base.Broadcast.Broadcasted{Nothing}) where {T, D, VT}
+    axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
+    bc_ = Base.Broadcast.preprocess(dest, bc)
+    @iterateupper dest true list[k] = :($bc_)[CartesianIndex(i,j)] # slow: bc_ has a plm
+    return dest
+end
 
 # Unary operations (faster than default methods)
 # ==============================================
