@@ -60,5 +60,4 @@ to_table
 to_dict
 from_table
 writedlm
-writecsv
 ```

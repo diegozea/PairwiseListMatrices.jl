@@ -1072,9 +1072,8 @@ end
 # ======
 
 """
-Creates a `Matrix{Any}` is useful for `writedlm` and/or `writecsv`.
-Labels are stored in the columns 1 and 2, and the values in the column 3.
-Diagonal values are included by default.
+Creates a `Matrix{Any}`, labels are stored in the columns 1 and 2, and the
+values in the column 3. Diagonal values are included by default.
 
 ```julia
 julia> plm = PairwiseListMatrix([10,20,30], false)
@@ -1257,12 +1256,12 @@ julia> plm  = PairwiseListMatrix(trues(3), false)
   true  false   true
   true   true  false
 
-julia> writedlm("example.txt", plm, diagonal=false, delim=' ')
+julia> writedlm("example.csv", plm, diagonal=false, delim=',')
 
-shell> cat example.txt
-1 2 true
-1 3 true
-2 3 true
+shell> cat example.csv
+1,2,true
+1,3,true
+2,3,true
 
 ```
 """
@@ -1282,51 +1281,6 @@ function DelimitedFiles.writedlm(filename::String,
                        delim::Char = '\t',
                        labels::Vector{String} = getlabels(nplm)) where {T,D,TV,DN}
     writedlm(filename, nplm.array, diagonal=diagonal, delim=delim, labels=labels)
-end
-
-"""
-This function takes the filename as first argument and a `PairwiseListMatrix` as second
-argument. If the keyword argument `diagonal` is `true` (default) the diagonal is included
-in the output.
-
-```julia
-julia> plm  = PairwiseListMatrix(trues(3), false)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
- false   true   true
-  true  false   true
-  true   true  false
-
-julia> writedlm("example.csv", plm)
-
-shell> cat example.csv
-1,1,false
-1,2,true
-1,3,true
-2,2,false
-2,3,true
-3,3,false
-
-julia> writedlm("example.csv", plm, diagonal=false)
-
-shell> cat example.csv
-1,2,true
-1,3,true
-2,3,true
-
-```
-"""
-function DelimitedFiles.writecsv(filename::String,
-                       plm::PairwiseListMatrix{T,D,TV};
-                       diagonal::Bool = true,
-                       labels::Vector{String} = getlabels(plm)) where {T,D,TV}
-    writedlm(filename, plm, diagonal=diagonal, delim=',', labels=labels)
-end
-
-function DelimitedFiles.writecsv(filename::String,
-                       nplm::NamedArray{T,2,PairwiseListMatrix{T,D,TV},DN};
-                       diagonal::Bool = true,
-                       labels::Vector{String} = getlabels(nplm)) where {T,D,TV,DN}
-    writedlm(filename, nplm.array, diagonal=diagonal, delim=',', labels=labels)
 end
 
 # triu! & triu
