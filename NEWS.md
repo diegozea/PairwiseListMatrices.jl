@@ -7,6 +7,9 @@ PairwiseListMatrices v0.6 was the last version with Julia 0.6 support.
 
 * `writecsv` changed to `writedlm` using `delim=','`.   
 
+* A type parameter to indicate the wrapped matrix type was added to
+`NamedResidueMatrix`, which is now `NamedResidueMatrix{Array{Residue,2}}`.  
+
 ### Changes from v0.5 to v0.6
 
 PairwiseListMatrices v0.6 requires Julia v0.6.

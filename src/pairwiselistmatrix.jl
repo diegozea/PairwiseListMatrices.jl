@@ -49,9 +49,11 @@ end
 Returns the list length needed for a pairwise measures or comparisons of `nelements`.
 If `diagonal` is `true`, diagonal values are included in the list.
 
-```
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
-4×4 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+4×4 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
  0  1  2  3
  1  0  4  5
  2  4  0  6
@@ -81,9 +83,11 @@ Returns the `k` index of the `list` from the indixes `i` and `j` with `i<j` from
 of `nelements` by `nelements`. `diagonal` should be `true` or `Val{true}` if the diagonal
 values are on the `list`. You must not use it with `i>j`.
 
-```
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+3×3 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
  10  20  30
  20  40  50
  30  50  60
@@ -107,7 +111,9 @@ function _diagonal_value(diagonal::Bool, ::Type{T}) where T
     if !diagonal
         if hasmethod(zero, (T,))
             return zero(T)
-        elseif T == Any
+        elseif T <: Union{Missing, Int}
+            return missing
+        elseif T === Any
             return nothing
         else
             throw(ErrorException(
@@ -430,9 +436,11 @@ end
 Returns a vector of type `VT` from a `PairwiseListMatrix{T, false, VT}` that has
 the diagonal values.
 
-```
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm = PairwiseListMatrix([10,20,30,40,50,60], true)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+3×3 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
  10  20  30
  20  40  50
  30  50  60
@@ -515,30 +523,6 @@ function Base.Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{2},
     PairwiseListMatrix{E, D, typeof(list)}(list, diag, plm.nelements)
 end
 
-# struct PLMStyle <: Broadcast.BroadcastStyle end
-#
-# Base.BroadcastStyle(::Type{PairwiseListMatrix{T, D, VT}}) where {T, D, VT} = PLMStyle()
-#
-# function Base.similar(bc::Broadcast.Broadcasted{PLMStyle},
-#                       ::Type{E}) where E
-#     A = _find_plm(bc)
-#     similar(A, E)
-# end
-#
-# "`A = _find_plm(As)` returns the first PairwiseListMatrix among the arguments."
-# _find_plm(bc::Base.Broadcast.Broadcasted) = _find_plm(bc.args)
-# _find_plm(args::Tuple) = _find_plm(_find_plm(args[1]), Base.tail(args))
-# _find_plm(x) = x
-# _find_plm(a::PairwiseListMatrix, rest) = a
-# _find_plm(::Any, rest) = _find_plm(rest)
-#
-# Base.BroadcastStyle(::PLMStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = PLMStyle()
-# Base.BroadcastStyle(::Base.Broadcast.DefaultArrayStyle{0}, ::PLMStyle) = PLMStyle()
-#
-# Base.BroadcastStyle(::PLMStyle, ::T) where T <: Base.Broadcast.BroadcastStyle = T()
-# Base.BroadcastStyle(::T, ::PLMStyle) where T <: Base.Broadcast.BroadcastStyle = T()
-#
-
 @inline function Base.copyto!(dest::PairwiseListMatrix{T, D, VT},
                               bc::Base.Broadcast.Broadcasted{Nothing}) where {T, D, VT}
     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
@@ -609,63 +593,6 @@ end
 function LinearAlgebra.svd(m::LowerTriangular{T,PairwiseListMatrix{T,D,VT}}) where {T,D,VT}
     svd(Matrix(m))
 end
-
-# Binary operations (faster than default methods)
-# ===============================================
-
-# for F in (:broadcast,  :broadcast!)
-#     @eval begin
-#         function Base.$F(f,
-#                          A::PairwiseListMatrix{T,true,VT},
-#                          B::PairwiseListMatrix{S,true,VS}) where {T,S,VT,VS}
-#             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-#             list = $F(f, A.list, B.list)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, T[])
-#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
-#         end
-#
-#         function Base.$F(f,
-#                          A::PairwiseListMatrix{T,false,VT},
-#                          B::PairwiseListMatrix{S,false,VS}) where {T,S,VT,VS}
-#             @assert A.nelements == B.nelements "Matrices must have the same number of elements"
-#             list = $F(f, A.list, B.list)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, $F(f, A.diag, B.diag))
-#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
-#         end
-#
-#         function Base.$F(f, A::PairwiseListMatrix{T,true,VT}, B::Number) where {T,VT}
-#             list = $F(f, A.list, B)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, T[])
-#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(A.nelements))
-#         end
-#
-#         function Base.$F(f, A::PairwiseListMatrix{T, false, VT}, B::Number) where {T,VT}
-#             list = $F(f, A.list, B)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, $F(f, A.diag, B))
-#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(A.nelements))
-#         end
-#
-#         # Several functions are not commutative: i.e. ./
-#
-#         function Base.$F(f, A::Number, B::PairwiseListMatrix{T,true,VT}) where {T,VT}
-#             list = $F(f, A, B.list)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, T[])
-#             PairwiseListMatrix{eltype(list), true, VOUT}(list, diag, copy(B.nelements))
-#         end
-#
-#         function Base.$F(f, A::Number, B::PairwiseListMatrix{T, false, VT}) where {T,VT}
-#             list = $F(f, A, B.list)
-#             VOUT = typeof(list)
-#             diag = convert(VOUT, $F(f, A, B.diag))
-#             PairwiseListMatrix{eltype(list), false, VOUT}(list, diag, copy(B.nelements))
-#         end
-#     end
-# end
 
 # Faster mean and sum
 # ===================
@@ -777,12 +704,12 @@ function _sum_nodiag_kernel!(sum_i, lm::PairwiseListMatrix{T,false,VT}, N) where
     sum_i
 end
 
-"Sum the values outside the diagonal"
 _sum_nodiag(m::PairwiseListMatrix{T,false,VT}) where {T,VT} = T(2) * sum(m.list)
 function _sum_nodiag(m::PairwiseListMatrix{T,true,VT}) where {T,VT}
     T(2) * sum(m.list) - sum(diagonal(m))
 end
 
+"Sum the values outside the diagonal"
 function sum_nodiag(lm::PairwiseListMatrix{T,diagonal,VT};
                     dims::Union{Int,Colon}=:) where {T,diagonal,VT}
     if isa(dims, Colon)
@@ -971,9 +898,11 @@ zscore(list, mat) = zscore!(list, copy(mat))
 """
 It gets the labels of a PairwiseListMatrix.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm  = PairwiseListMatrix(ones(3), false)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+3×3 PairwiseListMatrix{Float64,false,Array{Float64,1}}:
  0.0  1.0  1.0
  1.0  0.0  1.0
  1.0  1.0  0.0
@@ -985,7 +914,7 @@ julia> getlabels(plm)
  "3"
 
 julia> nplm  = setlabels(plm, ["a","b","c"])
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c
 ──────┼──────────────
 a     │ 0.0  1.0  1.0
@@ -1020,15 +949,17 @@ end
 """
 Creates a Named PairwiseListMatrix.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm  = PairwiseListMatrix(ones(3), false)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+3×3 PairwiseListMatrix{Float64,false,Array{Float64,1}}:
  0.0  1.0  1.0
  1.0  0.0  1.0
  1.0  1.0  0.0
 
 julia> nplm  = setlabels(plm, ["a","b","c"])
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c
 ──────┼──────────────
 a     │ 0.0  1.0  1.0
@@ -1075,9 +1006,11 @@ end
 Creates a `Matrix{Any}`, labels are stored in the columns 1 and 2, and the
 values in the column 3. Diagonal values are included by default.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> plm = PairwiseListMatrix([10,20,30], false)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
   0  10  20
  10   0  30
  20  30   0
@@ -1123,9 +1056,11 @@ end
 It takes a `PairwiseListMatrix` and converts it to a `Dict` of `Symbol`s to arrays.
 The returned dictionary can be easily converted into a `DataFrame`.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices, DataFrames
+
 julia> nplm = setlabels(PairwiseListMatrix([10,20,30], false), ["a","b","c"])
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}
+3×3 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
 A ╲ B │  a   b   c
 ──────┼───────────
 a     │  0  10  20
@@ -1133,21 +1068,19 @@ b     │ 10   0  30
 c     │ 20  30   0
 
 julia> dict = to_dict(nplm, diagonal=false)
-Dict{Symbol,Any} with 3 entries:
-  :i      => String["a","a","b"]
-  :values => [10,20,30]
-  :j      => String["b","c","c"]
-
-julia> using DataFrames
+Dict{Symbol,Array{T,1} where T} with 3 entries:
+  :values => [10, 20, 30]
+  :j      => ["b", "c", "c"]
+  :i      => ["a", "a", "b"]
 
 julia> DataFrame(dict)
 3×3 DataFrames.DataFrame
-│ Row │ i   │ j   │ values │
-├─────┼─────┼─────┼────────┤
-│ 1   │ "a" │ "b" │ 10     │
-│ 2   │ "a" │ "c" │ 20     │
-│ 3   │ "b" │ "c" │ 30     │
-
+│ Row │ i      │ j      │ values │
+│     │ String │ String │ Int64  │
+├─────┼────────┼────────┼────────┤
+│ 1   │ a      │ b      │ 10     │
+│ 2   │ a      │ c      │ 20     │
+│ 3   │ b      │ c      │ 30     │
 ```
 """
 function to_dict(plm::PairwiseListMatrix{T,D,TV};
@@ -1179,17 +1112,21 @@ Creation of a `PairwiseListMatrix` from a `Matrix`, `DataFrame` or similar struc
 By default the columns with the labels for i (slow) and j (fast) are 1 and 2.
 Values are taken from the column 3 by default.
 
-```julia
-julia> filename = joinpath(Pkg.dir("PairwiseListMatrices"),"test","example.csv");
+```jldoctest
+julia> using PairwiseListMatrices, Pkg, DelimitedFiles
 
-julia> dat = readdlm(filename)
+julia> import PairwiseListMatrices
+
+julia> filename = joinpath(dirname(pathof(PairwiseListMatrices)), "..", "test", "example.csv");
+
+julia> dat = readdlm(filename, ',')
 3×3 Array{Any,2}:
  "A"  "B"  10
  "A"  "C"  20
  "B"  "C"  30
 
 julia> from_table(dat, false)
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Any,false,Array{Any,1}}
+3×3 Named PairwiseListMatrix{Any,false,Array{Any,1}}
 A ╲ B │       A        B        C
 ──────┼──────────────────────────
 A     │ nothing       10       20
@@ -1199,26 +1136,29 @@ C     │      20       30  nothing
 
 This is also useful to create a `PairwiseListMatrix` from a `DataFrame`:
 
-```julia
-julia> using DataFrames
+```
+julia> using PairwiseListMatrices, DataFrames, CSV, Pkg
 
-julia> filename = joinpath(Pkg.dir("PairwiseListMatrices"),"test","example.csv");
+julia> import PairwiseListMatrices
 
-julia> df = readtable(filename, header=false)
+julia> filename = joinpath(dirname(pathof(PairwiseListMatrices)), "..", "test", "example.csv");
+
+julia> df = CSV.read(filename, header=false)
 3×3 DataFrames.DataFrame
-│ Row │ x1  │ x2  │ x3 │
-├─────┼─────┼─────┼────┤
-│ 1   │ "A" │ "B" │ 10 │
-│ 2   │ "A" │ "C" │ 20 │
-│ 3   │ "B" │ "C" │ 30 │
+│ Row │ Column1 │ Column2 │ Column3 │
+│     │ String⍰ │ String⍰ │ Int64⍰  │
+├─────┼─────────┼─────────┼─────────┤
+│ 1   │ A       │ B       │ 10      │
+│ 2   │ A       │ C       │ 20      │
+│ 3   │ B       │ C       │ 30      │
 
 julia> from_table(df, false)
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,DataArrays.DataArray{Int64,1}}
-A ╲ B │  A   B   C
-──────┼───────────
-A     │  0  10  20
-B     │ 10   0  30
-C     │ 20  30   0
+3×3 Named PairwiseListMatrix{Union{Missing, Int64},false,Array{Union{Missing, Int64},1}}
+A ╲ B │       A        B        C
+──────┼──────────────────────────
+A     │ missing       10       20
+B     │      10  missing       30
+C     │      20       30  missing
 ```
 """
 function from_table(table,
@@ -1227,14 +1167,15 @@ function from_table(table,
                     valuecol::Int = 3,
                     diagonalvalue = :default)
     @assert size(table,2) >= 3
-    if diagonalvalue == :default
-        diagonalvalue = _diagonal_value(diagonal, eltype(table[:,valuecol]))
-    end
     values = table[:,valuecol]
+    if diagonalvalue == :default
+        diagonalvalue = _diagonal_value(diagonal, eltype(values))
+    end
     plm  = PairwiseListMatrix(values, diagonal, diagonalvalue)
     nplm = NamedArray(plm)
     if length(labelcols) == 2
-        unique_labels = unique(vcat(table[:,labelcols[1]],table[:,labelcols[2]]))
+        unique_labels = unique(vcat(table[:, labelcols[1]],
+                                    table[:, labelcols[2]]))
         setlabels!(nplm, String[ string(lab) for lab in unique_labels ])
     end
     nplm
@@ -1249,16 +1190,18 @@ argument. If the `diagonal` keyword argument is `true` (default), the diagonal i
 in the output. The keyword argument `delim` (by default is `'\t'`) allows to modified the
 character used as delimiter.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices, DelimitedFiles
+
 julia> plm  = PairwiseListMatrix(trues(3), false)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Bool,false,BitArray{1}}:
+3×3 PairwiseListMatrix{Bool,false,BitArray{1}}:
  false   true   true
   true  false   true
   true   true  false
 
 julia> writedlm("example.csv", plm, diagonal=false, delim=',')
 
-shell> cat example.csv
+julia> println(read("example.csv", String))
 1,2,true
 1,3,true
 2,3,true
@@ -1308,9 +1251,11 @@ PairwiseListMatrices with same size and labels. There are 4 `kind`s of joins:
 `NaN`s are filled in where needed to complete joins. The default value for missing values
 can be changed passing a tuple to `missing`.
 
-```julia
+```jldoctest
+julia> using PairwiseListMatrices
+
 julia> l = setlabels(PairwiseListMatrix([1.,2.,3.], false), ["a","b","c"]) # a b c
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c
 ──────┼──────────────
 a     │ 0.0  1.0  2.0
@@ -1318,7 +1263,7 @@ b     │ 1.0  0.0  3.0
 c     │ 2.0  3.0  0.0
 
 julia> r = setlabels(PairwiseListMatrix([1.,2.,3.], false), ["b","c","d"]) # b c d
-3×3 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   b    c    d
 ──────┼──────────────
 b     │ 0.0  1.0  2.0
@@ -1326,30 +1271,24 @@ c     │ 1.0  0.0  3.0
 d     │ 2.0  3.0  0.0
 
 julia> join(l, r, kind=:inner) # b c
-(
-2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+(2×2 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   b    c
 ──────┼─────────
 b     │ 0.0  3.0
-c     │ 3.0  0.0,
-
-2×2 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+c     │ 3.0  0.0, 2×2 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   b    c
 ──────┼─────────
 b     │ 0.0  1.0
 c     │ 1.0  0.0)
 
 julia> join(l, r, kind=:outer) # a b c d
-(
-4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+(4×4 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c    d
 ──────┼───────────────────
 a     │ 0.0  1.0  2.0  NaN
 b     │ 1.0  0.0  3.0  NaN
 c     │ 2.0  3.0  0.0  NaN
-d     │ NaN  NaN  NaN  NaN,
-
-4×4 Named PairwiseListMatrices.PairwiseListMatrix{Float64,false,Array{Float64,1}}
+d     │ NaN  NaN  NaN  NaN, 4×4 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
 A ╲ B │   a    b    c    d
 ──────┼───────────────────
 a     │ NaN  NaN  NaN  NaN

@@ -1,6 +1,7 @@
 using Documenter, PairwiseListMatrices
 
 makedocs(
+    doctest = true,
     format = :html,
     sitename = "PairwiseListMatrices",
     modules = [PairwiseListMatrices],
@@ -13,7 +14,6 @@ makedocs(
 deploydocs(
     repo   = "github.com/diegozea/PairwiseListMatrices.jl.git",
     target = "build",
-    julia  = "0.6",
     deps   = nothing,
     make   = nothing
 )

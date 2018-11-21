@@ -1,6 +1,12 @@
 __precompile__()
 
+"""
+This package allows you to use a pairwise list as a symmetric matrix.
 
+```julia
+using PairwiseListMatrices
+```
+"""
 module PairwiseListMatrices
 
 # standard libraries
@@ -28,18 +34,10 @@ export  @iterateupper,
         from_table, to_table,
         to_dict,
         join,
-        to_dataframe, from_dataframe
+        writedlm
 
 include("macros.jl")
 include("pairwiselistmatrix.jl")
 include("plotrecipes.jl")
-
-function to_dataframe(args...)
-    throw(ErrorException("Deprecated function, use DataFrame(to_dict(args...)) instead."))
-end
-
-function from_dataframe(args...)
-    throw(ErrorException("Deprecated function, use from_table(args...) instead."))
-end
 
 end

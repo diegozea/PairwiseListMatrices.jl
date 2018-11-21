@@ -504,7 +504,7 @@ end
 
     PLM = PairwiseListMatrix([1,2,3], false)
 
-    @iteratelist PLM Test.@test list[k] == k
+    @iteratelist PLM Main.@test(list[k] == k)
 
     list_values = [1,2,3,4,5,6]
     PLMtrue  = PairwiseListMatrix(list_values, true)
@@ -512,11 +512,11 @@ end
     full_t   = Matrix(PLMtrue)
     full_f   = Matrix(PLMfalse)
 
-    @iteratelist PLMtrue  Test.@test list[k] == :($list_values)[k]
-    @iteratelist PLMfalse Test.@test list[k] == :($list_values)[k]
+    @iteratelist PLMtrue  Main.@test(list[k] == :($list_values)[k])
+    @iteratelist PLMfalse Main.@test(list[k] == :($list_values)[k])
 
-    @iteratediag PLMtrue  Test.@test false
-    @iteratediag PLMfalse Test.@test diag[k] == 0
+    @iteratediag PLMtrue  Main.@test(false)
+    @iteratediag PLMfalse Main.@test(diag[k] == 0)
 
     @iterateupper PLMtrue  true  list[k] = :($list_values)[k]
     @iterateupper PLMfalse false list[k] = :($list_values)[k]
