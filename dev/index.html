@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>PairwiseListMatrices · PairwiseListMatrices</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>PairwiseListMatrices</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href="index.html">PairwiseListMatrices</a><ul class="internal"><li><a class="toctext" href="#Introduction-1">Introduction</a></li><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#Simple-example-1">Simple example</a></li><li><a class="toctext" href="#Implementation-1">Implementation</a></li><li><a class="toctext" href="#Ploting-1">Ploting</a></li><li><a class="toctext" href="#Benchmark-1">Benchmark</a></li></ul></li><li><a class="toctext" href="api.html">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="index.html">PairwiseListMatrices</a></li></ul><a class="edit-page" href="https://github.com/diegozea/PairwiseListMatrices.jl/blob/master/docs/src/index.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>PairwiseListMatrices</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="PairwiseListMatrices-1" href="#PairwiseListMatrices-1">PairwiseListMatrices</a></h1><h2><a class="nav-anchor" id="Introduction-1" href="#Introduction-1">Introduction</a></h2><p><strong>PairwiseListMatrices</strong> allows you to represent a (squared) <strong>symmetric matrix</strong> as a list of the values in the upper or lower triangular part of the matrix. Those matrices are common for representing <strong>pairwise measures/comparisons</strong> between the elements of one group when the used metric/distance satisfies the symmetry condition. Also the <strong>adjacency matrices of undirected graphs</strong> can be represented with this kind of list/matrices.  </p><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>This package is registered on Julia&#39;s METADATA.jl and it can be installed through the Julia&#39;s REPL:  </p><pre><code class="language-julia">Pkg.add(&quot;PairwiseListMatrices&quot;)</code></pre><p>If the package is installed on your system, you can load it with:  </p><pre><code class="language-julia">using PairwiseListMatrices</code></pre><h2><a class="nav-anchor" id="Simple-example-1" href="#Simple-example-1">Simple example</a></h2><p>The following symmetric matrix has 9 values. Their values could be thought as pairwise measures between 3 elements:  </p><pre><code class="language-julia-repl">julia&gt; matrix = [  0 10 20
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>PairwiseListMatrices · PairwiseListMatrices</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>PairwiseListMatrices</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href>PairwiseListMatrices</a><ul class="internal"><li><a class="toctext" href="#Introduction-1">Introduction</a></li><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#Simple-example-1">Simple example</a></li><li><a class="toctext" href="#Implementation-1">Implementation</a></li><li><a class="toctext" href="#Ploting-1">Ploting</a></li><li><a class="toctext" href="#Benchmark-1">Benchmark</a></li></ul></li><li><a class="toctext" href="api/">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>PairwiseListMatrices</a></li></ul></nav><hr/><div id="topbar"><span>PairwiseListMatrices</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="PairwiseListMatrices-1" href="#PairwiseListMatrices-1">PairwiseListMatrices</a></h1><h2><a class="nav-anchor" id="Introduction-1" href="#Introduction-1">Introduction</a></h2><p><strong>PairwiseListMatrices</strong> allows you to represent a (squared) <strong>symmetric matrix</strong> as a list of the values in the upper or lower triangular part of the matrix. Those matrices are common for representing <strong>pairwise measures/comparisons</strong> between the elements of one group when the used metric/distance satisfies the symmetry condition. Also the <strong>adjacency matrices of undirected graphs</strong> can be represented with this kind of list/matrices.  </p><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>This package is registered on Julia&#39;s METADATA.jl and it can be installed through the Julia&#39;s REPL:  </p><pre><code class="language-julia">Pkg.add(&quot;PairwiseListMatrices&quot;)</code></pre><p>If the package is installed on your system, you can load it with:  </p><pre><code class="language-julia">using PairwiseListMatrices</code></pre><h2><a class="nav-anchor" id="Simple-example-1" href="#Simple-example-1">Simple example</a></h2><p>The following symmetric matrix has 9 values. Their values could be thought as pairwise measures between 3 elements:  </p><pre><code class="language-julia-repl">julia&gt; matrix = [  0 10 20
                   10  0 30
                   20 30  0 ]
 3×3 Array{Int64,2}:
@@ -12,7 +12,7 @@
  30</code></pre><p>The type <code>PairwiseListMatrix</code>, defined in this module, can be used for working with the list as a full symmetric matrix.  </p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
 
 julia&gt; plm = PairwiseListMatrix(list)
-3×3 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
   0  10  20
  10   0  30
  20  30   0</code></pre><h2><a class="nav-anchor" id="Implementation-1" href="#Implementation-1">Implementation</a></h2><p>If you are performing pairwise measures over <code>N</code> elements, storing all the <code>N*N</code> values of a <code>Matrix{T}</code> represents <code>sizeof(T)*(N*N)</code> bytes of memory. However, the lower and upper triangular parts of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:  </p><p><img src="PLM.svg" alt/></p><p>The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need <code>sizeof(T)*(N)</code> bytes for storing the diagonal values on a vector and <code>sizeof(T)*(N*(N-1))/2</code> bytes for storing the lower or upper triangular part of the matrix. The type <code>PairwiseListMatrix{T, diagonal, VT}</code> represents the symmetric matrix using only <code>sizeof(T)*(N*(N+1))/2</code> bytes instead of <code>sizeof(T)*(N*N)</code> bytes, saving almost 50% of the memory (the percent depends on <code>N</code>):  </p><div><pre><code class="language-julia">using Plots
@@ -21,7 +21,7 @@ plot(      2:550,
            N -&gt; 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),
            xlab = &quot;N&quot;,
            ylab = &quot;% of saved memory&quot;,
-           legend = nothing        )</code></pre><pre><code class="language-none">/home/travis/.julia/v0.6/GR/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
+           legend = nothing        )</code></pre><pre><code class="language-none">/home/travis/.julia/packages/GR/wFd9A/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
 connect: Connection refused
 GKS: can&#39;t connect to GKS socket application
 Did you start &#39;gksqt&#39;?
@@ -35,14 +35,14 @@ GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in ro
 end</code></pre><p>The number of elements in the pairwise measure/comparisons or the number of nodes in the undirected graph is stored in <code>nelements</code> and used in indexing operations. This allows you to index the object like any other matrix.  </p><p>The <code>PairwiseListMatrix</code> can be wrapped in a <code>NamedArray</code> (from the package <code>NamedArrays</code>) to allow the access of elements using labels. The function <code>setlabel</code> can be used to create this object easily. For example, using the matrix of the figure and storing the diagonal values in the list:</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
 
 julia&gt; plm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)
-4×4 PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+4×4 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
  1  1  0  1
  1  0  1  1
  0  1  0  0
  1  1  0  0
 
 julia&gt; nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
-4×4 Named PairwiseListMatrices.PairwiseListMatrix{Int64,true,Array{Int64,1}}
+4×4 Named PairwiseListMatrix{Int64,true,Array{Int64,1}}
 A ╲ B │ A  B  C  D
 ──────┼───────────
 A     │ 1  1  0  1
@@ -54,14 +54,14 @@ julia&gt; nplm[&quot;B&quot;,&quot;C&quot;]
 1</code></pre><p>You can also create the matrix with the list without the diagonal values and fill the diagonal values after that:  </p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
 
 julia&gt; plm = PairwiseListMatrix([1,0,1,1,1,0], false)
-4×4 PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+4×4 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
  0  1  0  1
  1  0  1  1
  0  1  0  0
  1  1  0  0
 
 julia&gt; nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
-4×4 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}
+4×4 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
 A ╲ B │ A  B  C  D
 ──────┼───────────
 A     │ 0  1  0  1
@@ -73,7 +73,7 @@ julia&gt; nplm[&quot;A&quot;,&quot;A&quot;] = 1
 1
 
 julia&gt; nplm
-4×4 Named PairwiseListMatrices.PairwiseListMatrix{Int64,false,Array{Int64,1}}
+4×4 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
 A ╲ B │ A  B  C  D
 ──────┼───────────
 A     │ 1  1  0  1
@@ -85,10 +85,10 @@ nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
 
 using Plots
 gr()
-plot(nplm)</code></pre><pre><code class="language-none">/home/travis/.julia/v0.6/GR/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
+plot(nplm)</code></pre><pre><code class="language-none">/home/travis/.julia/packages/GR/wFd9A/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
 connect: Connection refused
 GKS: can&#39;t connect to GKS socket application
 Did you start &#39;gksqt&#39;?
 
 GKS: Open failed in routine OPEN_WS
-GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</code></pre></div><p><img src="heatmap.png" alt/>  </p><h2><a class="nav-anchor" id="Benchmark-1" href="#Benchmark-1">Benchmark</a></h2><p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p><ul><li><p><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></p></li><li><p><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></p></li></ul><footer><hr/><a class="next" href="api.html"><span class="direction">Next</span><span class="title">API</span></a></footer></article></body></html>
+GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</code></pre></div><p><img src="heatmap.png" alt/>  </p><h2><a class="nav-anchor" id="Benchmark-1" href="#Benchmark-1">Benchmark</a></h2><p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p><ul><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></li><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></li></ul><footer><hr/><a class="next" href="api/"><span class="direction">Next</span><span class="title">API</span></a></footer></article></body></html>

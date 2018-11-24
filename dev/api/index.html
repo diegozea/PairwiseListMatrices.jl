@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>API · PairwiseListMatrices</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>PairwiseListMatrices</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">PairwiseListMatrices</a></li><li class="current"><a class="toctext" href>API</a><ul class="internal"><li><a class="toctext" href="#Creation-1">Creation</a></li><li><a class="toctext" href="#Getters-1">Getters</a></li><li><a class="toctext" href="#Helpers-1">Helpers</a></li><li><a class="toctext" href="#Macros-1">Macros</a></li><li><a class="toctext" href="#Labels/Names-1">Labels/Names</a></li><li><a class="toctext" href="#Join-1">Join</a></li><li><a class="toctext" href="#Statistics-1">Statistics</a></li><li><a class="toctext" href="#IO-1">IO</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li><a href>API</a></li></ul></nav><hr/><div id="topbar"><span>API</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="API-1" href="#API-1">API</a></h1><h2><a class="nav-anchor" id="Creation-1" href="#Creation-1">Creation</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.PairwiseListMatrix" href="#PairwiseListMatrices.PairwiseListMatrix"><code>PairwiseListMatrices.PairwiseListMatrix</code></a> — <span class="docstring-category">Type</span>.</div><div><div><p><code>PairwiseListMatrix{T, diagonal, VT}</code> is a (squared) symmetric matrix that stores a <code>list</code> of type <code>VT</code> with values of type <code>T</code> for the pairwise comparison/evaluation of <code>nelements</code>. If <code>diagonal</code> is <code>true</code> the first element of the list is <code>1, 1</code> otherwise is <code>1, 2</code>. If <code>diagonal</code> is <code>false</code> the diagonal values are stored in a vector on the <code>diag</code> field.</p></div></div></section><h2><a class="nav-anchor" id="Getters-1" href="#Getters-1">Getters</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.hasdiagonal" href="#PairwiseListMatrices.hasdiagonal"><code>PairwiseListMatrices.hasdiagonal</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Returns <code>true</code> if the list has diagonal values.</p></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.getlist" href="#PairwiseListMatrices.getlist"><code>PairwiseListMatrices.getlist</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Retuns the <code>list</code> vector.</p></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.getdiag" href="#PairwiseListMatrices.getdiag"><code>PairwiseListMatrices.getdiag</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Retuns the <code>diag</code> vector (which contains the diagonal values if <code>diagonal</code> is <code>false</code>).</p></div></div></section><h2><a class="nav-anchor" id="Helpers-1" href="#Helpers-1">Helpers</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.lengthlist" href="#PairwiseListMatrices.lengthlist"><code>PairwiseListMatrices.lengthlist</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Returns the length of the <code>list</code> field</p></div></div><div><div><p>Returns the list length needed for a pairwise measures or comparisons of <code>nelements</code>. If <code>diagonal</code> is <code>true</code>, diagonal values are included in the list.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([1, 2, 3, 4, 5, 6], false)
+4×4 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 0  1  2  3
+ 1  0  4  5
+ 2  4  0  6
+ 3  5  6  0
+
+julia&gt; lengthlist(4, false)
+6
+
+julia&gt; lengthlist(plm)
+6
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.ij2k" href="#PairwiseListMatrices.ij2k"><code>PairwiseListMatrices.ij2k</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Returns the <code>k</code> index of the <code>list</code> from the indixes <code>i</code> and <code>j</code> with <code>i&lt;j</code> from a matrix of <code>nelements</code> by <code>nelements</code>. <code>diagonal</code> should be <code>true</code> or <code>Val{true}</code> if the diagonal values are on the <code>list</code>. You must not use it with <code>i&gt;j</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([10,20,30,40,50,60], true)
+3×3 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+julia&gt; ij2k(1, 2, 3, true)
+2
+
+julia&gt; getlist(plm)[2]
+20
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.diagonal" href="#PairwiseListMatrices.diagonal"><code>PairwiseListMatrices.diagonal</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Returns a vector of type <code>VT</code> from a <code>PairwiseListMatrix{T, false, VT}</code> that has the diagonal values.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([10,20,30,40,50,60], true)
+3×3 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 10  20  30
+ 20  40  50
+ 30  50  60
+
+julia&gt; diagonal(plm)
+3-element Array{Int64,1}:
+ 10
+ 40
+ 60
+</code></pre></div></div></section><h2><a class="nav-anchor" id="Macros-1" href="#Macros-1">Macros</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.@iteratelist" href="#PairwiseListMatrices.@iteratelist"><code>PairwiseListMatrices.@iteratelist</code></a> — <span class="docstring-category">Macro</span>.</div><div><div><p>The macro <code>@iteratelist</code> writes a <code>for</code> loop over the <code>list</code> but avoiding <code>getfield</code> calls inside the loop. The first argument of the macro is the <code>PairwiseListMatrix</code> that is going to be iterated and the second is the body of the loop. In the body <code>list</code> will be the list field of the <code>PairwiseListMatrix</code> and <code>k</code> the index over that list. Other variables should be interpolated in a quote. You must not modify the value of <code>k</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; PLM = PairwiseListMatrix([1,2,3], false)
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 0  1  2
+ 1  0  3
+ 2  3  0
+
+julia&gt; @iteratelist PLM println(list[k])
+1
+2
+3
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.@iteratediag" href="#PairwiseListMatrices.@iteratediag"><code>PairwiseListMatrices.@iteratediag</code></a> — <span class="docstring-category">Macro</span>.</div><div><div><p>The macro <code>@iteratediag</code> writes a <code>for</code> loop over the <code>diag</code> field of a <code>PairwiseListMatrix{T,false,VT}</code> but avoiding calls to <code>getfield</code> inside the loop. The first argument of the macro is the <code>PairwiseListMatrix</code> that is going to be iterated and the second is the body of the loop. In the body <code>diag</code> will be the diag field of the <code>PairwiseListMatrix</code> and <code>k</code> the index over that vector. Other variables should be interpolated in a quote. You must not modify the value of <code>k</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; PLM = PairwiseListMatrix([1,2,3], false)
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 0  1  2
+ 1  0  3
+ 2  3  0
+
+julia&gt; @iteratediag PLM diag[k] += 10k
+
+julia&gt; PLM
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 10   1   2
+  1  20   3
+  2   3  30
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.@iterateupper" href="#PairwiseListMatrices.@iterateupper"><code>PairwiseListMatrices.@iterateupper</code></a> — <span class="docstring-category">Macro</span>.</div><div><div><p>The macro <code>@iterateupper</code> iterates over the upper triangular part of the <code>PairwiseListMatrix</code> that is given as first argument. The second argument should be <code>true</code> if the diagonal need to be included in the iteration or <code>false</code> otherwise. The last argument is the body of the loop, where <code>list</code> is the list and diag fields of the <code>PairwiseListMatrix</code> and <code>k</code> is the index over that <code>list</code>. You can also use the respective <code>i</code> and <code>j</code> indexes for that position <code>k</code> in the upper triangular part of the matrix. Other variables should be interpolated in a quote. You must not modify the values of <code>i</code>, <code>j</code> or <code>k</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; PLM = PairwiseListMatrix([1,2,3], true)
+2×2 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 1  2
+ 2  3
+
+julia&gt; mat = zeros(Int, 2, 2)
+2×2 Array{Int64,2}:
+ 0  0
+ 0  0
+
+julia&gt; let mat = mat # To avoid using global
+           @iterateupper PLM true :($mat)[i,j] = list[k]
+       end
+
+julia&gt; mat
+2×2 Array{Int64,2}:
+ 1  2
+ 0  3
+</code></pre></div></div></section><h2><a class="nav-anchor" id="Labels/Names-1" href="#Labels/Names-1">Labels/Names</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.getlabels" href="#PairwiseListMatrices.getlabels"><code>PairwiseListMatrices.getlabels</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>It gets the labels of a PairwiseListMatrix.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm  = PairwiseListMatrix(ones(3), false)
+3×3 PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+ 0.0  1.0  1.0
+ 1.0  0.0  1.0
+ 1.0  1.0  0.0
+
+julia&gt; getlabels(plm)
+3-element Array{String,1}:
+ &quot;1&quot;
+ &quot;2&quot;
+ &quot;3&quot;
+
+julia&gt; nplm  = setlabels(plm, [&quot;a&quot;,&quot;b&quot;,&quot;c&quot;])
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  1.0
+b     │ 1.0  0.0  1.0
+c     │ 1.0  1.0  0.0
+
+julia&gt; getlabels(nplm)
+3-element Array{String,1}:
+ &quot;a&quot;
+ &quot;b&quot;
+ &quot;c&quot;
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.setlabels" href="#PairwiseListMatrices.setlabels"><code>PairwiseListMatrices.setlabels</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Creates a Named PairwiseListMatrix.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm  = PairwiseListMatrix(ones(3), false)
+3×3 PairwiseListMatrix{Float64,false,Array{Float64,1}}:
+ 0.0  1.0  1.0
+ 1.0  0.0  1.0
+ 1.0  1.0  0.0
+
+julia&gt; nplm  = setlabels(plm, [&quot;a&quot;,&quot;b&quot;,&quot;c&quot;])
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  1.0
+b     │ 1.0  0.0  1.0
+c     │ 1.0  1.0  0.0
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.setlabels!" href="#PairwiseListMatrices.setlabels!"><code>PairwiseListMatrices.setlabels!</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>It changes the labels of a Named PairwiseListMatrix</p></div></div></section><h2><a class="nav-anchor" id="Join-1" href="#Join-1">Join</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Base.join" href="#Base.join"><code>Base.join</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>This function join two PairwiseListMatrices by their labels, returning two PairwiseListMatrices with same size and labels. There are 4 <code>kind</code>s of joins:</p><ul><li><code>:inner</code> : Intersect. The output matrices only include the labels that are in both PairwiseListMatrices</li><li><code>:outer</code> : Union. Include the labels of the two PairwiseListMatrices.</li><li><code>:left</code> : Only use labels from the first argument.</li><li><code>:right</code> : Only use labels from the second argument.</li></ul><p><code>NaN</code>s are filled in where needed to complete joins. The default value for missing values can be changed passing a tuple to <code>missing</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; l = setlabels(PairwiseListMatrix([1.,2.,3.], false), [&quot;a&quot;,&quot;b&quot;,&quot;c&quot;]) # a b c
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c
+──────┼──────────────
+a     │ 0.0  1.0  2.0
+b     │ 1.0  0.0  3.0
+c     │ 2.0  3.0  0.0
+
+julia&gt; r = setlabels(PairwiseListMatrix([1.,2.,3.], false), [&quot;b&quot;,&quot;c&quot;,&quot;d&quot;]) # b c d
+3×3 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c    d
+──────┼──────────────
+b     │ 0.0  1.0  2.0
+c     │ 1.0  0.0  3.0
+d     │ 2.0  3.0  0.0
+
+julia&gt; join(l, r, kind=:inner) # b c
+(2×2 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c
+──────┼─────────
+b     │ 0.0  3.0
+c     │ 3.0  0.0, 2×2 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   b    c
+──────┼─────────
+b     │ 0.0  1.0
+c     │ 1.0  0.0)
+
+julia&gt; join(l, r, kind=:outer) # a b c d
+(4×4 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c    d
+──────┼───────────────────
+a     │ 0.0  1.0  2.0  NaN
+b     │ 1.0  0.0  3.0  NaN
+c     │ 2.0  3.0  0.0  NaN
+d     │ NaN  NaN  NaN  NaN, 4×4 Named PairwiseListMatrix{Float64,false,Array{Float64,1}}
+A ╲ B │   a    b    c    d
+──────┼───────────────────
+a     │ NaN  NaN  NaN  NaN
+b     │ NaN  0.0  1.0  2.0
+c     │ NaN  1.0  0.0  3.0
+d     │ NaN  2.0  3.0  0.0)
+</code></pre></div></div></section><h2><a class="nav-anchor" id="Statistics-1" href="#Statistics-1">Statistics</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.sum_nodiag" href="#PairwiseListMatrices.sum_nodiag"><code>PairwiseListMatrices.sum_nodiag</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Sum the values outside the diagonal</p></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.mean_nodiag" href="#PairwiseListMatrices.mean_nodiag"><code>PairwiseListMatrices.mean_nodiag</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Mean of the values outside the diagonal</p></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.zscore" href="#PairwiseListMatrices.zscore"><code>PairwiseListMatrices.zscore</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>It&#39;s like <code>zscore!</code> but without modifying the <code>PairwiseListMatrix</code></p></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.zscore!" href="#PairwiseListMatrices.zscore!"><code>PairwiseListMatrices.zscore!</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>This function takes a vector of <code>PairwiseListMatrix</code> objects and a <code>PairwiseListMatrix</code> and fill the matrix with the zscore value using the median and std of the vector.</p></div></div></section><h2><a class="nav-anchor" id="IO-1" href="#IO-1">IO</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.to_table" href="#PairwiseListMatrices.to_table"><code>PairwiseListMatrices.to_table</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Creates a <code>Matrix{Any}</code>, labels are stored in the columns 1 and 2, and the values in the column 3. Diagonal values are included by default.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([10,20,30], false)
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+  0  10  20
+ 10   0  30
+ 20  30   0
+
+julia&gt; to_table(plm)
+6×3 Array{Any,2}:
+ &quot;1&quot;  &quot;1&quot;   0
+ &quot;1&quot;  &quot;2&quot;  10
+ &quot;1&quot;  &quot;3&quot;  20
+ &quot;2&quot;  &quot;2&quot;   0
+ &quot;2&quot;  &quot;3&quot;  30
+ &quot;3&quot;  &quot;3&quot;   0
+
+julia&gt; to_table(plm, diagonal=false)
+3×3 Array{Any,2}:
+ &quot;1&quot;  &quot;2&quot;  10
+ &quot;1&quot;  &quot;3&quot;  20
+ &quot;2&quot;  &quot;3&quot;  30
+</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.to_dict" href="#PairwiseListMatrices.to_dict"><code>PairwiseListMatrices.to_dict</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>It takes a <code>PairwiseListMatrix</code> and converts it to a <code>Dict</code> of <code>Symbol</code>s to arrays. The returned dictionary can be easily converted into a <code>DataFrame</code>.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices, DataFrames
+
+julia&gt; nplm = setlabels(PairwiseListMatrix([10,20,30], false), [&quot;a&quot;,&quot;b&quot;,&quot;c&quot;])
+3×3 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
+A ╲ B │  a   b   c
+──────┼───────────
+a     │  0  10  20
+b     │ 10   0  30
+c     │ 20  30   0
+
+julia&gt; dict = to_dict(nplm, diagonal=false)
+Dict{Symbol,Array{T,1} where T} with 3 entries:
+  :values =&gt; [10, 20, 30]
+  :j      =&gt; [&quot;b&quot;, &quot;c&quot;, &quot;c&quot;]
+  :i      =&gt; [&quot;a&quot;, &quot;a&quot;, &quot;b&quot;]
+
+julia&gt; DataFrame(dict)
+3×3 DataFrames.DataFrame
+│ Row │ i      │ j      │ values │
+│     │ String │ String │ Int64  │
+├─────┼────────┼────────┼────────┤
+│ 1   │ a      │ b      │ 10     │
+│ 2   │ a      │ c      │ 20     │
+│ 3   │ b      │ c      │ 30     │</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="PairwiseListMatrices.from_table" href="#PairwiseListMatrices.from_table"><code>PairwiseListMatrices.from_table</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>Creation of a <code>PairwiseListMatrix</code> from a <code>Matrix</code>, <code>DataFrame</code> or similar structure. By default the columns with the labels for i (slow) and j (fast) are 1 and 2. Values are taken from the column 3 by default.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices, Pkg, DelimitedFiles
+
+julia&gt; import PairwiseListMatrices
+
+julia&gt; filename = joinpath(dirname(pathof(PairwiseListMatrices)), &quot;..&quot;, &quot;test&quot;, &quot;example.csv&quot;);
+
+julia&gt; dat = readdlm(filename, &#39;,&#39;)
+3×3 Array{Any,2}:
+ &quot;A&quot;  &quot;B&quot;  10
+ &quot;A&quot;  &quot;C&quot;  20
+ &quot;B&quot;  &quot;C&quot;  30
+
+julia&gt; from_table(dat, false)
+3×3 Named PairwiseListMatrix{Any,false,Array{Any,1}}
+A ╲ B │       A        B        C
+──────┼──────────────────────────
+A     │ nothing       10       20
+B     │      10  nothing       30
+C     │      20       30  nothing</code></pre><p>This is also useful to create a <code>PairwiseListMatrix</code> from a <code>DataFrame</code>:</p><pre><code class="language-none">julia&gt; using PairwiseListMatrices, DataFrames, CSV, Pkg
+
+julia&gt; import PairwiseListMatrices
+
+julia&gt; filename = joinpath(dirname(pathof(PairwiseListMatrices)), &quot;..&quot;, &quot;test&quot;, &quot;example.csv&quot;);
+
+julia&gt; df = CSV.read(filename, header=false)
+3×3 DataFrames.DataFrame
+│ Row │ Column1 │ Column2 │ Column3 │
+│     │ String⍰ │ String⍰ │ Int64⍰  │
+├─────┼─────────┼─────────┼─────────┤
+│ 1   │ A       │ B       │ 10      │
+│ 2   │ A       │ C       │ 20      │
+│ 3   │ B       │ C       │ 30      │
+
+julia&gt; from_table(df, false)
+3×3 Named PairwiseListMatrix{Union{Missing, Int64},false,Array{Union{Missing, Int64},1}}
+A ╲ B │       A        B        C
+──────┼──────────────────────────
+A     │ missing       10       20
+B     │      10  missing       30
+C     │      20       30  missing</code></pre></div></div></section><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="DelimitedFiles.writedlm" href="#DelimitedFiles.writedlm"><code>DelimitedFiles.writedlm</code></a> — <span class="docstring-category">Function</span>.</div><div><div><p>This function takes the filename as first argument and a <code>PairwiseListMatrix</code> as second argument. If the <code>diagonal</code> keyword argument is <code>true</code> (default), the diagonal is included in the output. The keyword argument <code>delim</code> (by default is <code>&#39;	&#39;</code>) allows to modified the character used as delimiter.</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices, DelimitedFiles
+
+julia&gt; plm  = PairwiseListMatrix(trues(3), false)
+3×3 PairwiseListMatrix{Bool,false,BitArray{1}}:
+ false   true   true
+  true  false   true
+  true   true  false
+
+julia&gt; writedlm(&quot;example.csv&quot;, plm, diagonal=false, delim=&#39;,&#39;)
+
+julia&gt; println(read(&quot;example.csv&quot;, String))
+1,2,true
+1,3,true
+2,3,true
+</code></pre></div></div></section><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">PairwiseListMatrices</span></a></footer></article></body></html>
