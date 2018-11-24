@@ -21,13 +21,7 @@ plot(      2:550,
            N -&gt; 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),
            xlab = &quot;N&quot;,
            ylab = &quot;% of saved memory&quot;,
-           legend = nothing        )</code></pre><pre><code class="language-none">/home/travis/.julia/packages/GR/wFd9A/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
-connect: Connection refused
-GKS: can&#39;t connect to GKS socket application
-Did you start &#39;gksqt&#39;?
-
-GKS: Open failed in routine OPEN_WS
-GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</code></pre></div><p><img src="curve.png" alt/></p><p>As you can see in the schematic diagram, the difference between <code>PairwiseListMatrix{T, true, VT}</code> and <code>PairwiseListMatrix{T, false, VT}</code> is where the diagonal values are stored. All <code>PairwiseListMatrix{T, diagonal, VT}</code> have a <code>list</code> field for storing the values. If <code>diagonal</code> is true, the diagonal values are included in the <code>list</code> (i.e. yellow value) and the <code>diag</code> vector is empty. But if the <code>diagonal</code> value is <code>false</code> the diagonal values are stored in the <code>diag</code> vector.  </p><pre><code class="language-julia">mutable struct PairwiseListMatrix{T,diagonal,VT} &lt;: AbstractArray{T, 2}
+           legend = nothing        )</code></pre></div><p><img src="curve.png" alt/></p><p>As you can see in the schematic diagram, the difference between <code>PairwiseListMatrix{T, true, VT}</code> and <code>PairwiseListMatrix{T, false, VT}</code> is where the diagonal values are stored. All <code>PairwiseListMatrix{T, diagonal, VT}</code> have a <code>list</code> field for storing the values. If <code>diagonal</code> is true, the diagonal values are included in the <code>list</code> (i.e. yellow value) and the <code>diag</code> vector is empty. But if the <code>diagonal</code> value is <code>false</code> the diagonal values are stored in the <code>diag</code> vector.  </p><pre><code class="language-julia">mutable struct PairwiseListMatrix{T,diagonal,VT} &lt;: AbstractArray{T, 2}
     list::VT
     diag::VT
     nelements::Int
@@ -85,10 +79,4 @@ nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
 
 using Plots
 gr()
-plot(nplm)</code></pre><pre><code class="language-none">/home/travis/.julia/packages/GR/wFd9A/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
-connect: Connection refused
-GKS: can&#39;t connect to GKS socket application
-Did you start &#39;gksqt&#39;?
-
-GKS: Open failed in routine OPEN_WS
-GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</code></pre></div><p><img src="heatmap.png" alt/>  </p><h2><a class="nav-anchor" id="Benchmark-1" href="#Benchmark-1">Benchmark</a></h2><p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p><ul><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></li><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></li></ul><footer><hr/><a class="next" href="api/"><span class="direction">Next</span><span class="title">API</span></a></footer></article></body></html>
+plot(nplm)</code></pre></div><p><img src="heatmap.png" alt/>  </p><h2><a class="nav-anchor" id="Benchmark-1" href="#Benchmark-1">Benchmark</a></h2><p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p><ul><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></li><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></li></ul><footer><hr/><a class="next" href="api/"><span class="direction">Next</span><span class="title">API</span></a></footer></article></body></html>
