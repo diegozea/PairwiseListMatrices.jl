@@ -16,6 +16,8 @@ script:
  - julia --check-bounds=yes --inline=yes --code-coverage=user -e 'using InteractiveUtils; using Pkg; versioninfo();  Pkg.add(Pkg.PackageSpec(path=pwd())); Pkg.build("PairwiseListMatrices"); Pkg.test("PairwiseListMatrices", coverage=true)'
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter")'
+  - julia -e 'using Pkg; Pkg.add("Coverage")' # Coverage
   - julia -e 'using Pkg; Pkg.add("Plots"); Pkg.add("GR"); using Plots, GR' # Plots
-  - julia -e 'import PairwiseListMatrices; include(joinpath(dirname(pathof(PairwiseListMatrices)), "..", "docs", "make.jl"))'
-  - julia -e 'using Pkg; using PairwiseListMatrices; cd(dirname(pathof(PairwiseListMatrices))); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("DataFrames"); Pkg.add("CSV");' # DataFrames
+  - julia -e --code-coverage=user 'import PairwiseListMatrices; include(joinpath(dirname(pathof(PairwiseListMatrices)), "..", "docs", "make.jl"))'
+  - julia -e 'using Pkg; using PairwiseListMatrices; cd(dirname(pathof(PairwiseListMatrices))); using Coverage; Coveralls.submit(Coveralls.process_folder())'
