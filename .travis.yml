@@ -19,5 +19,7 @@ after_success:
   - julia -e 'using Pkg; Pkg.add("Coverage")' # Coverage
   - julia -e 'using Pkg; Pkg.add("Plots"); Pkg.add("GR"); using Plots, GR' # Plots
   - julia -e 'using Pkg; Pkg.add("DataFrames"); Pkg.add("CSV");' # DataFrames
-  - julia -e --code-coverage=user 'import PairwiseListMatrices; include(joinpath(dirname(pathof(PairwiseListMatrices)), "..", "docs", "make.jl"))'
-  - julia -e 'using Pkg; using PairwiseListMatrices; cd(dirname(pathof(PairwiseListMatrices))); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  # Documentation and DocTests
+  - julia --code-coverage=user -e 'import PairwiseListMatrices; include(joinpath(dirname(pathof(PairwiseListMatrices)), "..", "docs", "make.jl"))'
+  # Coverage
+  - julia -e 'using Pkg; using PairwiseListMatrices; pkdir = dirname(pathof(PairwiseListMatrices)); println(pkdir); cd(pkdir); using Coverage; Coveralls.submit(Coveralls.process_folder())'
