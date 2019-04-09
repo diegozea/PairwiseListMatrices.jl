@@ -9,8 +9,8 @@ mutable struct PairwiseListMatrix{T,diagonal,VT} <: AbstractArray{T, 2}
     diag::VT
     nelements::Int
 
-    function PairwiseListMatrix{T,diagonal,VT}(list::AbstractVector{T},
-                                               diag::AbstractVector{T},
+    function PairwiseListMatrix{T,diagonal,VT}(list::VT,
+                                               diag::VT,
                                                N::Int) where {T,diagonal,VT}
         @assert eltype(VT) === T "Field vectors must have the same element type than the PairwiseListMatrix"
         if !diagonal
