@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>PairwiseListMatrices · PairwiseListMatrices</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">PairwiseListMatrices</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>PairwiseListMatrices</a><ul class="internal"><li><a class="tocitem" href="#Introduction"><span>Introduction</span></a></li><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Simple-example"><span>Simple example</span></a></li><li><a class="tocitem" href="#Implementation"><span>Implementation</span></a></li><li><a class="tocitem" href="#Ploting"><span>Ploting</span></a></li><li><a class="tocitem" href="#Benchmark"><span>Benchmark</span></a></li></ul></li><li><a class="tocitem" href="api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>PairwiseListMatrices</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>PairwiseListMatrices</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/diegozea/PairwiseListMatrices.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="PairwiseListMatrices"><a class="docs-heading-anchor" href="#PairwiseListMatrices">PairwiseListMatrices</a><a id="PairwiseListMatrices-1"></a><a class="docs-heading-anchor-permalink" href="#PairwiseListMatrices" title="Permalink"></a></h1><h2 id="Introduction"><a class="docs-heading-anchor" href="#Introduction">Introduction</a><a id="Introduction-1"></a><a class="docs-heading-anchor-permalink" href="#Introduction" title="Permalink"></a></h2><p><strong>PairwiseListMatrices</strong> allows you to represent a (squared) <strong>symmetric matrix</strong> as a list of the values in the upper or lower triangular part of the matrix. Those matrices are common for representing <strong>pairwise measures/comparisons</strong> between the elements of one group when the used metric/distance satisfies the symmetry condition. Also the <strong>adjacency matrices of undirected graphs</strong> can be represented with this kind of list/matrices.  </p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>This package is registered on Julia&#39;s METADATA.jl and it can be installed through the Julia&#39;s REPL:  </p><pre><code class="language-julia">Pkg.add(&quot;PairwiseListMatrices&quot;)</code></pre><p>If the package is installed on your system, you can load it with:  </p><pre><code class="language-julia">using PairwiseListMatrices</code></pre><h2 id="Simple-example"><a class="docs-heading-anchor" href="#Simple-example">Simple example</a><a id="Simple-example-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-example" title="Permalink"></a></h2><p>The following symmetric matrix has 9 values. Their values could be thought as pairwise measures between 3 elements:  </p><pre><code class="language-julia-repl">julia&gt; matrix = [  0 10 20
+                  10  0 30
+                  20 30  0 ]
+3×3 Array{Int64,2}:
+  0  10  20
+ 10   0  30
+ 20  30   0</code></pre><p>Since all the diagonal members are zeros, this matrix could be represented as a vector/list of the 3 values on the triangular part:  </p><pre><code class="language-julia-repl">julia&gt; list = [10, 20, 30]
+3-element Array{Int64,1}:
+ 10
+ 20
+ 30</code></pre><p>The type <code>PairwiseListMatrix</code>, defined in this module, can be used for working with the list as a full symmetric matrix.  </p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix(list)
+3×3 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+  0  10  20
+ 10   0  30
+ 20  30   0</code></pre><h2 id="Implementation"><a class="docs-heading-anchor" href="#Implementation">Implementation</a><a id="Implementation-1"></a><a class="docs-heading-anchor-permalink" href="#Implementation" title="Permalink"></a></h2><p>If you are performing pairwise measures over <code>N</code> elements, storing all the <code>N*N</code> values of a <code>Matrix{T}</code> represents <code>sizeof(T)*(N*N)</code> bytes of memory. However, the lower and upper triangular parts of the matrix are identical and could be stored in a single list. In this way, you are storing the green value only once:  </p><p><img src="PLM.svg" alt/></p><p>The diagonal values should be stored, since they could change at any time (i.e. yellow value). So you need <code>sizeof(T)*(N)</code> bytes for storing the diagonal values on a vector and <code>sizeof(T)*(N*(N-1))/2</code> bytes for storing the lower or upper triangular part of the matrix. The type <code>PairwiseListMatrix{T, diagonal, VT}</code> represents the symmetric matrix using only <code>sizeof(T)*(N*(N+1))/2</code> bytes instead of <code>sizeof(T)*(N*N)</code> bytes, saving almost 50% of the memory (the percent depends on <code>N</code>):  </p><pre><code class="language-julia">using Plots
+gr()
+plot(      2:550,
+           N -&gt; 100.0 - ( 100.0 * div(N*(N+1), 2) / (N*N) ),
+           xlab = &quot;N&quot;,
+           ylab = &quot;% of saved memory&quot;,
+           legend = nothing        )</code></pre><p><img src="curve.png" alt/></p><p>As you can see in the schematic diagram, the difference between <code>PairwiseListMatrix{T, true, VT}</code> and <code>PairwiseListMatrix{T, false, VT}</code> is where the diagonal values are stored. All <code>PairwiseListMatrix{T, diagonal, VT}</code> have a <code>list</code> field for storing the values. If <code>diagonal</code> is true, the diagonal values are included in the <code>list</code> (i.e. yellow value) and the <code>diag</code> vector is empty. But if the <code>diagonal</code> value is <code>false</code> the diagonal values are stored in the <code>diag</code> vector.  </p><pre><code class="language-julia">mutable struct PairwiseListMatrix{T,diagonal,VT} &lt;: AbstractArray{T, 2}
+    list::VT
+    diag::VT
+    nelements::Int
+    ...
+end</code></pre><p>The number of elements in the pairwise measure/comparisons or the number of nodes in the undirected graph is stored in <code>nelements</code> and used in indexing operations. This allows you to index the object like any other matrix.  </p><p>The <code>PairwiseListMatrix</code> can be wrapped in a <code>NamedArray</code> (from the package <code>NamedArrays</code>) to allow the access of elements using labels. The function <code>setlabel</code> can be used to create this object easily. For example, using the matrix of the figure and storing the diagonal values in the list:</p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)
+4×4 PairwiseListMatrix{Int64,true,Array{Int64,1}}:
+ 1  1  0  1
+ 1  0  1  1
+ 0  1  0  0
+ 1  1  0  0
+
+julia&gt; nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
+4×4 Named PairwiseListMatrix{Int64,true,Array{Int64,1}}
+A ╲ B │ A  B  C  D
+──────┼───────────
+A     │ 1  1  0  1
+B     │ 1  0  1  1
+C     │ 0  1  0  0
+D     │ 1  1  0  0
+
+julia&gt; nplm[&quot;B&quot;,&quot;C&quot;]
+1</code></pre><p>You can also create the matrix with the list without the diagonal values and fill the diagonal values after that:  </p><pre><code class="language-julia-repl">julia&gt; using PairwiseListMatrices
+
+julia&gt; plm = PairwiseListMatrix([1,0,1,1,1,0], false)
+4×4 PairwiseListMatrix{Int64,false,Array{Int64,1}}:
+ 0  1  0  1
+ 1  0  1  1
+ 0  1  0  0
+ 1  1  0  0
+
+julia&gt; nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
+4×4 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
+A ╲ B │ A  B  C  D
+──────┼───────────
+A     │ 0  1  0  1
+B     │ 1  0  1  1
+C     │ 0  1  0  0
+D     │ 1  1  0  0
+
+julia&gt; nplm[&quot;A&quot;,&quot;A&quot;] = 1
+1
+
+julia&gt; nplm
+4×4 Named PairwiseListMatrix{Int64,false,Array{Int64,1}}
+A ╲ B │ A  B  C  D
+──────┼───────────
+A     │ 1  1  0  1
+B     │ 1  0  1  1
+C     │ 0  1  0  0
+D     │ 1  1  0  0</code></pre><h2 id="Ploting"><a class="docs-heading-anchor" href="#Ploting">Ploting</a><a id="Ploting-1"></a><a class="docs-heading-anchor-permalink" href="#Ploting" title="Permalink"></a></h2><p>You can use the <a href="https://juliaplots.github.io/">Plots</a> package to visualize this matrices quickly as heat maps. If you are looking for more complex visualization, you can use the <a href="https://github.com/JuliaPlots/PlotRecipes.jl">PlotRecipes</a> package. This last package provides <strong>arc diagram</strong>, <strong>chord diagram/circos</strong> and other <code>graphplot</code>s (since those matrices could be a representation for an <strong>adjacency matrix/list</strong> of an undirected graph).  </p><pre><code class="language-julia">using PairwiseListMatrices
+plm = PairwiseListMatrix([1,1,0,1,0,1,1,0,0,0], true)
+nplm = setlabels(plm, [&quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;])
+
+using Plots
+gr()
+plot(nplm)</code></pre><pre class="documenter-example-output">┌ Warning: Attribute alias `ratio` detected in the user recipe defined for the signature (::NamedArrays.NamedArray{Int64,2,PairwiseListMatrix{Int64,true,Array{Int64,1}},Tuple{OrderedCollections.OrderedDict{String,Int64},OrderedCollections.OrderedDict{String,Int64}}}). To ensure expected behavior it is recommended to use the default attribute `aspect_ratio`.
+└ @ Plots ~/.julia/packages/Plots/LWw1t/src/pipeline.jl:15</pre><p><img src="heatmap.png" alt/>  </p><h2 id="Benchmark"><a class="docs-heading-anchor" href="#Benchmark">Benchmark</a><a id="Benchmark-1"></a><a class="docs-heading-anchor-permalink" href="#Benchmark" title="Permalink"></a></h2><p><code>PairwiseListMatrix</code> is faster than a full matrix to make operation like <code>sum</code> and <code>mean</code> in the whole matrix, since it is cache efficient. However it is slower than a full matrix for reducing along dimensions.</p><ul><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/creation_bech.ipynb">Creation benchmark</a></li><li><a href="http://nbviewer.ipython.org/github/diegozea/PairwiseListMatrices.jl/blob/master/test/stats_bench.ipynb">Statistics benchmark</a></li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 1 August 2020 19:37">Saturday 1 August 2020</span>. Using Julia version 1.4.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
