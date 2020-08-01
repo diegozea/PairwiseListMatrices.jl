@@ -1,0 +1,11 @@
+name = "PairwiseListMatrices"
+uuid = "f9da4da7-9382-5435-b973-175f5d8dfb32"
+version = "0.7.1"
+
+[deps]
+NamedArrays = "86f7a689-2022-50b4-a561-43c23ac3c673"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+
+[compat]
+NamedArrays = "≥ 0.9.2"
+julia = "≥ 1.0.0"
