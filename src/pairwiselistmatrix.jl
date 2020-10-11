@@ -527,7 +527,7 @@ end
                               bc::Base.Broadcast.Broadcasted{Nothing}) where {T, D, VT}
     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
     bc_ = Base.Broadcast.preprocess(dest, bc)
-    @iterateupper dest true list[k] = :($bc_)[CartesianIndex(i,j)] # slow: bc_ has a plm
+    @iterateupper dest true list[k] = bc_[CartesianIndex(i,j)] # slow: bc_ has a plm
     return dest
 end
 
@@ -1037,10 +1037,10 @@ function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = getla
     table = Array{Any}(undef, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
     @iterateupper plm diagonal begin
-        :($t) += 1
-        :($table)[:($t), 1] = :($labels)[i]
-        :($table)[:($t), 2] = :($labels)[j]
-        :($table)[:($t), 3] = list[k]
+        t += 1
+        table[t, 1] = labels[i]
+        table[t, 2] = labels[j]
+        table[t, 3] = list[k]
     end
     table
 end
@@ -1093,10 +1093,10 @@ function to_dict(plm::PairwiseListMatrix{T,D,TV};
     K = Array{T}(undef, L)
     t = 0
     @iterateupper plm diagonal begin
-        :($t) += 1
-        :($I)[:($t)] = :($labels)[i]
-        :($J)[:($t)] = :($labels)[j]
-        :($K)[:($t)] = list[k]
+        t += 1
+        I[t] = labels[i]
+        J[t] = labels[j]
+        K[t] = list[k]
     end
     Dict(:i => I, :j => J, :values => K)
 end
@@ -1214,7 +1214,7 @@ function DelimitedFiles.writedlm(filename::String,
                        delim::Char = '\t',
                        labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     open(filename, "w") do fh
-        @iterateupper plm diagonal println(:($fh), :($labels)[i], :($delim), :($labels)[j], :($delim), list[k])
+        @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
     end
 end
 

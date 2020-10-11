@@ -3,7 +3,7 @@ The macro `@iteratelist` writes a `for` loop over the `list` but avoiding `getfi
 inside the loop. The first argument of the macro is the `PairwiseListMatrix` that is going
 to be iterated and the second is the body of the loop.
 In the body `list` will be the list field of the `PairwiseListMatrix` and `k` the index
-over that list. Other variables should be interpolated in a quote. You must not modify the
+over that list. Other variables are expanded in the current scope. You must not modify the
 value of `k`.
 
 ```jldoctest
@@ -23,12 +23,13 @@ julia> @iteratelist PLM println(list[k])
 ```
 """
 macro iteratelist(plm, exp)
-    quote
-        list = $(esc(plm)).list
-        for k in 1:length(list)
-            $exp
+    esc(quote
+        let list = $plm.list
+            for k in 1:length(list)
+                $exp
+            end
         end
-    end
+    end)
 end
 
 """
@@ -37,7 +38,7 @@ The macro `@iteratediag` writes a `for` loop over the `diag` field of a
 argument of the macro is the `PairwiseListMatrix` that is going to be iterated and the
 second is the body of the loop. In the body `diag` will be the diag field of the
 `PairwiseListMatrix` and `k` the index over that vector.
-Other variables should be interpolated in a quote. You must not modify the value of `k`.
+Other variables are expanded in the current scope. You must not modify the value of `k`.
 
 ```jldoctest
 julia> using PairwiseListMatrices
@@ -59,14 +60,14 @@ julia> PLM
 ```
 """
 macro iteratediag(plm, exp)
-    quote
-        if !hasdiagonal($(esc(plm)))
-            diag = $(esc(plm)).diag
+    esc(quote
+        if !$hasdiagonal($plm)
+            local diag = $plm.diag
             for k in 1:length(diag)
-                $(exp)
+                $exp
             end
         end
-    end
+    end)
 end
 
 """
@@ -76,7 +77,7 @@ The macro `@iterateupper` iterates over the upper triangular part of the
 The last argument is the body of the loop, where `list` is the list and diag fields of
 the `PairwiseListMatrix` and `k` is the index over that `list`.
 You can also use the respective `i` and `j` indexes for that position `k` in the upper
-triangular part of the matrix. Other variables should be interpolated in a quote.
+triangular part of the matrix. Other variables are expanded in the current scope.
 You must not modify the values of `i`, `j` or `k`.
 
 ```jldoctest
@@ -93,7 +94,7 @@ julia> mat = zeros(Int, 2, 2)
  0  0
 
 julia> let mat = mat # To avoid using global
-           @iterateupper PLM true :(\$mat)[i,j] = list[k]
+           @iterateupper PLM true mat[i,j] = list[k]
        end
 
 julia> mat
@@ -104,57 +105,59 @@ julia> mat
 ```
 """
 macro iterateupper(plm, use_diag, exp)
-    quote
-        N = $(esc(plm)).nelements
-        if hasdiagonal($(esc(plm)))
-            if $(esc(use_diag))
-                k = 0
-                list = $(esc(plm)).list
-                for i in 1:N
-                    for j in i:N
-                        k += 1
-                        $exp
-                    end
-                end
-            else
-                k = 0
-                list = $(esc(plm)).list
-                for i in 1:N
-                    for j in i:N
-                        k += 1
-                        if i != j
+    esc(quote
+        let N = $plm.nelements
+            local k, diag, list
+            if $hasdiagonal($plm)
+                if $use_diag
+                    k = 0
+                    list = $plm.list
+                    for i in 1:N
+                        for j in i:N
+                            k += 1
                             $exp
                         end
                     end
-                end
-            end
-        else
-            if $(esc(use_diag))
-                k = 0
-                diag = $(esc(plm)).diag
-                list = $(esc(plm)).list
-                for i in 1:N
-                    for j in i:N
-                        if i != j
+                else
+                    k = 0
+                    list = $plm.list
+                    for i in 1:N
+                        for j in i:N
                             k += 1
-                            $exp
-                        else
-                            let list = diag, k = i
+                            if i != j
                                 $exp
                             end
                         end
                     end
                 end
             else
-                k = 0
-                list = $(esc(plm)).list
-                for i in 1:(N-1)
-                    for j in (i+1):N
-                        k += 1
-                        $exp
+                if $use_diag
+                    k = 0
+                    diag = $plm.diag
+                    list = $plm.list
+                    for i in 1:N
+                        for j in i:N
+                            if i != j
+                                k += 1
+                                $exp
+                            else
+                                let list = diag, k = i
+                                    $exp
+                                end
+                            end
+                        end
+                    end
+                else
+                    k = 0
+                    list = $plm.list
+                    for i in 1:(N-1)
+                        for j in (i+1):N
+                            k += 1
+                            $exp
+                        end
                     end
                 end
             end
         end
-    end
+    end)
 end

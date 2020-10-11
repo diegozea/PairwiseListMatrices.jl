@@ -512,20 +512,20 @@ end
     full_t   = Matrix(PLMtrue)
     full_f   = Matrix(PLMfalse)
 
-    @iteratelist PLMtrue  Main.@test(list[k] == :($list_values)[k])
-    @iteratelist PLMfalse Main.@test(list[k] == :($list_values)[k])
+    @iteratelist PLMtrue  Main.@test(list[k] == list_values[k])
+    @iteratelist PLMfalse Main.@test(list[k] == list_values[k])
 
     @iteratediag PLMtrue  Main.@test(false)
     @iteratediag PLMfalse Main.@test(diag[k] == 0)
 
-    @iterateupper PLMtrue  true  list[k] = :($list_values)[k]
-    @iterateupper PLMfalse false list[k] = :($list_values)[k]
+    @iterateupper PLMtrue  true  list[k] = list_values[k]
+    @iterateupper PLMfalse false list[k] = list_values[k]
 
-    @iterateupper PLMtrue  true  list[k] = :($full_t)[i,j]
-    @iterateupper PLMtrue  false list[k] = :($full_t)[i,j]
+    @iterateupper PLMtrue  true  list[k] = full_t[i,j]
+    @iterateupper PLMtrue  false list[k] = full_t[i,j]
 
-    @iterateupper PLMtrue  true  list[k] = :($full_f)[i,j]
-    @iterateupper PLMfalse false list[k] = :($full_f)[i,j]
+    @iterateupper PLMtrue  true  list[k] = full_f[i,j]
+    @iterateupper PLMfalse false list[k] = full_f[i,j]
 end
 
 @testset "IO" begin
