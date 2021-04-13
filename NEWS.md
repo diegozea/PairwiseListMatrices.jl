@@ -1,6 +1,6 @@
 ## PairwiseListMatrices.jl Release Notes
 
-## Changes from v0.7 to v0.8
+## Changes from v0.8 to v0.9
 
 * The `@iterateupper,`, `@iteratelist` and `@iteratediag` macros have 
 been replaced by the `apply2upper`, `apply2list` and `apply2diag` functions.
