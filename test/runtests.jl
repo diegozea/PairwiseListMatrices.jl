@@ -500,11 +500,13 @@ end
     end
 end
 
-@testset "Macros" begin
+@testset "Apply" begin
 
     PLM = PairwiseListMatrix([1,2,3], false)
 
-    @iteratelist PLM Main.@test(list[k] == k)
+    apply2list(PLM) do list, k
+        Main.@test(list[k] == k)
+    end
 
     list_values = [1,2,3,4,5,6]
     PLMtrue  = PairwiseListMatrix(list_values, true)
@@ -512,20 +514,37 @@ end
     full_t   = Matrix(PLMtrue)
     full_f   = Matrix(PLMfalse)
 
-    @iteratelist PLMtrue  Main.@test(list[k] == :($list_values)[k])
-    @iteratelist PLMfalse Main.@test(list[k] == :($list_values)[k])
+    apply2list(PLMtrue) do list, k
+        @test(list[k] == list_values[k])
+    end
+    apply2list(PLMfalse) do list, k
+        @test(list[k] == list_values[k])
+    end
 
-    @iteratediag PLMtrue  Main.@test(false)
-    @iteratediag PLMfalse Main.@test(diag[k] == 0)
+    apply2diag(PLMfalse) do diag, k
+        @test(diag[k] == 0)
+    end
 
-    @iterateupper PLMtrue  true  list[k] = :($list_values)[k]
-    @iterateupper PLMfalse false list[k] = :($list_values)[k]
+    apply2upper(PLMtrue, use_diag=true) do list, k, i, j
+        list[k] = list_values[k]
+    end
+    apply2upper(PLMfalse, use_diag=false) do list, k, i, j
+        list[k] = list_values[k]
+    end
 
-    @iterateupper PLMtrue  true  list[k] = :($full_t)[i,j]
-    @iterateupper PLMtrue  false list[k] = :($full_t)[i,j]
+    apply2upper(PLMtrue, use_diag=true) do list, k, i, j
+        list[k] = full_t[i, j]
+    end
+    apply2upper(PLMtrue, use_diag=false) do list, k, i, j
+        list[k] = full_t[i, j]
+    end
 
-    @iterateupper PLMtrue  true  list[k] = :($full_f)[i,j]
-    @iterateupper PLMfalse false list[k] = :($full_f)[i,j]
+    apply2upper(PLMfalse, use_diag=true) do list, k, i, j
+        list[k] = full_f[i, j]
+    end
+    apply2upper(PLMfalse, use_diag=false) do list, k, i, j
+        list[k] = full_f[i, j]
+    end
 end
 
 @testset "IO" begin

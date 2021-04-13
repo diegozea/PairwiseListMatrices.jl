@@ -18,11 +18,7 @@ using Statistics
 using NamedArrays
 using RecipesBase
 
-export  @iterateupper,
-        @iteratelist,
-        @iteratediag,
-
-        PairwiseListMatrix,
+export  PairwiseListMatrix,
         hasdiagonal,
         getlist, getdiag,
         diagonal,
@@ -34,10 +30,13 @@ export  @iterateupper,
         from_table, to_table,
         to_dict,
         join,
-        writedlm
+        writedlm,
+        apply2upper,
+        apply2list,
+        apply2diag
 
-include("macros.jl")
 include("pairwiselistmatrix.jl")
+include("apply.jl")
 include("plotrecipes.jl")
 
 end

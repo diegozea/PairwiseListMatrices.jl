@@ -20,14 +20,9 @@ getdiag
 lengthlist
 ij2k
 diagonal
-```
-
-## Macros
-
-```@docs
-@iteratelist
-@iteratediag
-@iterateupper
+apply2list
+apply2diag
+apply2upper
 ```
 
 ## Labels/Names

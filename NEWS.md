@@ -1,5 +1,10 @@
 ## PairwiseListMatrices.jl Release Notes
 
+## Changes from v0.7 to v0.8
+
+* The `@iterateupper,`, `@iteratelist` and `@iteratediag` macros have 
+been replaced by the `apply2upper`, `apply2list` and `apply2diag` functions.
+
 ## Changes from v0.6 to v0.7
 
 PairwiseListMatrices v0.7 requires Julia 0.7/1.0.
