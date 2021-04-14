@@ -33,8 +33,12 @@ export  PairwiseListMatrix,
         writedlm,
         apply2upper,
         apply2list,
-        apply2diag
+        apply2diag,
+        @iteratelist,
+        @iteratediag,
+        @iterateupper
 
+include("macros.jl")
 include("pairwiselistmatrix.jl")
 include("apply.jl")
 include("plotrecipes.jl")
