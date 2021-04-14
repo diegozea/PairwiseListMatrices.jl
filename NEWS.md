@@ -1,6 +1,6 @@
 ## PairwiseListMatrices.jl Release Notes
 
-## Changes from v0.8 to v0.10
+## Changes from v0.9 to v0.10
 
 * Add the `@iterateupper,`, `@iteratelist` and `@iteratediag` macros back again 
 thanks to @simeonschaub (Simeon Schaub) PR. The `@iterate...` macros are faster 
