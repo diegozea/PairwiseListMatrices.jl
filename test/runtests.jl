@@ -520,6 +520,9 @@ end
     apply2list(PLMfalse) do list, k
         @test(list[k] == list_values[k])
     end
+    
+    @iteratelist PLMtrue  Main.@test(list[k] == list_values[k])
+    @iteratelist PLMfalse Main.@test(list[k] == list_values[k])
 
     apply2diag(PLMfalse) do diag, k
         @test(diag[k] == 0)
@@ -545,6 +548,15 @@ end
     apply2upper(PLMfalse, use_diag=false) do list, k, i, j
         list[k] = full_f[i, j]
     end
+    
+    @iterateupper PLMtrue  true  list[k] = list_values[k]
+    @iterateupper PLMfalse false list[k] = list_values[k]
+
+    @iterateupper PLMtrue  true  list[k] = full_t[i,j]
+    @iterateupper PLMtrue  false list[k] = full_t[i,j]
+
+    @iterateupper PLMtrue  true  list[k] = full_f[i,j]
+    @iterateupper PLMfalse false list[k] = full_f[i,j]
 end
 
 @testset "IO" begin

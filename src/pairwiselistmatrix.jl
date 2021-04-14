@@ -527,9 +527,7 @@ end
                               bc::Base.Broadcast.Broadcasted{Nothing}) where {T, D, VT}
     axes(dest) == axes(bc) || Base.Broadcast.throwdm(axes(dest), axes(bc))
     bc_ = Base.Broadcast.preprocess(dest, bc)
-    apply2upper(dest; use_diag=true) do list, k, i, j
-        list[k] = bc_[CartesianIndex(i,j)] # slow: bc_ has a plm
-    end
+    @iterateupper dest true list[k] = bc_[CartesianIndex(i,j)] # slow: bc_ has a plm
     return dest
 end
 
@@ -1027,7 +1025,7 @@ julia> to_table(plm)
  "3"  "3"   0
 
 julia> to_table(plm, diagonal=false)
-3×3 Array{Any,2}:
+3×3 Array{Any,2}:   
  "1"  "2"  10
  "1"  "3"  20
  "2"  "3"  30
@@ -1038,11 +1036,11 @@ function to_table(plm::PairwiseListMatrix; diagonal::Bool = true, labels = getla
     N = plm.nelements
     table = Array{Any}(undef, diagonal ? div(N*(N+1),2) : div(N*(N-1),2), 3)
     t = 0
-    apply2upper(plm; use_diag=diagonal) do list, k, i, j
-            t += 1
-            table[t, 1] = labels[i]
-            table[t, 2] = labels[j]
-            table[t, 3] = list[k]
+    @iterateupper plm diagonal begin
+        t += 1
+        table[t, 1] = labels[i]
+        table[t, 2] = labels[j]
+        table[t, 3] = list[k]
     end
     table
 end
@@ -1094,7 +1092,7 @@ function to_dict(plm::PairwiseListMatrix{T,D,TV};
     J = Array{String}(undef, L)
     K = Array{T}(undef, L)
     t = 0
-    apply2upper(plm; use_diag=diagonal) do list, k, i, j
+    @iterateupper plm diagonal begin
         t += 1
         I[t] = labels[i]
         J[t] = labels[j]
@@ -1217,9 +1215,7 @@ function DelimitedFiles.writedlm(filename::String,
                        delim::Char = '\t',
                        labels::Vector{String} = getlabels(plm)) where {T,D,TV}
     open(filename, "w") do fh
-        apply2upper(plm; use_diag=diagonal) do list, k, i, j
-            println(fh, labels[i], delim, labels[j], delim, list[k])
-        end
+        @iterateupper plm diagonal println(fh, labels[i], delim, labels[j], delim, list[k])
     end
 end
 

@@ -1,6 +1,6 @@
 name = "PairwiseListMatrices"
 uuid = "f9da4da7-9382-5435-b973-175f5d8dfb32"
-version = "0.9.0"
+version = "0.10.0"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
