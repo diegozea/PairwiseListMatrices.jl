@@ -107,20 +107,24 @@ end
 # Empties
 # -------
 
-function _diagonal_value(diagonal::Bool, ::Type{T}) where T
-    if !diagonal
-        if hasmethod(zero, (T,))
-            return zero(T)
-        elseif T <: Union{Missing, Int}
-            return missing
+function _diagonal_value(::Type{T}) where T
+    if hasmethod(zero, (T,))
+        return zero(T)
+    else
+        if T isa Union
+            T_types = Base.uniontypes(T)
+            if Missing ∈ T_types
+                return missing
+            end
+            if Nothing ∈ T_types
+                return nothing
+            end
         elseif T === Any
             return nothing
-        else
-            throw(ErrorException(
-            "Please use the last argument to fill the diagonal. It should be of type $T."))
         end
     end
-    Array{T}(undef, 1)[1]
+    throw(ErrorException(
+       "Please use the last argument to fill the diagonal. It should be of type $T."))
 end
 
 
@@ -139,7 +143,7 @@ PairwiseListMatrix(Int, 3, true)
 function PairwiseListMatrix(::Type{T},
                            nelements::Int,
                            diagonal::Bool = false,
-                           diagonalvalue::T = _diagonal_value(diagonal, T)) where T
+                           diagonalvalue::T = _diagonal_value(T)) where T
     if diagonal
         return PairwiseListMatrix{T, true, Vector{T}}(
             Array{T}(undef, lengthlist(nelements, Val{true})),
@@ -283,7 +287,7 @@ instead of being on the list. The `diag` vector can be filled with the optional
 """
 function PairwiseListMatrix(list::AbstractVector{T},
                            diagonal::Bool = false,
-                           diagonalvalue::T = _diagonal_value(diagonal, T)) where T
+                           diagonalvalue::T = _diagonal_value(T)) where T
     VT = typeof(list)
     if diagonal
         nelements = _nelements_with_diagonal(length(list))
@@ -1170,7 +1174,7 @@ function from_table(table,
     @assert size(table,2) >= 3
     values = table[:,valuecol]
     if diagonalvalue == :default
-        diagonalvalue = _diagonal_value(diagonal, eltype(values))
+        diagonalvalue = _diagonal_value(eltype(values))
     end
     plm  = PairwiseListMatrix(values, diagonal, diagonalvalue)
     nplm = NamedArray(plm)

@@ -1,5 +1,9 @@
 ## PairwiseListMatrices.jl Release Notes
 
+## Changes from v0.10 to v0.11
+
+Fix bug in `from_table`.
+
 ## Changes from v0.9 to v0.10
 
 * Add the `@iterateupper,`, `@iteratelist` and `@iteratediag` macros back again 

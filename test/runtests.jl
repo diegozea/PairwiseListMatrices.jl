@@ -582,6 +582,15 @@ end
 
         @test to_table(list) == to_table(list_diag)
         @test to_table(list, diagonal=false) == to_table(list_diag, diagonal=false)
+
+        @testset "README" begin
+            # using Any type instead of Int to allow @test
+            plm  = PairwiseListMatrix(Any[1,2,3], false)
+            nplm  = setlabels(plm, ["a","b","c"])
+            table = to_table(nplm)
+            new_nplm = from_table(table, true)
+            @test new_nplm == plm
+        end
     end
 
     @testset "DataFrames" begin

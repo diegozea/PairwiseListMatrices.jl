@@ -68,13 +68,21 @@ a     │ 0  1  2
 b     │ 1  0  3
 c     │ 2  3  0
 
-julia> to_table(nplm)
-6×3 Array{Any,2}:
+julia> table = to_table(nplm)
+6×3 Matrix{Any}:
  "a"  "a"  0
  "a"  "b"  1
  "a"  "c"  2
  "b"  "b"  0
  "b"  "c"  3
  "c"  "c"  0
+
+julia> from_table(table, true)
+3×3 Named PairwiseListMatrix{Any, true, Vector{Any}}
+A ╲ B │ a  b  c
+──────┼────────
+a     │ 0  1  2
+b     │ 1  0  3
+c     │ 2  3  0
 
 ```
