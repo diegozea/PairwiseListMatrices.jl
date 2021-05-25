@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 jobs:
   TagBot:
-    # THIS 'if' LINE IS NEW
     if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
-    # NOTHING BELOW HAS CHANGED
     runs-on: ubuntu-latest
     steps:
       - uses: JuliaRegistries/TagBot@v1
